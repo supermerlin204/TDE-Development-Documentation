@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <circle cx="96" cy="96" r="88" fill="none" stroke="#00bfa5" stroke-width="3" filter="url(#glow)"/>
+  <circle cx="96" cy="96" r="64" fill="none" stroke="#00897b" stroke-width="1.5" opacity="0.7"/>
+  <circle cx="96" cy="96" r="40" fill="none" stroke="#00bfa5" stroke-width="1" opacity="0.4"/>
+  <circle cx="96" cy="96" r="18" fill="none" stroke="#00f0ff" stroke-width="2.5" filter="url(#glow)"/>
+  <circle cx="96" cy="96" r="5" fill="#00f0ff"/>
+  <line x1="96" y1="20" x2="96" y2="74" stroke="#00bfa5" stroke-width="1.5" opacity="0.5"/>
+  <line x1="96" y1="118" x2="96" y2="172" stroke="#00bfa5" stroke-width="1.5" opacity="0.5"/>
+  <line x1="20" y1="96" x2="74" y2="96" stroke="#00bfa5" stroke-width="1.5" opacity="0.5"/>
+  <line x1="118" y1="96" x2="172" y2="96" stroke="#00bfa5" stroke-width="1.5" opacity="0.5"/>
+  <text x="96" y="58" text-anchor="middle" fill="#00f0ff" font-size="18" font-weight="bold" font-family="sans-serif" filter="url(#glow)">TDE</text>
+</svg>

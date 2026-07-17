@@ -1,0 +1,13 @@
+{
+  "short_name": "TDE Docs",
+  "name": "The Dreamless Era — Development Documentation",
+  "icons": [{
+    "src": "icon.png",
+    "type": "image/png",
+    "sizes": "192x192"
+  }],
+  "start_url": "/",
+  "background_color": "#040a0a",
+  "theme_color": "#060e0e",
+  "display": "standalone"
+}

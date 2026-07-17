@@ -1,0 +1,21 @@
+{
+  "name": "tde-dev-documentation",
+  "version": "0.1.0",
+  "description": "无眠纪 (The Dreamless Era) — 类魂RPG开发文档站点",
+  "private": true,
+  "keywords": [
+    "game-development",
+    "souls-like",
+    "rpg",
+    "documentation"
+  ],
+  "license": "UNLICENSED",
+  "author": "TDE Development Team",
+  "scripts": {
+    "start": "npx serve . -p 3000 --no-clipboard",
+    "deploy": "echo '纯静态站点，直接上传整个目录到服务器即可。推荐使用 rsync 或 scp。' && echo '' && echo '示例：' && echo '  rsync -avz ./ user@server:/var/www/tde-docs/' && echo '  scp -r ./* user@server:/var/www/tde-docs/' && echo '' && echo '如果使用 GitHub Pages：' && echo '  git push origin main  (确保仓库设置 Pages source 为 main 分支)'"
+  },
+  "devDependencies": {
+    "three": "^0.160.0"
+  }
+}

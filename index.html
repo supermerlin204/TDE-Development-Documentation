@@ -1,0 +1,373 @@
+<!doctype html>
+<html class="no-js" lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>无眠纪 The Dreamless Era — 开发文档</title>
+  <link rel="stylesheet" href="css/style.css?v=38">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./lib/three.module.js",
+      "three/addons/": "./lib/"
+    }
+  }
+  </script>
+  <meta name="description" content="无眠纪 (The Dreamless Era) — 类魂RPG开发文档">
+  <meta property="og:title" content="无眠纪 — The Dreamless Era">
+  <meta property="og:type" content="website">
+  <meta property="og:description" content="类魂RPG开发文档">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.png">
+  <meta name="theme-color" content="#060e0e">
+</head>
+<body>
+  <!-- 粒子背景 -->
+  <canvas id="particleCanvas"></canvas>
+
+  <!-- 符文圆环装饰 -->
+  <div class="bg-rune-circle rune-1"></div>
+  <div class="bg-rune-circle rune-2"></div>
+  <div class="bg-rune-circle rune-3"></div>
+
+  <!-- 浮游余烬 -->
+  <div class="ember-field" aria-hidden="true"></div>
+
+  <!-- 应用容器 -->
+  <div id="app">
+
+    <!-- 侧边栏导航 -->
+    <nav id="sidebar">
+      <div class="sidebar-inner">
+        <div class="logo-container">
+          <div class="logo-icon">
+            <svg viewBox="0 0 64 64" class="logo-svg">
+              <defs>
+                <filter id="logoGlow">
+                  <feGaussianBlur stdDeviation="2" result="blur"/>
+                  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+              </defs>
+              <circle cx="32" cy="32" r="28" fill="none" stroke="var(--cyan)" stroke-width="1.5" filter="url(#logoGlow)"/>
+              <circle cx="32" cy="32" r="20" fill="none" stroke="var(--cyan-dark)" stroke-width="1" opacity="0.6"/>
+              <path d="M32 8 L32 24 M32 40 L32 56 M8 32 L24 32 M40 32 L56 32" stroke="var(--cyan)" stroke-width="1" opacity="0.5"/>
+              <path d="M16 16 L24 24 M40 24 L48 16 M16 48 L24 40 M40 40 L48 48" stroke="var(--cyan-dark)" stroke-width="0.8" opacity="0.4"/>
+              <circle cx="32" cy="32" r="6" fill="none" stroke="var(--cyan-bright)" stroke-width="2" filter="url(#logoGlow)"/>
+              <circle cx="32" cy="32" r="2" fill="var(--cyan-bright)"/>
+            </svg>
+          </div>
+          <div class="logo-text">
+            <h1 class="logo-title">TDE</h1>
+            <span class="logo-subtitle">The Dreamless Era</span>
+            <span class="logo-chinese">无眠纪</span>
+          </div>
+        </div>
+
+        <ul class="nav-list">
+          <li><a href="#dashboard" class="nav-link active" data-page="dashboard">
+            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></span>
+            <span class="nav-label">总览面板</span>
+            <span class="nav-glow"></span>
+          </a></li>
+          <li><a href="#world" class="nav-link" data-page="world">
+            <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10A15.3 15.3 0 0112 2z"/></svg></span>
+            <span class="nav-label">世界地图</span>
+            <span class="nav-glow"></span>
+          </a></li>
+          <li><a href="#characters" class="nav-link" data-page="characters">
+            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14c-4.4 0-8 1.8-8 4v2h16v-2c0-2.2-3.6-4-8-4z"/></svg></span>
+            <span class="nav-label">角色资料</span>
+            <span class="nav-glow"></span>
+          </a></li>
+          <li><a href="#bestiary" class="nav-link" data-page="bestiary">
+            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-2-6.5l-1.5 1.5L12 18l4.5-4.5L15 12l-3 3-3-3z"/></svg></span>
+            <span class="nav-label">敌人图鉴</span>
+            <span class="nav-glow"></span>
+          </a></li>
+          <li><a href="#equipment" class="nav-link" data-page="equipment">
+            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 3.6L12 12.6 3 3.6 12 3l9 .6zM12 13l-9 .6L12 21l9-7.4L12 13z"/></svg></span>
+            <span class="nav-label">装备道具</span>
+            <span class="nav-glow"></span>
+          </a></li>
+          <li><a href="#quests" class="nav-link" data-page="quests">
+            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg></span>
+            <span class="nav-label">任务系统</span>
+            <span class="nav-glow"></span>
+          </a></li>
+          <li><a href="#glossary" class="nav-link" data-page="glossary">
+            <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/><circle cx="18" cy="4" r="2"/><circle cx="8" cy="4" r="2"/></svg></span>
+            <span class="nav-label">词条系统</span>
+            <span class="nav-glow"></span>
+          </a></li>
+        </ul>
+
+        <div class="sidebar-footer">
+          <div class="build-info">
+            <span class="build-version">v0.1.0-alpha</span>
+            <span class="build-status status-active">积极开发中</span>
+          </div>
+          <button class="edit-toggle" id="editToggle" title="切换编辑模式 (Ctrl+E)">
+            <svg viewBox="0 0 24 24" class="edit-toggle-icon"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            <span class="edit-toggle-label">编辑模式</span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main id="content">
+
+      <!-- 总览面板 -->
+      <section id="page-dashboard" class="page active">
+        <header class="page-header">
+          <h2 class="page-title">项目总览</h2>
+          <p class="page-desc">无眠纪 — The Dreamless Era 开发总览面板</p>
+        </header>
+
+        <div class="stat-grid" id="statGrid">
+          <div class="stat-card">
+            <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm.5-13H11v6l5.2 3.1.8-1.3-4.5-2.7V7z"/></svg></div>
+            <div class="stat-value" id="statDays">0</div>
+            <input type="date" class="stat-date-input" id="statDateInput" onchange="window._onProjectDateChange(this.value)" style="display:none">
+            <div class="stat-label">开发天数</div>
+            <div class="stat-bar"><div class="stat-bar-fill" id="statBarDays" style="width:0%"></div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14c-4.4 0-8 1.8-8 4v2h16v-2c0-2.2-3.6-4-8-4z"/></svg></div>
+            <div class="stat-value" id="statEntities">0</div>
+            <div class="stat-label">已设计实体</div>
+            <div class="stat-bar"><div class="stat-bar-fill" id="statBarEntities" style="width:0%"></div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10A15.3 15.3 0 0112 2z"/></svg></div>
+            <div class="stat-value" id="statRegions">0</div>
+            <div class="stat-label">世界区域</div>
+            <div class="stat-bar"><div class="stat-bar-fill" id="statBarRegions" style="width:0%"></div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M18.5 3L15 7l3 3 3.5-3.5L18.5 3zM7 15l-4 4 4 4 4-4-4-4zm7.5-7.5L10 12l2 2 4.5-4.5-2-2z"/></svg></div>
+            <div class="stat-value" id="statBosses">0</div>
+            <div class="stat-label">Boss战</div>
+            <div class="stat-bar"><div class="stat-bar-fill" id="statBarBosses" style="width:0%"></div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M19.14 12.94a9.03 9.03 0 00.36-3.22l2.45-1.91a11.08 11.08 0 00-1.66-2.86l-3.07.45a8.95 8.95 0 00-2.2-2.2l.45-3.07a10.9 10.9 0 00-2.86-1.66L10.63 3.9A9.03 9.03 0 007.4 3.54L6.81 2.19a10.97 10.97 0 00-3.21.56l-.36 2.99a8.92 8.92 0 00-2.42 1.8l-2.99-.36a10.97 10.97 0 00-.56 3.21l2.45 1.91a9.03 9.03 0 00-.36 3.22l-2.45 1.91c.36 1.02.92 1.98 1.66 2.86l3.07-.45c.6.86 1.34 1.6 2.2 2.2l-.45 3.07c.88.74 1.84 1.3 2.86 1.66l1.91-2.45a9.03 9.03 0 003.22.36l.6 1.35c1.1.27 2.24.27 3.21-.56l.36-2.99a8.92 8.92 0 002.42-1.8l2.99.36c.29-1.05.48-2.13.56-3.21l-2.45-1.91zm-7.61 3.5a4.44 4.44 0 110-8.88 4.44 4.44 0 010 8.88z"/></svg></div>
+            <div class="stat-value" id="statSubsystems">0</div>
+            <div class="stat-label">活跃子系统</div>
+            <div class="stat-bar"><div class="stat-bar-fill" id="statBarSubsystems" style="width:0%"></div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm12 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM17 12V9.5h2.5l1.96 2.5H17z"/></svg></div>
+            <div class="stat-value" id="statGlossary">0</div>
+            <div class="stat-label">词条数</div>
+            <div class="stat-bar"><div class="stat-bar-fill" id="statBarGlossary" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid" id="dashGrid">
+          <div class="card card-large">
+            <h3 class="card-title"><span class="card-title-icon"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></span>实体总览</h3>
+            <div id="entityStats"></div>
+          </div>
+          <div class="card card-large">
+            <h3 class="card-title"><span class="card-title-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10A15.3 15.3 0 0112 2z"/></svg></span>区域速览</h3>
+            <div id="regionOverview"></div>
+          </div>
+          <div class="card card-large">
+            <h3 class="card-title"><span class="card-title-icon"><svg viewBox="0 0 24 24"><path d="M19.14 12.94a9.03 9.03 0 00.36-3.22l2.45-1.91a11.08 11.08 0 00-1.66-2.86l-3.07.45a8.95 8.95 0 00-2.2-2.2l.45-3.07a10.9 10.9 0 00-2.86-1.66L10.63 3.9A9.03 9.03 0 007.4 3.54L6.81 2.19a10.97 10.97 0 00-3.21.56l-.36 2.99a8.92 8.92 0 00-2.42 1.8l-2.99-.36a10.97 10.97 0 00-.56 3.21l2.45 1.91a9.03 9.03 0 00-.36 3.22l-2.45 1.91c.36 1.02.92 1.98 1.66 2.86l3.07-.45c.6.86 1.34 1.6 2.2 2.2l-.45 3.07c.88.74 1.84 1.3 2.86 1.66l1.91-2.45a9.03 9.03 0 003.22.36l.6 1.35c1.1.27 2.24.27 3.21-.56l.36-2.99a8.92 8.92 0 002.42-1.8l2.99.36c.29-1.05.48-2.13.56-3.21l-2.45-1.91zm-7.61 3.5a4.44 4.44 0 110-8.88 4.44 4.44 0 010 8.88z"/></svg></span>数据管理</h3>
+            <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:14px;">导出数据为JSON文件进行离线编辑，或将编辑后的JSON导入。修改会自动保存到浏览器本地存储。</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="data-btn data-btn-export" id="btnExport">导出数据 (JSON)</button>
+              <button class="data-btn data-btn-import" id="btnImport">导入数据 (JSON)</button>
+              <button class="data-btn data-btn-reset" id="btnReset">重置为默认数据</button>
+            </div>
+            <input type="file" id="fileInput" accept=".json" style="display:none;">
+            <div id="dataStatus" style="margin-top:10px;font-size:0.72rem;color:var(--text-muted);"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 世界地图 -->
+      <section id="page-world" class="page">
+        <header class="page-header">
+          <h2 class="page-title">世界地图</h2>
+          <p class="page-desc">无眠纪世界 — 区域设定与连接关系</p>
+        </header>
+        <div class="world-map-container">
+          <div class="world-map-svg" id="worldMap"></div>
+        </div>
+        <div class="region-grid" id="regionGrid"></div>
+        <!-- 地图节点编辑弹窗 -->
+        <div class="mn-modal-overlay" id="mapNodeModal" onclick="window._closeMapNodeModal()">
+          <div class="mn-modal" onclick="event.stopPropagation()">
+            <button class="mn-modal-close" onclick="window._closeMapNodeModal()">&times;</button>
+            <h3 class="mn-modal-title" id="mnTitle"></h3>
+            <div class="mn-modal-body" id="mnBody"></div>
+            <div class="mn-modal-actions">
+              <button class="mn-btn-cancel" onclick="window._closeMapNodeModal()">取消</button>
+              <button class="mn-btn-save" onclick="window._saveMapNode()">保存</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 区域详情 -->
+      <section id="page-region-detail" class="page">
+        <header class="page-header">
+          <a class="rd-back-link" href="#world">&larr; 返回世界地图</a>
+          <h2 class="page-title" id="rdTitle"></h2>
+          <p class="page-desc" id="rdSubtitle"></p>
+        </header>
+        <div class="rd-hero">
+          <div class="rd-viewer">
+            <div class="rd-graphic" id="rdGraphic"></div>
+            <div class="rd-model-picker" id="rdModelPicker" style="display:none"></div>
+            <div class="rd-landmark-info" id="rdLandmarkInfo" style="display:none"></div>
+          </div>
+          <div class="rd-hero-body">
+            <div class="rd-desc" id="rdDesc"></div>
+            <div class="rd-meta" id="rdMeta"></div>
+          </div>
+        </div>
+        <div class="rd-sections" id="rdSections"></div>
+        <!-- 地标放大弹窗 -->
+        <div class="lm-modal-overlay" id="lmModal" onclick="window._closeLandmarkModal()">
+          <div class="lm-modal" onclick="event.stopPropagation()">
+            <button class="lm-modal-close" onclick="window._closeLandmarkModal()">&times;</button>
+            <span class="lm-modal-badge" id="lmModalBadge"></span>
+            <h3 class="lm-modal-name" id="lmModalName"></h3>
+            <div class="lm-modal-desc" id="lmModalDesc"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 角色资料 -->
+      <section id="page-characters" class="page">
+        <header class="page-header">
+          <h2 class="page-title">角色资料库</h2>
+          <p class="page-desc">职业、NPC与商人信息</p>
+        </header>
+        <div class="tab-nav">
+          <button class="tab-btn active" data-tab="classes">初始职业</button>
+          <button class="tab-btn" data-tab="npcs">NPC</button>
+          <button class="tab-btn" data-tab="merchants">商人</button>
+        </div>
+        <div class="tab-content active" id="tab-classes"></div>
+        <div class="tab-content" id="tab-npcs"></div>
+        <div class="tab-content" id="tab-merchants"></div>
+      </section>
+
+      <!-- 敌人图鉴 -->
+      <section id="page-bestiary" class="page">
+        <header class="page-header">
+          <h2 class="page-title">敌人图鉴</h2>
+          <p class="page-desc">Boss、精英怪与普通敌人数据</p>
+        </header>
+        <div class="tab-nav">
+          <button class="tab-btn active" data-btab="bosses">Boss</button>
+          <button class="tab-btn" data-btab="elites">精英敌人</button>
+          <button class="tab-btn" data-btab="common">普通敌人</button>
+        </div>
+        <div class="tab-content active" id="btab-bosses"></div>
+        <div class="tab-content" id="btab-elites"></div>
+        <div class="tab-content" id="btab-common"></div>
+      </section>
+
+
+      <!-- 装备道具 -->
+      <section id="page-equipment" class="page">
+        <header class="page-header">
+          <h2 class="page-title">装备与道具</h2>
+          <p class="page-desc">武器、防具、护符与消耗品数据库</p>
+        </header>
+        <div class="tab-nav">
+          <button class="tab-btn active" data-etab="weapons">武器</button>
+          <button class="tab-btn" data-etab="armor">防具</button>
+          <button class="tab-btn" data-etab="talismans">护符</button>
+          <button class="tab-btn" data-etab="consumables">消耗品</button>
+        </div>
+        <div class="tab-content active" id="etab-weapons"></div>
+        <div class="tab-content" id="etab-armor"></div>
+        <div class="tab-content" id="etab-talismans"></div>
+        <div class="tab-content" id="etab-consumables"></div>
+      </section>
+
+      <!-- 任务系统 -->
+      <section id="page-quests" class="page">
+        <header class="page-header">
+          <h2 class="page-title">任务系统</h2>
+          <p class="page-desc">主线支线任务链与分支剧情</p>
+        </header>
+        <div class="quest-grid" id="questGrid"></div>
+      </section>
+
+      <!-- 词条系统 -->
+      <section id="page-glossary" class="page">
+        <header class="page-header">
+          <h2 class="page-title">词条系统</h2>
+          <p class="page-desc">阵营、家族、组织、概念、属性——世界观与机制设定参考</p>
+        </header>
+        <div class="tab-nav" id="glossaryTabs">
+          <button class="tab-btn active" data-gtab="all">全部</button>
+          <button class="tab-btn" data-gtab="faction">阵营</button>
+          <button class="tab-btn" data-gtab="family">家族</button>
+          <button class="tab-btn" data-gtab="organization">组织</button>
+          <button class="tab-btn" data-gtab="concept">概念</button>
+          <button class="tab-btn" data-gtab="race">种族</button>
+          <button class="tab-btn" data-gtab="event">事件</button>
+          <button class="tab-btn" data-gtab="region">区域</button>
+          <button class="tab-btn" data-gtab="status">异常状态</button>
+          <button class="tab-btn" data-gtab="attribute">属性</button>
+        </div>
+        <div class="glossary-grid" id="glossaryGrid"></div>
+      </section>
+
+
+    </main>
+  </div>
+
+  <!-- 详情弹窗 -->
+  <div id="modal" class="modal-overlay">
+    <div class="modal-content">
+      <button class="modal-close">&times;</button>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- 提示消息 -->
+  <div id="toast" class="toast"></div>
+
+  <!-- 编辑面板（右侧抽屉） -->
+  <div id="editPanel" class="edit-panel">
+    <div class="edit-panel-header">
+      <h3 class="edit-panel-title" id="editPanelTitle">编辑</h3>
+      <button class="edit-panel-close" id="editPanelClose">&times;</button>
+    </div>
+    <div class="edit-panel-body" id="editPanelBody"></div>
+    <div class="edit-panel-footer">
+      <button class="ep-btn ep-btn-cancel" id="editPanelCancel">取消</button>
+      <button class="ep-btn ep-btn-save" id="editPanelSave">保存</button>
+    </div>
+  </div>
+  <div class="edit-panel-overlay" id="editPanelOverlay"></div>
+
+  <!-- 自动补全下拉 -->
+  <div id="autocomplete" class="autocomplete-dropdown"></div>
+
+  <!-- 富文本格式工具栏 -->
+  <div id="formatToolbar" class="format-toolbar">
+    <button data-cmd="bold" title="加粗 (Ctrl+B)"><b>B</b></button>
+    <button data-cmd="italic" title="斜体 (Ctrl+I)"><i>I</i></button>
+    <button data-cmd="underline" title="下划线 (Ctrl+U)"><u>U</u></button>
+    <span class="fmt-sep"></span>
+    <button data-cmd="h2" title="二级标题">H2</button>
+    <button data-cmd="h3" title="三级标题">H3</button>
+  </div>
+
+  <script src="js/data.js?v=38"></script>
+  <script src="js/modelStore.js?v=31"></script>
+  <script src="js/app.js?v=38"></script>
+  <script type="module" src="js/map3d.js?v=37"></script>
+</body>
+</html>

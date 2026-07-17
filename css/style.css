@@ -1272,7 +1272,6 @@ body.edit-mode .project-intro-text {
 
 /* 节点卡片 */
 .rg-node-card {
-  min-width: 130px; min-height: 88px;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);

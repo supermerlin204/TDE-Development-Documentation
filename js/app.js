@@ -2015,8 +2015,8 @@
       if (fo) {
         var sw = parseFloat(fo.getAttribute('data-nw')) || 130;
         var sh = parseFloat(fo.getAttribute('data-nh')) || 90;
-        x = parseFloat(fo.getAttribute('x')) + sw / 2;
-        y = parseFloat(fo.getAttribute('y')) + sh / 2;
+        x = snapToGrid(parseFloat(fo.getAttribute('x')) + sw / 2);
+        y = snapToGrid(parseFloat(fo.getAttribute('y')) + sh / 2);
       }
       var nameEl = card.querySelector('.rg-node-name');
       var descEl = card.querySelector('.rg-node-desc');
@@ -2045,15 +2045,22 @@
     saveData();
   }
 
+  var RG_GRID = 20; // 网格间距
+
+  function snapToGrid(v) { return Math.round(v / RG_GRID) * RG_GRID; }
+
   function calcNodeSize(name, desc) {
     var nl = (name || '').length, dl = (desc || '').length;
     var maxLine = Math.max(nl, Math.ceil(dl / 2.5));
     var w = 130;
     if (maxLine > 8) w = Math.min(180, 130 + Math.floor((maxLine - 8) * 5));
-    var lines = Math.max(2, Math.ceil(dl / 14));
-    var h = 88 + Math.max(0, lines - 2) * 17;
-    h = Math.min(156, Math.max(88, h));
     w = Math.max(130, Math.min(180, w));
+    if (!dl) {
+      return { w: w, h: 54, lines: 0 }; // 仅标题：徽章+名称+紧凑内边距
+    }
+    var lines = Math.max(2, Math.ceil(dl / 14));
+    var h = 54 + lines * 17;
+    h = Math.min(156, Math.max(54, h));
     return { w: w, h: h, lines: lines };
   }
 
@@ -2275,8 +2282,8 @@
           fo._startFOY = parseFloat(fo.getAttribute('y'));
         }
         var fsz = getNodeSize(fo);
-        var nX = fo._startFOX + sdX;
-        var nY = fo._startFOY + sdY;
+        var nX = snapToGrid(fo._startFOX + sdX);
+        var nY = snapToGrid(fo._startFOY + sdY);
         nX = Math.max(-fsz.w / 2, Math.min(800 - fsz.w / 2, nX));
         nY = Math.max(-fsz.h / 2, Math.min(500 - fsz.h / 2, nY));
         fo.setAttribute('x', nX);
@@ -2426,8 +2433,8 @@
     var viewCenterX = (svgRectW / 2 - st.panX) / st.zoom * scaleX;
     var viewCenterY = (svgRectH / 2 - st.panY) / st.zoom * scaleY;
     // 添加一些随机偏移
-    var cx = Math.round(viewCenterX + (Math.random() - 0.5) * 100);
-    var cy = Math.round(viewCenterY + (Math.random() - 0.5) * 100);
+    var cx = snapToGrid(Math.round(viewCenterX + (Math.random() - 0.5) * 100));
+    var cy = snapToGrid(Math.round(viewCenterY + (Math.random() - 0.5) * 100));
     cx = Math.max(65, Math.min(vbW - 65, cx));
     cy = Math.max(45, Math.min(vbH - 45, cy));
     var nodeId = 'rn-' + Date.now();
@@ -2481,6 +2488,7 @@
         node.name = nameInp.value.trim();
         node.desc = descInp.value.trim();
         saveData();
+        saveRouteGraphData(regionId);
         renderRouteGraph('rgContainer-' + regionId, regionId);
       }
       popup.remove();
@@ -2507,6 +2515,7 @@
       var route = getRouteData(regionId);
       var edge = route.edges.find(function(e) { return e.from === fromId && e.to === toId; });
       if (edge) { edge.label = inp.value.trim(); saveData(); }
+      saveRouteGraphData(regionId);
       renderRouteGraph('rgContainer-' + regionId, regionId);
       popup.remove();
     }

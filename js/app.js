@@ -2510,7 +2510,6 @@
         node.desc = descInp.value.trim();
         saveData();
       }
-      saveRouteGraphData(regionId);
       closeEditModal();
       renderRouteGraph('rgContainer-' + regionId, regionId);
     }
@@ -2543,7 +2542,6 @@
       var route = getRouteData(regionId);
       var edge = route.edges.find(function(e) { return e.from === fromId && e.to === toId; });
       if (edge) { edge.label = inp.value.trim(); saveData(); }
-      saveRouteGraphData(regionId);
       closeEditModal();
       renderRouteGraph('rgContainer-' + regionId, regionId);
     }

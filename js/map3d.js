@@ -219,7 +219,7 @@ function clearLandmarkHighlight() {
 function loadModelFromUrl(url) {
   console.log('[map3d] loadModelFromUrl:', url);
   return new Promise((resolve) => {
-    const loader = new GLTFLoader();
+    const loader = getGltfLoader();
     const encoded = encodeURI(url);
     console.log('[map3d] fetching:', encoded);
     loader.load(encoded, (gltf) => {
@@ -251,7 +251,7 @@ async function loadModelIntoScene(regionId, modelPath) {
   console.log('[map3d] loading from IndexedDB blob');
 
   return new Promise((resolve) => {
-    const loader = new GLTFLoader();
+    const loader = getGltfLoader();
     loader.load(url, (gltf) => {
       URL.revokeObjectURL(url);
       processLoadedModel(gltf);

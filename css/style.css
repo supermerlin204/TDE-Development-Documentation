@@ -1608,6 +1608,8 @@ body.dragging-map-node * { cursor: grabbing !important; }
 .data-btn-export:hover { background: rgba(0,191,165,0.1); }
 .data-btn-import { border-color: var(--blue); color: var(--blue); }
 .data-btn-import:hover { background: rgba(68,138,255,0.1); }
+.data-btn-save-files { border-color: var(--cyan-bright); color: var(--bg-primary); background: var(--cyan); font-weight: 600; }
+.data-btn-save-files:hover { background: var(--cyan-bright); box-shadow: var(--shadow-glow); }
 .data-btn-reset { border-color: var(--red); color: var(--red); }
 .data-btn-reset:hover { background: rgba(255,82,82,0.1); }
 

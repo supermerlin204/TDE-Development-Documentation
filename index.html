@@ -176,11 +176,12 @@
           </div>
           <div class="card card-large">
             <h3 class="card-title"><span class="card-title-icon"><svg viewBox="0 0 24 24"><path d="M19.14 12.94a9.03 9.03 0 00.36-3.22l2.45-1.91a11.08 11.08 0 00-1.66-2.86l-3.07.45a8.95 8.95 0 00-2.2-2.2l.45-3.07a10.9 10.9 0 00-2.86-1.66L10.63 3.9A9.03 9.03 0 007.4 3.54L6.81 2.19a10.97 10.97 0 00-3.21.56l-.36 2.99a8.92 8.92 0 00-2.42 1.8l-2.99-.36a10.97 10.97 0 00-.56 3.21l2.45 1.91a9.03 9.03 0 00-.36 3.22l-2.45 1.91c.36 1.02.92 1.98 1.66 2.86l3.07-.45c.6.86 1.34 1.6 2.2 2.2l-.45 3.07c.88.74 1.84 1.3 2.86 1.66l1.91-2.45a9.03 9.03 0 003.22.36l.6 1.35c1.1.27 2.24.27 3.21-.56l.36-2.99a8.92 8.92 0 002.42-1.8l2.99.36c.29-1.05.48-2.13.56-3.21l-2.45-1.91zm-7.61 3.5a4.44 4.44 0 110-8.88 4.44 4.44 0 010 8.88z"/></svg></span>数据管理</h3>
-            <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:14px;">导出数据为JSON文件进行离线编辑，或将编辑后的JSON导入。修改会自动保存到浏览器本地存储。</p>
+            <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:14px;">编辑后点击「下载源文件」保存 <code>data/*.js</code> 文件到仓库并提交，即可永久保留。JSON 导入/导出用作批量编辑与备份。</p>
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
-              <button class="data-btn data-btn-export" id="btnExport">导出数据 (JSON)</button>
-              <button class="data-btn data-btn-import" id="btnImport">导入数据 (JSON)</button>
-              <button class="data-btn data-btn-reset" id="btnReset">重置为默认数据</button>
+              <button class="data-btn data-btn-save-files" id="btnSaveFiles">下载源文件 (ZIP)</button>
+              <button class="data-btn data-btn-export" id="btnExport">导出 (JSON)</button>
+              <button class="data-btn data-btn-import" id="btnImport">导入 (JSON)</button>
+              <button class="data-btn data-btn-reset" id="btnReset">重新加载</button>
             </div>
             <input type="file" id="fileInput" accept=".json" style="display:none;">
             <div id="dataStatus" style="margin-top:10px;font-size:0.72rem;color:var(--text-muted);"></div>
@@ -365,7 +366,18 @@
     <button data-cmd="h3" title="三级标题">H3</button>
   </div>
 
-  <script src="js/data.js?v=38"></script>
+  <!-- 数据文件（_init.js 必须在最前，其余顺序无关） -->
+  <script src="data/_init.js"></script>
+  <script src="data/dashboard.js"></script>
+  <script src="data/classes.js"></script>
+  <script src="data/npcs.js"></script>
+  <script src="data/bestiary.js"></script>
+  <script src="data/regions.js"></script>
+  <script src="data/equipment.js"></script>
+  <script src="data/mechanics.js"></script>
+  <script src="data/quests.js"></script>
+  <script src="data/glossary.js"></script>
+  <script src="data/changelog.js"></script>
   <script src="js/modelStore.js?v=31"></script>
   <script src="js/app.js?v=38"></script>
   <script type="module" src="js/map3d.js?v=37"></script>

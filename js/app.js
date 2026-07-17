@@ -11,8 +11,9 @@
   // ============================
   let editMode = false;
   let editPanelPath = null; // 当前编辑面板对应的数据路径
-  const STORAGE_KEY = 'tde_dev_data';
-  const _defaultData = JSON.parse(JSON.stringify(TDE_DATA)); // 深拷贝默认数据
+  // 数据持久化：所有数据存储在 data/*.js 仓库文件中。
+  // 网页编辑后通过「下载源文件」导出更改，手动放入仓库并提交。
+  const _defaultData = JSON.parse(JSON.stringify(TDE_DATA)); // 深拷贝默认数据，用于检测未保存的更改
 
   // ============================
   // 粒子背景系统
@@ -244,7 +245,7 @@
     if (!val) return;
     TDE_DATA.projectStartDate = val;
     updateDashboardStats();
-    saveToLocal();
+    showSaved();
   };
 
   // ============================
@@ -805,42 +806,15 @@
     showSaved();
   }
 
-  // 数据版本号——当数据结构发生重大变化时递增，自动清除旧版本地存储
-  const DATA_VERSION = 2;
-
   function saveData() {
-    try {
-      var payload = JSON.parse(JSON.stringify(TDE_DATA));
-      payload._version = DATA_VERSION;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    } catch(e) { /* quota exceeded */ }
+    // 数据存储在 data/*.js 仓库文件中，网页编辑后通过「下载源文件」导出。
+    // 此函数仅重建索引，供所有编辑路径调用（保持函数签名不变）。
     buildMentionIndex();
     buildGlossNameMap();
   }
 
-  function loadSavedData() {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // 数据结构版本不匹配则丢弃旧数据，使用默认
-        if (parsed._version !== DATA_VERSION) {
-          console.log('%c数据版本不匹配，使用默认数据', 'color:#ffab40;');
-          return false;
-        }
-        delete parsed._version;
-        Object.keys(parsed).forEach(k => {
-          if (TDE_DATA.hasOwnProperty(k)) TDE_DATA[k] = parsed[k];
-        });
-        return true;
-      }
-    } catch(e) {}
-    return false;
-  }
-
   function resetData() {
-    if (confirm('确定要重置所有数据为默认值吗？此操作不可撤销。')) {
-      localStorage.removeItem(STORAGE_KEY);
+    if (confirm('确定要放弃所有未保存的修改并重新加载吗？\n\n提示：请先使用「下载源文件」保存您的修改。')) {
       location.reload();
     }
   }
@@ -2731,11 +2705,13 @@
   // 数据管理面板
   // ============================
   function initDataManager() {
+    const btnSaveFiles = document.getElementById('btnSaveFiles');
     const btnExport = document.getElementById('btnExport');
     const btnImport = document.getElementById('btnImport');
     const btnReset = document.getElementById('btnReset');
     const fileInput = document.getElementById('fileInput');
 
+    if (btnSaveFiles) btnSaveFiles.addEventListener('click', downloadDataFiles);
     if (btnExport) btnExport.addEventListener('click', exportJSON);
     if (btnImport) btnImport.addEventListener('click', () => fileInput.click());
     if (btnReset) btnReset.addEventListener('click', resetData);
@@ -2744,6 +2720,187 @@
       e.target.value = '';
     });
 
+  }
+
+  // ============================
+  // 下载数据源文件 (ZIP)
+  // ============================
+
+  // 数据文件定义：{ filename, keys: [TDE_DATA 键名] }
+  var DATA_FILE_MAP = [
+    { file: '_init.js',       keys: [] },
+    { file: 'dashboard.js',   keys: ['projectStartDate','progress','updates','tasks','milestones','sprints'] },
+    { file: 'classes.js',     keys: ['classes'] },
+    { file: 'npcs.js',        keys: ['npcs','merchants'] },
+    { file: 'bestiary.js',    keys: ['bosses','elites','common'] },
+    { file: 'regions.js',     keys: ['regions','worldMap'] },
+    { file: 'equipment.js',   keys: ['weapons','armor','talismans','consumables'] },
+    { file: 'mechanics.js',   keys: ['statusEffects','damageMatrix'] },
+    { file: 'quests.js',      keys: ['quests'] },
+    { file: 'glossary.js',    keys: ['glossary'] },
+    { file: 'changelog.js',   keys: ['changelog'] }
+  ];
+
+  var FILE_LABELS = {
+    _init: '数据命名空间',
+    dashboard: '总览 / 仪表盘',
+    classes: '初始职业',
+    npcs: 'NPC 与商人',
+    bestiary: '敌人图鉴',
+    regions: '区域与世界地图',
+    equipment: '武器、防具、护符与消耗品',
+    mechanics: '异常状态与伤害类型',
+    quests: '任务',
+    glossary: '词条系统',
+    changelog: '开发变更日志'
+  };
+
+  function generateDataFile(label, keys) {
+    var lines = [];
+    lines.push('// 无眠纪 — ' + label + '数据');
+    lines.push('// Part of TDE_DATA. Edit directly or use the web UI.');
+    lines.push('');
+    if (keys.length === 0) {
+      lines.push('const TDE_DATA = {};');
+    } else {
+      for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+        if (TDE_DATA.hasOwnProperty(key)) {
+          lines.push('TDE_DATA.' + key + ' = ' + JSON.stringify(TDE_DATA[key], null, 2) + ';');
+          lines.push('');
+        }
+      }
+    }
+    return lines.join('\n');
+  }
+
+  function downloadDataFiles() {
+    var files = [];
+    for (var i = 0; i < DATA_FILE_MAP.length; i++) {
+      var def = DATA_FILE_MAP[i];
+      var label = FILE_LABELS[def.file.replace('.js','')] || def.file;
+      var content = generateDataFile(label, def.keys);
+      files.push([def.file, content]);
+    }
+    var zipBytes = buildZip(files);
+    var blob = new Blob([zipBytes], { type: 'application/zip' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'tde-data-' + new Date().toISOString().slice(0,10) + '.zip';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    showToast('数据源文件已下载 — 解压到 data/ 目录并提交到仓库');
+  }
+
+  // ============================
+  // 最小 ZIP 构建器 (无压缩，纯 Store 模式)
+  // ============================
+
+  function crc32(bytes) {
+    var table = [];
+    for (var n = 0; n < 256; n++) {
+      var c = n;
+      for (var k = 0; k < 8; k++) {
+        c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      }
+      table[n] = c;
+    }
+    var crc = 0 ^ (-1);
+    for (var i = 0; i < bytes.length; i++) {
+      crc = (crc >>> 8) ^ table[(crc ^ bytes[i]) & 0xFF];
+    }
+    return (crc ^ (-1)) >>> 0;
+  }
+
+  function buildZip(files) {
+    var encoder = new TextEncoder();
+    var localHeaders = [];
+    var centralHeaders = [];
+    var fileDataParts = [];
+    var offset = 0;
+
+    for (var i = 0; i < files.length; i++) {
+      var name = files[i][0];
+      var content = files[i][1];
+      var nameBytes = encoder.encode(name);
+      var contentBytes = encoder.encode(content);
+      var crc = crc32(contentBytes);
+      var compSize = contentBytes.length;
+      var uncompSize = contentBytes.length;
+
+      // Local file header (30 bytes + filename)
+      var lh = new Uint8Array(30 + nameBytes.length);
+      var dv = new DataView(lh.buffer);
+      dv.setUint32(0, 0x04034b50, true);
+      dv.setUint16(4, 20, true);
+      dv.setUint16(6, 0, true);
+      dv.setUint16(8, 0, true);   // store (no compression)
+      dv.setUint16(10, 0, true);
+      dv.setUint16(12, 0, true);
+      dv.setUint32(14, crc, true);
+      dv.setUint32(18, compSize, true);
+      dv.setUint32(22, uncompSize, true);
+      dv.setUint16(26, nameBytes.length, true);
+      dv.setUint16(28, 0, true);
+      lh.set(nameBytes, 30);
+      localHeaders.push(lh);
+
+      // Central directory header (46 bytes + filename)
+      var cd = new Uint8Array(46 + nameBytes.length);
+      dv = new DataView(cd.buffer);
+      dv.setUint32(0, 0x02014b50, true);
+      dv.setUint16(4, 20, true);
+      dv.setUint16(6, 20, true);
+      dv.setUint16(8, 0, true);
+      dv.setUint16(10, 0, true);
+      dv.setUint16(12, 0, true);
+      dv.setUint16(14, 0, true);
+      dv.setUint32(16, crc, true);
+      dv.setUint32(20, compSize, true);
+      dv.setUint32(24, uncompSize, true);
+      dv.setUint16(28, nameBytes.length, true);
+      dv.setUint16(30, 0, true);
+      dv.setUint16(32, 0, true);
+      dv.setUint16(34, 0, true);
+      dv.setUint32(36, 0, true);
+      dv.setUint32(42, offset, true);
+      cd.set(nameBytes, 46);
+      centralHeaders.push(cd);
+
+      fileDataParts.push(contentBytes);
+      offset += 30 + nameBytes.length + compSize;
+    }
+
+    var centralDirOffset = offset;
+    var centralDirSize = 0;
+    for (var j = 0; j < centralHeaders.length; j++) {
+      centralDirSize += centralHeaders[j].length;
+    }
+    var totalSize = offset + centralDirSize + 22;
+    var result = new Uint8Array(totalSize);
+    var pos = 0;
+    for (var m = 0; m < localHeaders.length; m++) {
+      result.set(localHeaders[m], pos); pos += localHeaders[m].length;
+      result.set(fileDataParts[m], pos); pos += fileDataParts[m].length;
+    }
+    for (var n = 0; n < centralHeaders.length; n++) {
+      result.set(centralHeaders[n], pos); pos += centralHeaders[n].length;
+    }
+    // End of central directory record (22 bytes)
+    var eocd = new DataView(result.buffer, pos, 22);
+    eocd.setUint32(0, 0x06054b50, true);
+    eocd.setUint16(4, 0, true);
+    eocd.setUint16(6, 0, true);
+    eocd.setUint16(8, files.length, true);
+    eocd.setUint16(10, files.length, true);
+    eocd.setUint32(12, centralDirSize, true);
+    eocd.setUint32(16, centralDirOffset, true);
+    eocd.setUint16(20, 0, true);
+
+    return result;
   }
 
   // ============================
@@ -2784,9 +2941,24 @@
     initEditEvents();
     initDataManager();
 
-    // 尝试恢复本地存储
-    const hasSaved = loadSavedData();
-    if (hasSaved) console.log('%c已从本地存储恢复数据', 'color:#ffab40;');
+    // 一次性迁移：将旧版 localStorage 数据导入内存，提示用户下载保存
+    (function migrateLocalStorage() {
+      try {
+        var saved = localStorage.getItem('tde_dev_data');
+        if (saved) {
+          var parsed = JSON.parse(saved);
+          if (parsed._version === 2) {
+            delete parsed._version;
+            Object.keys(parsed).forEach(function(k) {
+              if (TDE_DATA.hasOwnProperty(k)) TDE_DATA[k] = parsed[k];
+            });
+            console.log('%c已从本地存储迁移旧数据。请立即点击「下载源文件」保存到仓库！', 'color:#ffab40;');
+            showToast('检测到浏览器本地存储的旧数据，已加载。请点击「下载源文件」保存到仓库！', 8000);
+            localStorage.removeItem('tde_dev_data');
+          }
+        }
+      } catch(e) { localStorage.removeItem('tde_dev_data'); }
+    })();
 
     buildMentionIndex();
     renderAll();
@@ -2830,7 +3002,7 @@
       'color:#00f0ff;font-size:1.2em;font-weight:bold;',
       'color:#00bfa5;font-size:1em;',
       'color:#889898;');
-    console.log('%cTDE 开发文档系统 v0.1.0-alpha %c| 离线可用 | Ctrl+E 编辑 | 自动保存',
+    console.log('%cTDE 开发文档系统 v0.1.0-alpha %c| Ctrl+E 编辑 | 下载源文件保存',
       'color:#556060;font-style:italic;',
       'color:#00bfa5;');
   }

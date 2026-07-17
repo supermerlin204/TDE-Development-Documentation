@@ -2282,8 +2282,10 @@
           fo._startFOY = parseFloat(fo.getAttribute('y'));
         }
         var fsz = getNodeSize(fo);
-        var nX = snapToGrid(fo._startFOX + sdX);
-        var nY = snapToGrid(fo._startFOY + sdY);
+        var cx = fo._startFOX + fsz.w / 2 + sdX;
+        var cy = fo._startFOY + fsz.h / 2 + sdY;
+        var nX = snapToGrid(cx) - fsz.w / 2;
+        var nY = snapToGrid(cy) - fsz.h / 2;
         nX = Math.max(-fsz.w / 2, Math.min(800 - fsz.w / 2, nX));
         nY = Math.max(-fsz.h / 2, Math.min(500 - fsz.h / 2, nY));
         fo.setAttribute('x', nX);
@@ -2309,7 +2311,8 @@
           fo = fo.closest('foreignObject');
           if (fo) { delete fo._startFOX; delete fo._startFOY; }
         }
-        if (wasDrag) { saveRouteGraphData(regionId); updateBadges(svgEl); }
+        saveRouteGraphData(regionId);
+        updateBadges(svgEl);
       }
       st.dragging = false;
       st.dragNodeId = null;
@@ -2325,7 +2328,7 @@
       if (e.target.classList.contains('rg-edge-label')) {
         var from = e.target.getAttribute('data-from');
         var to = e.target.getAttribute('data-to');
-        editRouteEdgeLabel(container, regionId, from, to, e.target);
+        showEdgeLabelModal(regionId, from, to, e.target.textContent);
         return;
       }
       // 也支持点击标签背景
@@ -2334,14 +2337,17 @@
         if (nextSib && nextSib.classList.contains('rg-edge-label')) {
           var from2 = nextSib.getAttribute('data-from');
           var to2 = nextSib.getAttribute('data-to');
-          editRouteEdgeLabel(container, regionId, from2, to2, nextSib);
+          showEdgeLabelModal(regionId, from2, to2, nextSib.textContent);
         }
         return;
       }
       // 编辑节点
       var nodeEl = getNodeEl(e.target);
       if (nodeEl) {
-        editRouteNode(container, regionId, nodeEl);
+        var nid = nodeEl.getAttribute('data-node-id');
+        var nameEl2 = nodeEl.querySelector('.rg-node-name');
+        var descEl2 = nodeEl.querySelector('.rg-node-desc');
+        showNodeEditModal(regionId, nid, nameEl2 ? nameEl2.textContent : '', descEl2 ? descEl2.textContent : '');
         return;
       }
     };
@@ -2393,7 +2399,7 @@
       if (editMode && e.target.classList.contains('rg-edge-label')) {
         var f = e.target.getAttribute('data-from');
         var t = e.target.getAttribute('data-to');
-        editRouteEdgeLabel(container, regionId, f, t, e.target);
+        showEdgeLabelModal(regionId, f, t, e.target.textContent);
         return;
       }
       // 编辑模式下点击连线 → 删除
@@ -2462,23 +2468,26 @@
     }
   }
 
-  function editRouteNode(container, regionId, nodeEl) {
-    var nodeId = nodeEl.getAttribute('data-node-id');
-    var nameEl = nodeEl.querySelector('.rg-node-name');
-    var descEl = nodeEl.querySelector('.rg-node-desc');
-    var name = nameEl ? nameEl.textContent : '';
-    var desc = descEl ? descEl.textContent : '';
-    // 移除已有 popup
-    var oldPopup = container.querySelector('.rg-edit-popup');
-    if (oldPopup) oldPopup.remove();
-    var popup = document.createElement('div');
-    popup.className = 'rg-edit-popup';
-    popup.innerHTML = '<input class="rg-edit-name" value="' + escAttr(name) + '" placeholder="节点名称">'
-      + '<input class="rg-edit-desc" value="' + escAttr(desc) + '" placeholder="节点描述">'
-      + '<div class="rg-edit-popup-actions"><button class="rg-edit-save">保存</button><button class="rg-edit-cancel">取消</button></div>';
-    container.appendChild(popup);
-    var nameInp = popup.querySelector('.rg-edit-name');
-    var descInp = popup.querySelector('.rg-edit-desc');
+  function closeEditModal() {
+    var ov = document.querySelector('.rg-edit-modal-overlay');
+    if (ov) ov.remove();
+  }
+
+  function showNodeEditModal(regionId, nodeId, name, desc) {
+    closeEditModal();
+    saveRouteGraphData(regionId);
+    var overlay = document.createElement('div');
+    overlay.className = 'modal-overlay open rg-edit-modal-overlay rg-edit-modal';
+    overlay.innerHTML = '<div class="modal-content">'
+      + '<button class="modal-close">&times;</button>'
+      + '<h3 style="margin:0 0 16px;color:var(--cyan-bright);font-size:1rem;">编辑路线节点</h3>'
+      + '<div class="rg-edit-field"><label>节点名称</label><input class="rg-edit-name" value="' + escAttr(name) + '"></div>'
+      + '<div class="rg-edit-field"><label>描述</label><textarea class="rg-edit-desc" rows="4">' + escAttr(desc) + '</textarea></div>'
+      + '<div class="modal-actions"><button class="btn-cancel">取消</button><button class="btn-save">保存</button></div>'
+      + '</div>';
+    document.body.appendChild(overlay);
+    var nameInp = overlay.querySelector('.rg-edit-name');
+    var descInp = overlay.querySelector('.rg-edit-desc');
     nameInp.focus();
     nameInp.select();
     function save() {
@@ -2488,41 +2497,50 @@
         node.name = nameInp.value.trim();
         node.desc = descInp.value.trim();
         saveData();
-        saveRouteGraphData(regionId);
-        renderRouteGraph('rgContainer-' + regionId, regionId);
       }
-      popup.remove();
+      closeEditModal();
+      renderRouteGraph('rgContainer-' + regionId, regionId);
     }
-    function cancel() { popup.remove(); }
-    popup.querySelector('.rg-edit-save').addEventListener('click', save);
-    popup.querySelector('.rg-edit-cancel').addEventListener('click', cancel);
-    nameInp.addEventListener('keydown', function(e) { if (e.key === 'Enter') save(); if (e.key === 'Escape') cancel(); });
-    descInp.addEventListener('keydown', function(e) { if (e.key === 'Escape') cancel(); });
+    overlay.querySelector('.btn-save').addEventListener('click', save);
+    overlay.querySelector('.btn-cancel').addEventListener('click', closeEditModal);
+    overlay.querySelector('.modal-close').addEventListener('click', closeEditModal);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeEditModal(); });
+    overlay.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeEditModal();
+      if (e.key === 'Enter' && document.activeElement !== descInp) save();
+    });
   }
 
-  function editRouteEdgeLabel(container, regionId, fromId, toId, textEl) {
-    var oldPopup = container.querySelector('.rg-edit-popup');
-    if (oldPopup) oldPopup.remove();
-    var popup = document.createElement('div');
-    popup.className = 'rg-edit-popup';
-    popup.innerHTML = '<input class="rg-edit-name" value="' + escAttr(textEl.textContent) + '" placeholder="移动方式（如：步行、攀爬…）">'
-      + '<div class="rg-edit-popup-actions"><button class="rg-edit-save">保存</button><button class="rg-edit-cancel">取消</button></div>';
-    container.appendChild(popup);
-    var inp = popup.querySelector('.rg-edit-name');
+  function showEdgeLabelModal(regionId, fromId, toId, label) {
+    closeEditModal();
+    saveRouteGraphData(regionId);
+    var overlay = document.createElement('div');
+    overlay.className = 'modal-overlay open rg-edit-modal-overlay rg-edit-modal';
+    overlay.innerHTML = '<div class="modal-content">'
+      + '<button class="modal-close">&times;</button>'
+      + '<h3 style="margin:0 0 16px;color:var(--cyan-bright);font-size:1rem;">编辑路线标签</h3>'
+      + '<div class="rg-edit-field"><label>移动方式（如：步行、攀爬、传送…）</label><input class="rg-edit-label-input" value="' + escAttr(label) + '"></div>'
+      + '<div class="modal-actions"><button class="btn-cancel">取消</button><button class="btn-save">保存</button></div>'
+      + '</div>';
+    document.body.appendChild(overlay);
+    var inp = overlay.querySelector('.rg-edit-label-input');
     inp.focus();
     inp.select();
     function save() {
       var route = getRouteData(regionId);
       var edge = route.edges.find(function(e) { return e.from === fromId && e.to === toId; });
       if (edge) { edge.label = inp.value.trim(); saveData(); }
-      saveRouteGraphData(regionId);
+      closeEditModal();
       renderRouteGraph('rgContainer-' + regionId, regionId);
-      popup.remove();
     }
-    function cancel() { popup.remove(); }
-    popup.querySelector('.rg-edit-save').addEventListener('click', save);
-    popup.querySelector('.rg-edit-cancel').addEventListener('click', cancel);
-    inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') save(); if (e.key === 'Escape') cancel(); });
+    overlay.querySelector('.btn-save').addEventListener('click', save);
+    overlay.querySelector('.btn-cancel').addEventListener('click', closeEditModal);
+    overlay.querySelector('.modal-close').addEventListener('click', closeEditModal);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeEditModal(); });
+    overlay.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeEditModal();
+      if (e.key === 'Enter') save();
+    });
   }
 
   function deleteRouteEdge(container, regionId, fromId, toId) {

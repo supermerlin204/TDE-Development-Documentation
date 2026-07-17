@@ -1405,30 +1405,19 @@ body.edit-mode .rg-edge-label:hover { fill: var(--cyan); }
   pointer-events: none;
 }
 
-/* 节点编辑弹窗 */
-.rg-edit-popup {
-  position: absolute; z-index: 20;
-  background: var(--bg-card); border: 1px solid var(--cyan);
-  border-radius: var(--radius-md); padding: 10px;
-  min-width: 180px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-}
-.rg-edit-popup input {
-  width: 100%; margin-bottom: 4px; box-sizing: border-box;
-  font-size: 0.78rem; padding: 4px 6px;
-  background: var(--bg-deep); border: 1px solid var(--border-subtle);
-  color: var(--text-primary); border-radius: 3px;
-}
-.rg-edit-popup input:focus { border-color: var(--cyan); outline: none; }
-.rg-edit-popup-actions {
-  display: flex; gap: 4px; justify-content: flex-end; margin-top: 4px;
-}
-.rg-edit-popup-actions button {
-  font-size: 0.68rem; padding: 2px 10px;
-  border: 1px solid var(--border-subtle); background: var(--bg-deep);
-  color: var(--text-secondary); border-radius: 3px; cursor: pointer;
-}
-.rg-edit-popup-actions button:hover { border-color: var(--cyan); color: var(--cyan); }
+/* 路线图编辑弹窗 — 复用 .modal-overlay 体系 */
+.rg-edit-modal .modal-content { max-width: 420px; padding: 24px; }
+.rg-edit-field { margin-bottom: 14px; }
+.rg-edit-field label { display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+.rg-edit-field input,
+.rg-edit-field textarea { width: 100%; box-sizing: border-box; font-size: 0.85rem; padding: 8px 10px; background: var(--bg-deep); border: 1px solid var(--border-subtle); color: var(--text-primary); border-radius: 4px; resize: vertical; font-family: inherit; }
+.rg-edit-field input:focus,
+.rg-edit-field textarea:focus { border-color: var(--cyan); outline: none; }
+.rg-edit-modal .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+.rg-edit-modal .btn-cancel { padding: 6px 16px; background: transparent; border: 1px solid var(--border-subtle); color: var(--text-muted); border-radius: 4px; cursor: pointer; font-size: 0.78rem; }
+.rg-edit-modal .btn-cancel:hover { border-color: var(--text-secondary); color: var(--text-primary); }
+.rg-edit-modal .btn-save { padding: 6px 18px; background: var(--cyan); border: none; color: var(--bg-deepest); border-radius: 4px; cursor: pointer; font-size: 0.78rem; font-weight: 600; }
+.rg-edit-modal .btn-save:hover { background: var(--cyan-bright); }
 
 @media (max-width: 768px) {
   .rd-graphic { min-height: 40vh; }

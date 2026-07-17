@@ -2010,7 +2010,7 @@
     var nodeIdToIdx = {};
     Array.from(nodes).forEach(function(card, i) {
       var nid = card.getAttribute('data-node-id');
-      var fo = card.parentNode;
+      var fo = card.closest('foreignObject') || card.parentNode;
       var x = 0, y = 0;
       if (fo) {
         var sw = parseFloat(fo.getAttribute('data-nw')) || 130;
@@ -2041,7 +2041,12 @@
       var labelEl = container.querySelector('.rg-edge-label[data-from="' + from + '"][data-to="' + to + '"]');
       edgeData.push({ from: from, to: to, label: labelEl ? labelEl.textContent : '' });
     });
-    region.route = { nodes: nodeData, edges: edgeData };
+    if (nodeData.length > 0) {
+      region.route = { nodes: nodeData, edges: edgeData };
+      console.log('[rg] saveRouteGraphData', regionId, 'nodes:', nodeData.map(function(n) { return n.id + '@' + n.x + ',' + n.y; }).join(' '));
+    } else {
+      console.log('[rg] saveRouteGraphData SKIPPED (no nodes found in DOM)');
+    }
     saveData();
   }
 
@@ -2068,6 +2073,7 @@
     var container = document.getElementById(containerId);
     if (!container) return;
     var route = getRouteData(regionId);
+    console.log('[rg] renderRouteGraph', regionId, 'nodes:', route.nodes.map(function(n) { return n.id + '@' + n.x + ',' + n.y; }).join(' '));
     if (!_rgStates[regionId]) {
       _rgStates[regionId] = { panX: 0, panY: 0, zoom: 1, dragging: false, dragNodeId: null, connSource: null, lastTap: 0, lastTapNodeId: null };
     }
@@ -2277,13 +2283,15 @@
         if (!fo) return;
         fo = fo.closest('foreignObject');
         if (!fo) return;
-        if (fo._startFOX === undefined) {
-          fo._startFOX = parseFloat(fo.getAttribute('x'));
-          fo._startFOY = parseFloat(fo.getAttribute('y'));
+        if (st._startFOX === undefined) {
+          st._startFOX = parseFloat(fo.getAttribute('x'));
+          st._startFOY = parseFloat(fo.getAttribute('y'));
         }
         var fsz = getNodeSize(fo);
-        var nX = fo._startFOX + sdX;
-        var nY = fo._startFOY + sdY;
+        var cx = st._startFOX + fsz.w / 2 + sdX;
+        var cy = st._startFOY + fsz.h / 2 + sdY;
+        var nX = snapToGrid(cx) - fsz.w / 2;
+        var nY = snapToGrid(cy) - fsz.h / 2;
         nX = Math.max(-fsz.w / 2, Math.min(800 - fsz.w / 2, nX));
         nY = Math.max(-fsz.h / 2, Math.min(500 - fsz.h / 2, nY));
         fo.setAttribute('x', nX);
@@ -2304,11 +2312,8 @@
       var dy = Math.abs(e.clientY - st.dragStartY);
       var wasDrag = dx > 3 || dy > 3;
       if (st.dragNodeId) {
-        var fo = svgEl.querySelector('.rg-node-card[data-node-id="' + st.dragNodeId + '"]');
-        if (fo) {
-          fo = fo.closest('foreignObject');
-          if (fo) { delete fo._startFOX; delete fo._startFOY; }
-        }
+        delete st._startFOX;
+        delete st._startFOY;
         if (wasDrag) { saveRouteGraphData(regionId); updateBadges(svgEl); }
       }
       st.dragging = false;
@@ -2442,6 +2447,7 @@
     cy = Math.max(45, Math.min(vbH - 45, cy));
     var nodeId = 'rn-' + Date.now();
     var route = getRouteData(regionId);
+    saveRouteGraphData(regionId);
     route.nodes.push({ id: nodeId, name: '', desc: '', x: cx, y: cy });
     saveData();
     renderRouteGraph('rgContainer-' + regionId, regionId);
@@ -2449,6 +2455,7 @@
 
   function deleteRouteGraphNode(container, regionId, nodeId) {
     var route = getRouteData(regionId);
+    saveRouteGraphData(regionId);
     route.nodes = route.nodes.filter(function(n) { return n.id !== nodeId; });
     route.edges = route.edges.filter(function(e) { return e.from !== nodeId && e.to !== nodeId; });
     saveData();
@@ -2459,6 +2466,7 @@
     var route = getRouteData(regionId);
     var exists = route.edges.some(function(e) { return e.from === fromId && e.to === toId; });
     if (!exists) {
+      saveRouteGraphData(regionId);
       route.edges.push({ from: fromId, to: toId, label: '' });
       saveData();
       renderRouteGraph('rgContainer-' + regionId, regionId);
@@ -2544,6 +2552,7 @@
 
   function deleteRouteEdge(container, regionId, fromId, toId) {
     var route = getRouteData(regionId);
+    saveRouteGraphData(regionId);
     route.edges = route.edges.filter(function(e) { return !(e.from === fromId && e.to === toId); });
     saveData();
     renderRouteGraph('rgContainer-' + regionId, regionId);

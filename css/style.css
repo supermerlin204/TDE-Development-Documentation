@@ -1257,11 +1257,117 @@ body.edit-mode .project-intro-text {
 }
 .rd-lm-add-btn:hover { border-color: var(--cyan); color: var(--cyan); background: rgba(0,191,165,0.03); }
 
+/* --- Route Preview --- */
+.rd-route-flow {
+  display: flex; align-items: flex-start; gap: 0;
+  overflow-x: auto; padding: 8px 0 4px;
+  flex-wrap: wrap;
+}
+.rd-route-node {
+  flex-shrink: 0; width: 150px; min-height: 150px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 14px; position: relative;
+  display: flex; flex-direction: column;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.rd-route-node:hover {
+  border-color: var(--cyan);
+  box-shadow: 0 0 14px rgba(0,191,165,0.1);
+}
+.rd-route-node.rd-landmark-edit {
+  padding-top: 28px;  /* 给编辑控件留空间 */
+}
+.rd-route-node-index {
+  position: absolute; top: -8px; left: -8px;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--cyan);
+  color: var(--bg-deepest);
+  font-size: 0.68rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1;
+}
+.rd-route-node-name {
+  font-size: 0.84rem; font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px; margin-top: 4px;
+  line-height: 1.3;
+}
+.rd-route-node-desc {
+  font-size: 0.72rem; color: var(--text-secondary);
+  line-height: 1.5; flex: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+.rd-route-connector {
+  flex-shrink: 0; width: 36px; height: 2px;
+  background: var(--cyan-dark);
+  position: relative; margin: 75px 4px 0;
+}
+.rd-route-connector::after {
+  content: '';
+  position: absolute; right: -1px; top: 50%;
+  transform: translateY(-50%);
+  border-left: 6px solid var(--cyan-dark);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+
+/* Route edit controls */
+.rd-route-node-controls {
+  position: absolute; top: 4px; right: 4px;
+  display: flex; gap: 2px; z-index: 2;
+}
+.rd-route-move-btn {
+  width: 20px; height: 20px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border-radius: 3px; cursor: pointer;
+  font-size: 10px; line-height: 1; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.rd-route-move-btn:hover {
+  border-color: var(--cyan); color: var(--cyan);
+  background: rgba(0,191,165,0.08);
+}
+.rd-route-add-btn {
+  flex-shrink: 0; width: 150px; min-height: 150px;
+  border: 1px dashed var(--border-subtle);
+  background: transparent; border-radius: var(--radius-md);
+  color: var(--text-muted); cursor: pointer;
+  font-size: 0.82rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition-fast);
+}
+.rd-route-add-btn:hover {
+  border-color: var(--cyan); color: var(--cyan);
+  background: rgba(0,191,165,0.04);
+}
+
+/* Route node edit inputs */
+.rd-route-node .rd-inline-input {
+  font-size: 0.84rem; font-weight: 600;
+  width: 100%; margin-bottom: 6px;
+}
+.rd-route-node .rd-inline-textarea {
+  font-size: 0.72rem; min-height: 56px; height: 56px;
+  resize: none; width: 100%; flex: 1;
+}
+
 @media (max-width: 768px) {
   .rd-graphic { min-height: 40vh; }
   .rd-graphic.has-model { min-height: 45vh; }
   .rd-graphic-inner { width: 80px; height: 80px; }
   .rd-sections-grid { grid-template-columns: 1fr; }
+  .rd-route-flow { flex-wrap: wrap; gap: 12px; justify-content: center; }
+  .rd-route-connector { display: none; }
+  .rd-route-add-btn { width: 150px; }
+  .rd-route-node { width: 140px; min-height: 140px; }
 }
 
 /* --- World Map --- */

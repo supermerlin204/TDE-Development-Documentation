@@ -1939,6 +1939,15 @@
       return { name: nameInp ? nameInp.value.trim() : '', desc: descInp ? descInp.value.trim() : '' };
     }).filter(function(lm) { return lm.name || lm.desc; });
 
+    // 路线节点
+    var routeNodes = document.querySelectorAll('#page-region-detail [data-rd-route-node]');
+    r.route = Array.from(routeNodes).map(function(nodeEl) {
+      var nameInp = nodeEl.querySelector('[data-rd-route-name]');
+      var descInp = nodeEl.querySelector('[data-rd-route-desc]');
+      var id = nodeEl.getAttribute('data-rd-route-id');
+      return { id: id || ('rn-' + Date.now()), name: nameInp ? nameInp.value.trim() : '', desc: descInp ? descInp.value.trim() : '' };
+    }).filter(function(n) { return n.name || n.desc; });
+
     saveData();
   }
 
@@ -1976,9 +1985,77 @@
     var firstInput = newCard ? newCard.querySelector('input') : null;
     if (firstInput) firstInput.focus();
   }
+  function addRouteNode(regionId) {
+    var flow = document.getElementById('rdRouteFlow-' + regionId);
+    if (!flow) return;
+    var addBtn = flow.querySelector('.rd-route-add-btn');
+    var existingNodes = flow.querySelectorAll('[data-rd-route-node]');
+    var j = existingNodes.length;
+    var nodeId = 'rn-' + Date.now();
+    var nodeHTML = '';
+    if (j > 0) nodeHTML += '<div class="rd-route-connector"></div>';
+    nodeHTML += '<div class="rd-route-node rd-landmark-edit" data-rd-route-node="' + j + '" data-rd-route-id="' + nodeId + '">'
+      + '<span class="rd-route-node-index">' + (j + 1) + '</span>'
+      + '<div class="rd-route-node-controls">'
+      + (j > 0 ? '<button class="rd-route-move-btn" title="上移" onclick="window._moveRouteNode(\'' + regionId + '\',' + j + ',-1)">&#9650;</button>' : '')
+      + '<button class="rd-card-remove-btn" title="删除此节点" onclick="var n=this.closest(\'[data-rd-route-node]\');n.nextElementSibling&&n.nextElementSibling.classList.contains(\'rd-route-connector\')&&n.nextElementSibling.remove();n.previousElementSibling&&n.previousElementSibling.classList.contains(\'rd-route-connector\')&&n.previousElementSibling.remove();n.remove();window._saveRegionInline(\'' + regionId + '\')">&times;</button>'
+      + '</div>'
+      + '<input class="rd-inline-input rd-route-node-name" data-rd-route-name data-rd-region="' + regionId + '" value="" placeholder="节点名称">'
+      + '<textarea class="rd-inline-textarea rd-route-node-desc" data-rd-route-desc data-rd-region="' + regionId + '" placeholder="节点描述"></textarea>'
+      + '</div>';
+    if (addBtn) {
+      addBtn.insertAdjacentHTML('beforebegin', nodeHTML);
+    } else {
+      flow.insertAdjacentHTML('beforeend', nodeHTML);
+    }
+    var newInput = flow.querySelector('[data-rd-route-node="' + j + '"] .rd-route-node-name');
+    if (newInput) newInput.focus();
+  }
+
+  function moveRouteNode(regionId, fromIndex, direction) {
+    var flow = document.getElementById('rdRouteFlow-' + regionId);
+    if (!flow) return;
+    var nodes = Array.from(flow.querySelectorAll('[data-rd-route-node]'));
+    var targetIdx = fromIndex + direction;
+    if (targetIdx < 0 || targetIdx >= nodes.length) return;
+    var nodeA = nodes[fromIndex];
+    var nodeB = nodes[targetIdx];
+    if (direction === -1) {
+      flow.insertBefore(nodeA, nodeB);
+    } else {
+      flow.insertBefore(nodeB, nodeA);
+    }
+    // 重建连接器和编号
+    var connectors = flow.querySelectorAll('.rd-route-connector');
+    for (var c = 0; c < connectors.length; c++) connectors[c].remove();
+    var allNodes = Array.from(flow.querySelectorAll('[data-rd-route-node]'));
+    allNodes.forEach(function(n, i) {
+      n.setAttribute('data-rd-route-node', i);
+      var badge = n.querySelector('.rd-route-node-index');
+      if (badge) badge.textContent = i + 1;
+      // 更新控件按钮中的索引
+      var ctrls = n.querySelector('.rd-route-node-controls');
+      if (ctrls) {
+        ctrls.innerHTML = '';
+        var regionId2 = n.querySelector('[data-rd-route-name]') ? n.querySelector('[data-rd-route-name]').getAttribute('data-rd-region') : regionId;
+        if (i > 0) ctrls.innerHTML += '<button class="rd-route-move-btn" title="上移" onclick="window._moveRouteNode(\'' + regionId2 + '\',' + i + ',-1)">&#9650;</button>';
+        if (i < allNodes.length - 1) ctrls.innerHTML += '<button class="rd-route-move-btn" title="下移" onclick="window._moveRouteNode(\'' + regionId2 + '\',' + i + ',1)">&#9660;</button>';
+        ctrls.innerHTML += '<button class="rd-card-remove-btn" title="删除此节点" onclick="var n=this.closest(\'[data-rd-route-node]\');n.nextElementSibling&&n.nextElementSibling.classList.contains(\'rd-route-connector\')&&n.nextElementSibling.remove();n.previousElementSibling&&n.previousElementSibling.classList.contains(\'rd-route-connector\')&&n.previousElementSibling.remove();n.remove();window._saveRegionInline(\'' + regionId2 + '\')">&times;</button>';
+      }
+      if (i > 0) {
+        var conn = document.createElement('div');
+        conn.className = 'rd-route-connector';
+        n.parentNode.insertBefore(conn, n);
+      }
+    });
+    window._saveRegionInline(regionId);
+  }
+
   window._saveRegionInline = saveRegionInline;
   window._addRegionTag = addRegionTag;
   window._addRegionLandmark = addRegionLandmark;
+  window._addRouteNode = addRouteNode;
+  window._moveRouteNode = moveRouteNode;
 
   function openLandmarkModal(name, desc, color) {
     var overlay = document.getElementById('lmModal');
@@ -2128,6 +2205,28 @@
       sectionsHTML += '</div>';
       sectionsHTML += '</div>'; // .rd-sections-grid
 
+      // 路线预览 (全宽, 可编辑)
+      var route = r.route || [];
+      sectionsHTML += '<div class="rd-section rd-section-full">';
+      sectionsHTML += '<div class="rd-section-title"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M3 3h18v4H3V3zm0 6h12v4H3V9zm0 6h16v4H3v-4z" fill="currentColor"/></svg>路线预览</div>';
+      sectionsHTML += '<div class="rd-route-flow" id="rdRouteFlow-' + regionId + '">';
+      route.forEach(function(node, j) {
+        if (j > 0) sectionsHTML += '<div class="rd-route-connector"></div>';
+        sectionsHTML += '<div class="rd-route-node rd-landmark-edit" data-rd-route-node="' + j + '" data-rd-route-id="' + escAttr(node.id || '') + '">';
+        sectionsHTML += '<span class="rd-route-node-index">' + (j + 1) + '</span>';
+        sectionsHTML += '<div class="rd-route-node-controls">';
+        if (j > 0) sectionsHTML += '<button class="rd-route-move-btn" title="上移" onclick="window._moveRouteNode(\'' + regionId + '\',' + j + ',-1)">&#9650;</button>';
+        if (j < route.length - 1) sectionsHTML += '<button class="rd-route-move-btn" title="下移" onclick="window._moveRouteNode(\'' + regionId + '\',' + j + ',1)">&#9660;</button>';
+        sectionsHTML += '<button class="rd-card-remove-btn" title="删除此节点" onclick="var n=this.closest(\'[data-rd-route-node]\');n.nextElementSibling&&n.nextElementSibling.classList.contains(\'rd-route-connector\')&&n.nextElementSibling.remove();n.previousElementSibling&&n.previousElementSibling.classList.contains(\'rd-route-connector\')&&n.previousElementSibling.remove();n.remove();window._saveRegionInline(\'' + regionId + '\')">&times;</button>';
+        sectionsHTML += '</div>';
+        sectionsHTML += '<input class="rd-inline-input rd-route-node-name" data-rd-route-name data-rd-region="' + regionId + '" value="' + escAttr(node.name) + '" placeholder="节点名称">';
+        sectionsHTML += '<textarea class="rd-inline-textarea rd-route-node-desc" data-rd-route-desc data-rd-region="' + regionId + '" placeholder="节点描述">' + escAttr(node.desc || '') + '</textarea>';
+        sectionsHTML += '</div>';
+      });
+      sectionsHTML += '<button class="rd-route-add-btn" onclick="window._addRouteNode(\'' + regionId + '\')">+ 添加节点</button>';
+      sectionsHTML += '</div>';
+      sectionsHTML += '</div>';
+
       // 连接区域 (全宽, 只读)
       sectionsHTML += '<div class="rd-section rd-section-full">';
       sectionsHTML += '<div class="rd-section-title"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm0 10h8v8H3v-8zm10-10h8v8h-8V3zm0 10h8v8h-8v-8z" fill="currentColor"/></svg>连接区域</div>';
@@ -2216,6 +2315,26 @@
       }
       sectionsHTML += '</div>';
       sectionsHTML += '</div>'; // .rd-sections-grid
+
+      // 路线预览 (全宽)
+      var route = r.route || [];
+      sectionsHTML += '<div class="rd-section rd-section-full">';
+      sectionsHTML += '<div class="rd-section-title"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M3 3h18v4H3V3zm0 6h12v4H3V9zm0 6h16v4H3v-4z" fill="currentColor"/></svg>路线预览</div>';
+      if (route.length > 0) {
+        sectionsHTML += '<div class="rd-route-flow">';
+        route.forEach(function(node, j) {
+          if (j > 0) sectionsHTML += '<div class="rd-route-connector"></div>';
+          sectionsHTML += '<div class="rd-route-node">';
+          sectionsHTML += '<span class="rd-route-node-index">' + (j + 1) + '</span>';
+          sectionsHTML += '<div class="rd-route-node-name">' + escAttr(node.name) + '</div>';
+          sectionsHTML += '<div class="rd-route-node-desc">' + escAttr(node.desc || '') + '</div>';
+          sectionsHTML += '</div>';
+        });
+        sectionsHTML += '</div>';
+      } else {
+        sectionsHTML += '<div style="font-size:0.78rem;color:var(--text-muted);padding:12px 0;">暂无路线数据</div>';
+      }
+      sectionsHTML += '</div>';
 
       // 连接区域 (全宽)
       sectionsHTML += '<div class="rd-section rd-section-full">';

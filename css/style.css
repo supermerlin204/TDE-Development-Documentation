@@ -1272,7 +1272,7 @@ body.edit-mode .project-intro-text {
 
 /* 节点卡片 */
 .rg-node-card {
-  width: 130px; height: 90px;
+  min-width: 130px; min-height: 88px;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
@@ -1305,10 +1305,10 @@ body.edit-mode .project-intro-text {
 }
 .rg-node-desc {
   font-size: 0.65rem; color: var(--text-muted);
-  line-height: 1.4; flex: 1;
+  line-height: 1.45; flex: 1;
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 5;
   -webkit-box-orient: vertical;
 }
 .rg-node-controls {

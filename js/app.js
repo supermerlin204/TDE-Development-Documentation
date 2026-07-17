@@ -2012,7 +2012,12 @@
       var nid = card.getAttribute('data-node-id');
       var fo = card.closest('foreignObject');
       var x = 0, y = 0;
-      if (fo) { x = parseFloat(fo.getAttribute('x')) + 65; y = parseFloat(fo.getAttribute('y')) + 45; }
+      if (fo) {
+        var sw = parseFloat(fo.getAttribute('data-nw')) || 130;
+        var sh = parseFloat(fo.getAttribute('data-nh')) || 90;
+        x = parseFloat(fo.getAttribute('x')) + sw / 2;
+        y = parseFloat(fo.getAttribute('y')) + sh / 2;
+      }
       var nameEl = card.querySelector('.rg-node-name');
       var descEl = card.querySelector('.rg-node-desc');
       nodeData.push({
@@ -2040,6 +2045,18 @@
     saveData();
   }
 
+  function calcNodeSize(name, desc) {
+    var nl = (name || '').length, dl = (desc || '').length;
+    var maxLine = Math.max(nl, Math.ceil(dl / 2.5));
+    var w = 130;
+    if (maxLine > 8) w = Math.min(180, 130 + Math.floor((maxLine - 8) * 5));
+    var lines = Math.max(2, Math.ceil(dl / 14));
+    var h = 88 + Math.max(0, lines - 2) * 17;
+    h = Math.min(156, Math.max(88, h));
+    w = Math.max(130, Math.min(180, w));
+    return { w: w, h: h, lines: lines };
+  }
+
   function renderRouteGraph(containerId, regionId) {
     var container = document.getElementById(containerId);
     if (!container) return;
@@ -2049,7 +2066,11 @@
     }
     var st = _rgStates[regionId];
     var vbW = 800, vbH = 500;
-    var nodeW = 130, nodeH = 90;
+    // 预计算每个节点的尺寸
+    var nodeSizes = {};
+    route.nodes.forEach(function(node) {
+      nodeSizes[node.id] = calcNodeSize(node.name, node.desc);
+    });
     var svgHTML = '';
     svgHTML += '<svg viewBox="0 0 ' + vbW + ' ' + vbH + '">';
     svgHTML += '<defs><pattern id="rgGrid-' + regionId + '" width="30" height="30" patternUnits="userSpaceOnUse">';
@@ -2077,12 +2098,13 @@
     route.nodes.forEach(function(node, idx) {
       var x = node.x || (100 + idx * 160);
       var y = node.y || 250;
-      var foX = x - nodeW / 2, foY = y - nodeH / 2;
-      svgHTML += '<foreignObject x="' + foX + '" y="' + foY + '" width="' + nodeW + '" height="' + nodeH + '">';
-      svgHTML += '<div xmlns="http://www.w3.org/1999/xhtml" class="rg-node-card" data-node-id="' + node.id + '" style="width:' + nodeW + 'px;height:' + nodeH + 'px;">';
+      var sz = nodeSizes[node.id];
+      var foX = x - sz.w / 2, foY = y - sz.h / 2;
+      svgHTML += '<foreignObject x="' + foX + '" y="' + foY + '" width="' + sz.w + '" height="' + sz.h + '" data-nw="' + sz.w + '" data-nh="' + sz.h + '">';
+      svgHTML += '<div xmlns="http://www.w3.org/1999/xhtml" class="rg-node-card" data-node-id="' + node.id + '" style="width:' + sz.w + 'px;height:' + sz.h + 'px;">';
       svgHTML += '<span class="rg-node-badge">' + (idx + 1) + '</span>';
       svgHTML += '<div class="rg-node-name">' + escAttr(node.name || '') + '</div>';
-      svgHTML += '<div class="rg-node-desc">' + escAttr((node.desc || '').substring(0, 80)) + '</div>';
+      svgHTML += '<div class="rg-node-desc">' + escAttr(node.desc || '') + '</div>';
       svgHTML += '<div class="rg-node-controls">';
       svgHTML += '<button class="rg-node-conn-btn" data-action="connect" data-node-id="' + node.id + '">+</button>';
       svgHTML += '<button class="rg-node-del-btn" data-action="delete" data-node-id="' + node.id + '">&times;</button>';
@@ -2123,7 +2145,12 @@
     container._rgCleanup = { mousemove: null, mouseup: null, keydown: null, wheel: null, dblclick: null, click: null };
     var svgEl = container.querySelector('svg');
     if (!svgEl) return;
-    var nodeW = 130, nodeH = 90;
+
+    function getNodeSize(fo) {
+      var w = parseFloat(fo.getAttribute('data-nw')) || 130;
+      var h = parseFloat(fo.getAttribute('data-nh')) || 90;
+      return { w: w, h: h };
+    }
 
     function getNodeEl(target) {
       if (!target) return null;
@@ -2142,8 +2169,9 @@
       if (!fo) return;
       fo = fo.closest('foreignObject');
       if (!fo) return;
-      var cx = parseFloat(fo.getAttribute('x')) + nodeW / 2;
-      var cy = parseFloat(fo.getAttribute('y')) + nodeH / 2;
+      var sz = getNodeSize(fo);
+      var cx = parseFloat(fo.getAttribute('x')) + sz.w / 2;
+      var cy = parseFloat(fo.getAttribute('y')) + sz.h / 2;
       var lines = svgEl.querySelectorAll('.rg-edge-line[data-from="' + nodeId + '"], .rg-edge-line[data-to="' + nodeId + '"]');
       var hits = svgEl.querySelectorAll('.rg-edge-hit[data-from="' + nodeId + '"], .rg-edge-hit[data-to="' + nodeId + '"]');
       var labels = svgEl.querySelectorAll('.rg-edge-label[data-from="' + nodeId + '"], .rg-edge-label[data-to="' + nodeId + '"]');
@@ -2246,10 +2274,11 @@
           fo._startFOX = parseFloat(fo.getAttribute('x'));
           fo._startFOY = parseFloat(fo.getAttribute('y'));
         }
+        var fsz = getNodeSize(fo);
         var nX = fo._startFOX + sdX;
         var nY = fo._startFOY + sdY;
-        nX = Math.max(-nodeW / 2, Math.min(800 - nodeW / 2, nX));
-        nY = Math.max(-nodeH / 2, Math.min(500 - nodeH / 2, nY));
+        nX = Math.max(-fsz.w / 2, Math.min(800 - fsz.w / 2, nX));
+        nY = Math.max(-fsz.h / 2, Math.min(500 - fsz.h / 2, nY));
         fo.setAttribute('x', nX);
         fo.setAttribute('y', nY);
         updateNodeEdges(st.dragNodeId);

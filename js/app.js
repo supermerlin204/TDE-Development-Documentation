@@ -2177,30 +2177,36 @@
       if (pct) pct.textContent = Math.round(st.zoom * 100) + '%';
     }
 
-    function updateNodeEdges(nodeId) {
-      var fo = svgEl.querySelector('.rg-node-card[data-node-id="' + nodeId + '"]');
-      if (!fo) return;
-      fo = fo.closest('foreignObject');
-      if (!fo) return;
-      var sz = getNodeSize(fo);
-      var cx = parseFloat(fo.getAttribute('x')) + sz.w / 2;
-      var cy = parseFloat(fo.getAttribute('y')) + sz.h / 2;
+    function updateNodeEdges(nodeId, foreignObject) {
+      var foEl = foreignObject;
+      if (!foEl) {
+        var cardEl = svgEl.querySelector('.rg-node-card[data-node-id="' + nodeId + '"]');
+        if (!cardEl) return;
+        foEl = cardEl.parentNode;
+        if (!foEl || foEl.nodeName.toLowerCase() !== 'foreignobject') return;
+      }
+      var sz = getNodeSize(foEl);
+      var cx = parseFloat(foEl.getAttribute('x')) + sz.w / 2;
+      var cy = parseFloat(foEl.getAttribute('y')) + sz.h / 2;
       var lines = svgEl.querySelectorAll('.rg-edge-line[data-from="' + nodeId + '"], .rg-edge-line[data-to="' + nodeId + '"]');
       var hits = svgEl.querySelectorAll('.rg-edge-hit[data-from="' + nodeId + '"], .rg-edge-hit[data-to="' + nodeId + '"]');
       var labels = svgEl.querySelectorAll('.rg-edge-label[data-from="' + nodeId + '"], .rg-edge-label[data-to="' + nodeId + '"]');
-      lines.forEach(function(line) {
+      for (var li = 0; li < lines.length; li++) {
+        var line = lines[li];
         if (line.getAttribute('data-from') === nodeId) { line.setAttribute('x1', cx); line.setAttribute('y1', cy); }
         else { line.setAttribute('x2', cx); line.setAttribute('y2', cy); }
-      });
-      hits.forEach(function(hit) {
+      }
+      for (var hi = 0; hi < hits.length; hi++) {
+        var hit = hits[hi];
         if (hit.getAttribute('data-from') === nodeId) { hit.setAttribute('x1', cx); hit.setAttribute('y1', cy); }
         else { hit.setAttribute('x2', cx); hit.setAttribute('y2', cy); }
-      });
-      labels.forEach(function(lbl) {
+      }
+      for (var li2 = 0; li2 < labels.length; li2++) {
+        var lbl = labels[li2];
         var fromId = lbl.getAttribute('data-from');
         var toId = lbl.getAttribute('data-to');
         var lineEl = svgEl.querySelector('.rg-edge-line[data-from="' + fromId + '"][data-to="' + toId + '"]');
-        if (!lineEl) return;
+        if (!lineEl) continue;
         var mx = (parseFloat(lineEl.getAttribute('x1')) + parseFloat(lineEl.getAttribute('x2'))) / 2;
         var my = (parseFloat(lineEl.getAttribute('y1')) + parseFloat(lineEl.getAttribute('y2'))) / 2;
         lbl.setAttribute('x', mx);
@@ -2212,7 +2218,7 @@
           bg.setAttribute('y', my - 8);
           bg.setAttribute('width', len * 7 + 8);
         }
-      });
+      }
     }
 
     function showConnToast() {
@@ -2296,7 +2302,7 @@
         nY = Math.max(-fsz.h / 2, Math.min(500 - fsz.h / 2, nY));
         fo.setAttribute('x', nX);
         fo.setAttribute('y', nY);
-        updateNodeEdges(st.dragNodeId);
+        updateNodeEdges(st.dragNodeId, fo);
       } else {
         st.panX = st.startPanX + dx;
         st.panY = st.startPanY + dy;

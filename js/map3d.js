@@ -215,54 +215,66 @@ function clearLandmarkHighlight() {
   _highlightOriginalMaterial = null;
 }
 
-// 从 URL 加载 (服务端 models/ 目录)
-function loadModelFromUrl(url) {
-  console.log('[map3d] loadModelFromUrl:', url);
+// 从 ArrayBuffer 解析 GLB（带 Draco 解码）
+function parseFromBuffer(buffer) {
   return new Promise((resolve) => {
     const loader = getGltfLoader();
-    const encoded = encodeURI(url);
-    console.log('[map3d] fetching:', encoded);
-    loader.load(encoded, (gltf) => {
-      console.log('[map3d] model loaded from URL');
+    loader.parse(buffer, '', (gltf) => {
       processLoadedModel(gltf);
       resolve(true);
-    }, undefined, (err) => {
-      console.warn('[map3d] failed to load from URL:', encoded, err);
+    }, (err) => {
+      console.warn('[map3d] parse failed:', err);
       resolve(false);
     });
   });
 }
 
+// 从 URL 下载 GLB 并缓存到 IndexedDB
+async function fetchAndCache(url, regionId) {
+  const encoded = encodeURI(url);
+  console.log('[map3d] downloading:', encoded);
+  const t0 = performance.now();
+  let response;
+  try {
+    response = await fetch(encoded);
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+  } catch (e) {
+    console.warn('[map3d] fetch failed:', e);
+    return null;
+  }
+  const buffer = await response.arrayBuffer();
+  const mb = (buffer.byteLength / 1024 / 1024).toFixed(1);
+  console.log('[map3d] downloaded', mb, 'MB in', (performance.now() - t0).toFixed(0), 'ms');
+
+  // 异步写入 IndexedDB（不阻塞解析）
+  const filename = url.split('/').pop();
+  window._modelStore.save(regionId, buffer, filename).catch(function() {});
+
+  return buffer;
+}
+
 async function loadModelIntoScene(regionId, modelPath) {
-  console.log('[map3d] loadModelIntoScene regionId:', regionId, 'modelPath:', modelPath);
-  // 1. 优先从服务端路径加载 (models/ 目录)
-  if (modelPath) {
-    const ok = await loadModelFromUrl(modelPath);
-    if (ok) return true;
-    console.log('[map3d] URL load failed, trying IndexedDB fallback...');
+  console.log('[map3d] loadModelIntoScene', { regionId, modelPath });
+
+  // 1. IndexedDB 缓存优先 — 秒加载
+  var cached = await window._modelStore.load(regionId);
+  if (cached && cached.buffer) {
+    console.log('[map3d] trying IndexedDB cache (' + (cached.buffer.byteLength / 1024 / 1024).toFixed(1) + ' MB)...');
+    var ok = await parseFromBuffer(cached.buffer);
+    if (ok) { console.log('[map3d] loaded from cache'); return true; }
+    console.log('[map3d] cache parse failed, will re-download');
   }
 
-  // 2. 回退至 IndexedDB (本地开发预览)
-  const data = await window._modelStore.load(regionId);
-  if (!data || !data.buffer) { console.log('[map3d] no IndexedDB data'); return false; }
+  // 2. 网络下载 + 缓存
+  if (modelPath) {
+    var buffer = await fetchAndCache(modelPath, regionId);
+    if (buffer) {
+      return await parseFromBuffer(buffer);
+    }
+  }
 
-  const blob = new Blob([data.buffer], { type: 'model/gltf-binary' });
-  const url = URL.createObjectURL(blob);
-  console.log('[map3d] loading from IndexedDB blob');
-
-  return new Promise((resolve) => {
-    const loader = getGltfLoader();
-    loader.load(url, (gltf) => {
-      URL.revokeObjectURL(url);
-      processLoadedModel(gltf);
-      console.log('[map3d] indexedDB model loaded');
-      resolve(true);
-    }, undefined, () => {
-      URL.revokeObjectURL(url);
-      console.log('[map3d] indexedDB model failed');
-      resolve(false);
-    });
-  });
+  console.log('[map3d] no model available');
+  return false;
 }
 
 // ============================
@@ -291,7 +303,14 @@ async function initMap3D(container, regionId, modelPath) {
   console.log('[map3d] scene initialized');
   _currentRegion = regionId;
 
+  // 加载提示（覆盖在 canvas 上方）
+  var spinner = document.createElement('div');
+  spinner.className = 'rd-loading';
+  spinner.innerHTML = '<div class="rd-loading-ring"></div><span class="rd-loading-text">加载模型中...</span>';
+  container.appendChild(spinner);
+
   const loaded = await loadModelIntoScene(regionId, modelPath);
+  if (spinner.parentNode) spinner.remove();
   if (!loaded) {
     console.log('[map3d] model load failed, disposing scene');
     disposeScene(container);

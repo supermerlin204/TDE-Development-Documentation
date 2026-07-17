@@ -1344,16 +1344,17 @@ body.edit-mode .rg-node-controls { display: flex; }
 body.edit-mode .rg-edge-hit { cursor: pointer; }
 .rg-edge-hit:hover + .rg-edge-line { stroke: var(--cyan); stroke-width: 2.5; }
 .rg-edge-label {
-  font-size: 10px; fill: var(--text-secondary);
+  font-size: 11px; fill: var(--text-primary);
   text-anchor: middle; dominant-baseline: central;
-  pointer-events: none;
+  font-weight: 600;
 }
+body:not(.edit-mode) .rg-edge-label { pointer-events: none; }
 .rg-edge-label-bg {
-  fill: var(--bg-deep); stroke: none;
+  fill: var(--bg-deep); stroke: rgba(255,255,255,0.06);
   pointer-events: none;
 }
 body.edit-mode .rg-edge-label {
-  pointer-events: auto; cursor: pointer;
+  cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px;
 }
 body.edit-mode .rg-edge-label:hover { fill: var(--cyan); }
 

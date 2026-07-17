@@ -2111,21 +2111,24 @@
     var st = _rgStates[regionId];
     if (!st) return;
     // 清理旧的事件监听器
-    if (container._rgCleanup) {
-      window.removeEventListener('mousemove', container._rgCleanup.mousemove);
-      window.removeEventListener('mouseup', container._rgCleanup.mouseup);
-      document.removeEventListener('keydown', container._rgCleanup.keydown);
+    var cl = container._rgCleanup;
+    if (cl) {
+      window.removeEventListener('mousemove', cl.mousemove);
+      window.removeEventListener('mouseup', cl.mouseup);
+      document.removeEventListener('keydown', cl.keydown);
+      if (cl.wheel) container.removeEventListener('wheel', cl.wheel);
+      if (cl.dblclick) container.removeEventListener('dblclick', cl.dblclick);
+      if (cl.click) container.removeEventListener('click', cl.click);
     }
-    container._rgCleanup = { mousemove: null, mouseup: null, keydown: null };
+    container._rgCleanup = { mousemove: null, mouseup: null, keydown: null, wheel: null, dblclick: null, click: null };
     var svgEl = container.querySelector('svg');
+    if (!svgEl) return;
     var nodeW = 130, nodeH = 90;
 
-    function getSvgCoords(e) {
-      var rect = svgEl.getBoundingClientRect();
-      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    function getNodeEl(target) {
+      if (!target) return null;
+      return target.closest ? (target.closest('.rg-node-card') || null) : null;
     }
-
-    function getNodeEl(target) { return target ? (target.closest('.rg-node-card') || (target.classList.contains('rg-node-card') ? target : null)) : null; }
 
     function updateTransform() {
       var tg = svgEl.querySelector('.rg-transform');
@@ -2144,7 +2147,6 @@
       var lines = svgEl.querySelectorAll('.rg-edge-line[data-from="' + nodeId + '"], .rg-edge-line[data-to="' + nodeId + '"]');
       var hits = svgEl.querySelectorAll('.rg-edge-hit[data-from="' + nodeId + '"], .rg-edge-hit[data-to="' + nodeId + '"]');
       var labels = svgEl.querySelectorAll('.rg-edge-label[data-from="' + nodeId + '"], .rg-edge-label[data-to="' + nodeId + '"]');
-      var labelBgs = svgEl.querySelectorAll('.rg-edge-label-bg');
       lines.forEach(function(line) {
         if (line.getAttribute('data-from') === nodeId) { line.setAttribute('x1', cx); line.setAttribute('y1', cy); }
         else { line.setAttribute('x2', cx); line.setAttribute('y2', cy); }
@@ -2153,7 +2155,6 @@
         if (hit.getAttribute('data-from') === nodeId) { hit.setAttribute('x1', cx); hit.setAttribute('y1', cy); }
         else { hit.setAttribute('x2', cx); hit.setAttribute('y2', cy); }
       });
-      // 更新标签位置
       labels.forEach(function(lbl) {
         var fromId = lbl.getAttribute('data-from');
         var toId = lbl.getAttribute('data-to');
@@ -2183,8 +2184,8 @@
       st.connSource = null;
     }
 
-    // --- 事件绑定 ---
-    container.addEventListener('wheel', function(e) {
+    // --- Wheel (zoom) ---
+    container._rgCleanup.wheel = function(e) {
       e.preventDefault();
       var rect = svgEl.getBoundingClientRect();
       var mx = e.clientX - rect.left, my = e.clientY - rect.top;
@@ -2194,19 +2195,15 @@
       st.panY = my - ((my - st.panY) / st.zoom) * newZoom;
       st.zoom = newZoom;
       updateTransform();
-    }, { passive: false });
+    };
+    container.addEventListener('wheel', container._rgCleanup.wheel, { passive: false });
 
+    // --- Mousedown on SVG (pan / node drag / connection) ---
     svgEl.addEventListener('mousedown', function(e) {
       if (e.button !== 0) return;
       var nodeEl = getNodeEl(e.target);
-      // 检查是否点击了节点上的按钮
       if (nodeEl && (e.target.closest('.rg-node-conn-btn') || e.target.closest('.rg-node-del-btn'))) return;
-      // 检查是否点击了缩放按钮或添加按钮
       if (e.target.closest('.rg-zoom-btn') || e.target.closest('.rg-add-node-btn')) return;
-      // 点击连线标签（编辑模式）→ 编辑
-      if (editMode && e.target.classList.contains('rg-edge-label')) {
-        return;
-      }
       // 连线模式下点击空白取消
       if (st.connSource && !nodeEl) { hideConnToast(); return; }
       // 连线模式下点击目标节点
@@ -2234,36 +2231,37 @@
       e.stopPropagation();
     });
 
+    // --- Mousemove (pan / node drag) ---
     container._rgCleanup.mousemove = function(e) {
       if (!st.dragging) return;
-      var dx2 = e.clientX - st.dragStartX;
-      var dy2 = e.clientY - st.dragStartY;
+      var dx = e.clientX - st.dragStartX;
+      var dy = e.clientY - st.dragStartY;
       if (st.dragNodeId) {
-        var sdX2 = dx2 / st.zoom;
-        var sdY2 = dy2 / st.zoom;
-        var fo2 = svgEl.querySelector('.rg-node-card[data-node-id="' + st.dragNodeId + '"]');
-        if (!fo2) return;
-        fo2 = fo2.closest('foreignObject');
-        if (!fo2) return;
-        if (!fo2._startFOX) {
-          fo2._startFOX = parseFloat(fo2.getAttribute('x'));
-          fo2._startFOY = parseFloat(fo2.getAttribute('y'));
+        var sdX = dx / st.zoom, sdY = dy / st.zoom;
+        var fo = svgEl.querySelector('.rg-node-card[data-node-id="' + st.dragNodeId + '"]');
+        if (!fo) return;
+        fo = fo.closest('foreignObject');
+        if (!fo) return;
+        if (fo._startFOX === undefined) {
+          fo._startFOX = parseFloat(fo.getAttribute('x'));
+          fo._startFOY = parseFloat(fo.getAttribute('y'));
         }
-        var nX = fo2._startFOX + sdX2;
-        var nY = fo2._startFOY + sdY2;
+        var nX = fo._startFOX + sdX;
+        var nY = fo._startFOY + sdY;
         nX = Math.max(-nodeW / 2, Math.min(800 - nodeW / 2, nX));
         nY = Math.max(-nodeH / 2, Math.min(500 - nodeH / 2, nY));
-        fo2.setAttribute('x', nX);
-        fo2.setAttribute('y', nY);
+        fo.setAttribute('x', nX);
+        fo.setAttribute('y', nY);
         updateNodeEdges(st.dragNodeId);
       } else {
-        st.panX = st.startPanX + dx2;
-        st.panY = st.startPanY + dy2;
+        st.panX = st.startPanX + dx;
+        st.panY = st.startPanY + dy;
         updateTransform();
       }
     };
     window.addEventListener('mousemove', container._rgCleanup.mousemove);
 
+    // --- Mouseup (end pan / node drag) ---
     container._rgCleanup.mouseup = function(e) {
       if (!st.dragging) return;
       var dx = Math.abs(e.clientX - st.dragStartX);
@@ -2284,27 +2282,37 @@
     };
     window.addEventListener('mouseup', container._rgCleanup.mouseup);
 
-    // 双击事件 (编辑节点 / 编辑连线标签)
-    container.addEventListener('dblclick', function(e) {
+    // --- Double-click (edit node / edit edge label) ---
+    container._rgCleanup.dblclick = function(e) {
       if (!editMode) return;
-      // 双击连线标签
+      // 编辑连线标签
       if (e.target.classList.contains('rg-edge-label')) {
         var from = e.target.getAttribute('data-from');
         var to = e.target.getAttribute('data-to');
-        var edgeKey = from + '|' + to;
         editRouteEdgeLabel(container, regionId, from, to, e.target);
         return;
       }
-      // 双击节点
+      // 也支持点击标签背景
+      if (e.target.classList.contains('rg-edge-label-bg')) {
+        var nextSib = e.target.nextElementSibling;
+        if (nextSib && nextSib.classList.contains('rg-edge-label')) {
+          var from2 = nextSib.getAttribute('data-from');
+          var to2 = nextSib.getAttribute('data-to');
+          editRouteEdgeLabel(container, regionId, from2, to2, nextSib);
+        }
+        return;
+      }
+      // 编辑节点
       var nodeEl = getNodeEl(e.target);
       if (nodeEl) {
         editRouteNode(container, regionId, nodeEl);
         return;
       }
-    });
+    };
+    container.addEventListener('dblclick', container._rgCleanup.dblclick);
 
-    // 点击事件 (通过委托处理按钮)
-    container.addEventListener('click', function(e) {
+    // --- Click (按钮 / 连线 / 连线标签编辑) ---
+    container._rgCleanup.click = function(e) {
       // 缩放按钮
       var zoomBtn = e.target.closest('.rg-zoom-btn');
       if (zoomBtn) {
@@ -2327,37 +2335,42 @@
         updateTransform();
         return;
       }
-      // 添加节点按钮
+      // 添加节点
       if (e.target.closest('.rg-add-node-btn')) {
         addRouteGraphNode(container, regionId);
         return;
       }
-      // 节点连接按钮
+      // 连接按钮
       var connBtn = e.target.closest('.rg-node-conn-btn');
       if (connBtn && editMode) {
-        var nid = connBtn.getAttribute('data-node-id');
-        st.connSource = nid;
+        st.connSource = connBtn.getAttribute('data-node-id');
         showConnToast();
         return;
       }
-      // 节点删除按钮
+      // 删除按钮
       var delBtn = e.target.closest('.rg-node-del-btn');
       if (delBtn && editMode) {
-        var dnid = delBtn.getAttribute('data-node-id');
-        deleteRouteGraphNode(container, regionId, dnid);
+        deleteRouteGraphNode(container, regionId, delBtn.getAttribute('data-node-id'));
         return;
       }
-      // 连线点击 (编辑模式 → 删除)
+      // 编辑模式下点击连线标签 → 编辑
+      if (editMode && e.target.classList.contains('rg-edge-label')) {
+        var f = e.target.getAttribute('data-from');
+        var t = e.target.getAttribute('data-to');
+        editRouteEdgeLabel(container, regionId, f, t, e.target);
+        return;
+      }
+      // 编辑模式下点击连线 → 删除
       if (editMode && e.target.classList.contains('rg-edge-hit')) {
-        var from = e.target.getAttribute('data-from');
-        var to = e.target.getAttribute('data-to');
-        deleteRouteEdge(container, regionId, from, to);
+        var ef = e.target.getAttribute('data-from');
+        var et = e.target.getAttribute('data-to');
+        deleteRouteEdge(container, regionId, ef, et);
         return;
       }
-      // 连线标签双击处理在 dblclick 中
-    });
+    };
+    container.addEventListener('click', container._rgCleanup.click);
 
-    // 键盘事件
+    // --- Keydown (Esc to cancel connection) ---
     container._rgCleanup.keydown = function(e) {
       if (e.key === 'Escape' && st.connSource) { hideConnToast(); }
     };

@@ -2010,7 +2010,7 @@
     var nodeIdToIdx = {};
     Array.from(nodes).forEach(function(card, i) {
       var nid = card.getAttribute('data-node-id');
-      var fo = card.closest('foreignObject');
+      var fo = card.parentNode;
       var x = 0, y = 0;
       if (fo) {
         var sw = parseFloat(fo.getAttribute('data-nw')) || 130;
@@ -2282,10 +2282,8 @@
           fo._startFOY = parseFloat(fo.getAttribute('y'));
         }
         var fsz = getNodeSize(fo);
-        var cx = fo._startFOX + fsz.w / 2 + sdX;
-        var cy = fo._startFOY + fsz.h / 2 + sdY;
-        var nX = snapToGrid(cx) - fsz.w / 2;
-        var nY = snapToGrid(cy) - fsz.h / 2;
+        var nX = fo._startFOX + sdX;
+        var nY = fo._startFOY + sdY;
         nX = Math.max(-fsz.w / 2, Math.min(800 - fsz.w / 2, nX));
         nY = Math.max(-fsz.h / 2, Math.min(500 - fsz.h / 2, nY));
         fo.setAttribute('x', nX);
@@ -2311,8 +2309,7 @@
           fo = fo.closest('foreignObject');
           if (fo) { delete fo._startFOX; delete fo._startFOY; }
         }
-        saveRouteGraphData(regionId);
-        updateBadges(svgEl);
+        if (wasDrag) { saveRouteGraphData(regionId); updateBadges(svgEl); }
       }
       st.dragging = false;
       st.dragNodeId = null;
@@ -2498,6 +2495,7 @@
         node.desc = descInp.value.trim();
         saveData();
       }
+      saveRouteGraphData(regionId);
       closeEditModal();
       renderRouteGraph('rgContainer-' + regionId, regionId);
     }
@@ -2530,6 +2528,7 @@
       var route = getRouteData(regionId);
       var edge = route.edges.find(function(e) { return e.from === fromId && e.to === toId; });
       if (edge) { edge.label = inp.value.trim(); saveData(); }
+      saveRouteGraphData(regionId);
       closeEditModal();
       renderRouteGraph('rgContainer-' + regionId, regionId);
     }

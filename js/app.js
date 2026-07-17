@@ -2301,8 +2301,8 @@
         var cy = st._startFOY + fsz.h / 2 + sdY;
         var nX = snapToGrid(cx) - fsz.w / 2;
         var nY = snapToGrid(cy) - fsz.h / 2;
-        nX = Math.max(-200, Math.min(1200, nX));
-        nY = Math.max(-200, Math.min(800, nY));
+        nX = Math.max(-2000, Math.min(3000, nX));
+        nY = Math.max(-2000, Math.min(3000, nY));
         fo.setAttribute('x', nX);
         fo.setAttribute('y', nY);
         updateNodeEdges(st.dragNodeId, fo);

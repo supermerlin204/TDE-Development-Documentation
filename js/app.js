@@ -1990,7 +1990,7 @@
     if (Array.isArray(region.route)) {
       var migrated = [].concat(region.route);
       for (var m = 0; m < migrated.length; m++) {
-        if (!migrated[m].x) { migrated[m].x = 100 + m * 160; migrated[m].y = 250; }
+        if (migrated[m].x == null) { migrated[m].x = 100 + m * 160; migrated[m].y = 250; }
       }
       region.route = { nodes: migrated, edges: [] };
     }
@@ -2011,8 +2011,11 @@
     Array.from(nodes).forEach(function(card, i) {
       var nid = card.getAttribute('data-node-id');
       var fo = card.closest('foreignObject') || card.parentNode;
-      var x = 0, y = 0;
-      if (fo) {
+      // 保留已有数据作为 fallback，避免找不到 fo 时归零
+      var oldNode = region.route && region.route.nodes ? region.route.nodes.find(function(n) { return n.id === nid; }) : null;
+      var x = oldNode ? oldNode.x : 0;
+      var y = oldNode ? oldNode.y : 0;
+      if (fo && fo.nodeName && fo.nodeName.toLowerCase() === 'foreignobject') {
         var sw = parseFloat(fo.getAttribute('data-nw')) || 130;
         var sh = parseFloat(fo.getAttribute('data-nh')) || 90;
         x = snapToGrid(parseFloat(fo.getAttribute('x')) + sw / 2);
@@ -2109,8 +2112,8 @@
     // 节点层
     svgHTML += '<g class="rg-nodes">';
     route.nodes.forEach(function(node, idx) {
-      var x = node.x || (100 + idx * 160);
-      var y = node.y || 250;
+      var x = (node.x != null) ? node.x : (100 + idx * 160);
+      var y = (node.y != null) ? node.y : 250;
       var sz = nodeSizes[node.id];
       var foX = x - sz.w / 2, foY = y - sz.h / 2;
       svgHTML += '<foreignObject x="' + foX + '" y="' + foY + '" width="' + sz.w + '" height="' + sz.h + '" data-nw="' + sz.w + '" data-nh="' + sz.h + '">';
@@ -2298,8 +2301,8 @@
         var cy = st._startFOY + fsz.h / 2 + sdY;
         var nX = snapToGrid(cx) - fsz.w / 2;
         var nY = snapToGrid(cy) - fsz.h / 2;
-        nX = Math.max(-fsz.w / 2, Math.min(800 - fsz.w / 2, nX));
-        nY = Math.max(-fsz.h / 2, Math.min(500 - fsz.h / 2, nY));
+        nX = Math.max(-200, Math.min(1200, nX));
+        nY = Math.max(-200, Math.min(800, nY));
         fo.setAttribute('x', nX);
         fo.setAttribute('y', nY);
         updateNodeEdges(st.dragNodeId, fo);
@@ -2449,8 +2452,6 @@
     // 添加一些随机偏移
     var cx = snapToGrid(Math.round(viewCenterX + (Math.random() - 0.5) * 100));
     var cy = snapToGrid(Math.round(viewCenterY + (Math.random() - 0.5) * 100));
-    cx = Math.max(65, Math.min(vbW - 65, cx));
-    cy = Math.max(45, Math.min(vbH - 45, cy));
     var nodeId = 'rn-' + Date.now();
     var route = getRouteData(regionId);
     saveRouteGraphData(regionId);

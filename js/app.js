@@ -1939,14 +1939,7 @@
       return { name: nameInp ? nameInp.value.trim() : '', desc: descInp ? descInp.value.trim() : '' };
     }).filter(function(lm) { return lm.name || lm.desc; });
 
-    // 路线节点
-    var routeNodes = document.querySelectorAll('#page-region-detail [data-rd-route-node]');
-    r.route = Array.from(routeNodes).map(function(nodeEl) {
-      var nameInp = nodeEl.querySelector('[data-rd-route-name]');
-      var descInp = nodeEl.querySelector('[data-rd-route-desc]');
-      var id = nodeEl.getAttribute('data-rd-route-id');
-      return { id: id || ('rn-' + Date.now()), name: nameInp ? nameInp.value.trim() : '', desc: descInp ? descInp.value.trim() : '' };
-    }).filter(function(n) { return n.name || n.desc; });
+    // 路线节点图 — 由 saveRouteGraphData 从 DOM 读取并写回 r.route
 
     saveData();
   }
@@ -1985,77 +1978,512 @@
     var firstInput = newCard ? newCard.querySelector('input') : null;
     if (firstInput) firstInput.focus();
   }
-  function addRouteNode(regionId) {
-    var flow = document.getElementById('rdRouteFlow-' + regionId);
-    if (!flow) return;
-    var addBtn = flow.querySelector('.rd-route-add-btn');
-    var existingNodes = flow.querySelectorAll('[data-rd-route-node]');
-    var j = existingNodes.length;
-    var nodeId = 'rn-' + Date.now();
-    var nodeHTML = '';
-    if (j > 0) nodeHTML += '<div class="rd-route-connector"></div>';
-    nodeHTML += '<div class="rd-route-node rd-landmark-edit" data-rd-route-node="' + j + '" data-rd-route-id="' + nodeId + '">'
-      + '<span class="rd-route-node-index">' + (j + 1) + '</span>'
-      + '<div class="rd-route-node-controls">'
-      + (j > 0 ? '<button class="rd-route-move-btn" title="上移" onclick="window._moveRouteNode(\'' + regionId + '\',' + j + ',-1)">&#9650;</button>' : '')
-      + '<button class="rd-card-remove-btn" title="删除此节点" onclick="var n=this.closest(\'[data-rd-route-node]\');n.nextElementSibling&&n.nextElementSibling.classList.contains(\'rd-route-connector\')&&n.nextElementSibling.remove();n.previousElementSibling&&n.previousElementSibling.classList.contains(\'rd-route-connector\')&&n.previousElementSibling.remove();n.remove();window._saveRegionInline(\'' + regionId + '\')">&times;</button>'
-      + '</div>'
-      + '<input class="rd-inline-input rd-route-node-name" data-rd-route-name data-rd-region="' + regionId + '" value="" placeholder="节点名称">'
-      + '<textarea class="rd-inline-textarea rd-route-node-desc" data-rd-route-desc data-rd-region="' + regionId + '" placeholder="节点描述"></textarea>'
-      + '</div>';
-    if (addBtn) {
-      addBtn.insertAdjacentHTML('beforebegin', nodeHTML);
-    } else {
-      flow.insertAdjacentHTML('beforeend', nodeHTML);
+  // ============================================================
+  // 路线节点图 (SVG 可缩放交互图)
+  // ============================================================
+  var _rgStates = {}; // { panX, panY, zoom, dragging, dragStartX, dragStartY, startPanX, startPanY, dragNodeId, connSource, lastTap, lastTapNodeId }
+
+  function getRouteData(regionId) {
+    var region = TDE_DATA.regions.find(function(r) { return r.id === regionId; });
+    if (!region) return { nodes: [], edges: [] };
+    // 迁移旧格式
+    if (Array.isArray(region.route)) {
+      var migrated = [].concat(region.route);
+      for (var m = 0; m < migrated.length; m++) {
+        if (!migrated[m].x) { migrated[m].x = 100 + m * 160; migrated[m].y = 250; }
+      }
+      region.route = { nodes: migrated, edges: [] };
     }
-    var newInput = flow.querySelector('[data-rd-route-node="' + j + '"] .rd-route-node-name');
-    if (newInput) newInput.focus();
+    var route = region.route || { nodes: [], edges: [] };
+    if (!route.nodes) route.nodes = [];
+    if (!route.edges) route.edges = [];
+    return route;
   }
 
-  function moveRouteNode(regionId, fromIndex, direction) {
-    var flow = document.getElementById('rdRouteFlow-' + regionId);
-    if (!flow) return;
-    var nodes = Array.from(flow.querySelectorAll('[data-rd-route-node]'));
-    var targetIdx = fromIndex + direction;
-    if (targetIdx < 0 || targetIdx >= nodes.length) return;
-    var nodeA = nodes[fromIndex];
-    var nodeB = nodes[targetIdx];
-    if (direction === -1) {
-      flow.insertBefore(nodeA, nodeB);
-    } else {
-      flow.insertBefore(nodeB, nodeA);
+  function saveRouteGraphData(regionId) {
+    var region = TDE_DATA.regions.find(function(r) { return r.id === regionId; });
+    if (!region) return;
+    var container = document.getElementById('rgContainer-' + regionId);
+    if (!container) return;
+    var nodes = container.querySelectorAll('.rg-node-card');
+    var nodeData = [];
+    var nodeIdToIdx = {};
+    Array.from(nodes).forEach(function(card, i) {
+      var nid = card.getAttribute('data-node-id');
+      var fo = card.closest('foreignObject');
+      var x = 0, y = 0;
+      if (fo) { x = parseFloat(fo.getAttribute('x')) + 65; y = parseFloat(fo.getAttribute('y')) + 45; }
+      var nameEl = card.querySelector('.rg-node-name');
+      var descEl = card.querySelector('.rg-node-desc');
+      nodeData.push({
+        id: nid,
+        name: nameEl ? nameEl.textContent : '',
+        desc: descEl ? descEl.textContent : '',
+        x: Math.round(x),
+        y: Math.round(y)
+      });
+      nodeIdToIdx[nid] = i;
+    });
+    var edgeLines = container.querySelectorAll('.rg-edge-line');
+    var edgeData = [];
+    var edgeSet = {};
+    Array.from(edgeLines).forEach(function(line) {
+      var from = line.getAttribute('data-from');
+      var to = line.getAttribute('data-to');
+      var key = from + '|' + to;
+      if (edgeSet[key]) return;
+      edgeSet[key] = true;
+      var labelEl = container.querySelector('.rg-edge-label[data-from="' + from + '"][data-to="' + to + '"]');
+      edgeData.push({ from: from, to: to, label: labelEl ? labelEl.textContent : '' });
+    });
+    region.route = { nodes: nodeData, edges: edgeData };
+    saveData();
+  }
+
+  function renderRouteGraph(containerId, regionId) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    var route = getRouteData(regionId);
+    if (!_rgStates[regionId]) {
+      _rgStates[regionId] = { panX: 0, panY: 0, zoom: 1, dragging: false, dragNodeId: null, connSource: null, lastTap: 0, lastTapNodeId: null };
     }
-    // 重建连接器和编号
-    var connectors = flow.querySelectorAll('.rd-route-connector');
-    for (var c = 0; c < connectors.length; c++) connectors[c].remove();
-    var allNodes = Array.from(flow.querySelectorAll('[data-rd-route-node]'));
-    allNodes.forEach(function(n, i) {
-      n.setAttribute('data-rd-route-node', i);
-      var badge = n.querySelector('.rd-route-node-index');
-      if (badge) badge.textContent = i + 1;
-      // 更新控件按钮中的索引
-      var ctrls = n.querySelector('.rd-route-node-controls');
-      if (ctrls) {
-        ctrls.innerHTML = '';
-        var regionId2 = n.querySelector('[data-rd-route-name]') ? n.querySelector('[data-rd-route-name]').getAttribute('data-rd-region') : regionId;
-        if (i > 0) ctrls.innerHTML += '<button class="rd-route-move-btn" title="上移" onclick="window._moveRouteNode(\'' + regionId2 + '\',' + i + ',-1)">&#9650;</button>';
-        if (i < allNodes.length - 1) ctrls.innerHTML += '<button class="rd-route-move-btn" title="下移" onclick="window._moveRouteNode(\'' + regionId2 + '\',' + i + ',1)">&#9660;</button>';
-        ctrls.innerHTML += '<button class="rd-card-remove-btn" title="删除此节点" onclick="var n=this.closest(\'[data-rd-route-node]\');n.nextElementSibling&&n.nextElementSibling.classList.contains(\'rd-route-connector\')&&n.nextElementSibling.remove();n.previousElementSibling&&n.previousElementSibling.classList.contains(\'rd-route-connector\')&&n.previousElementSibling.remove();n.remove();window._saveRegionInline(\'' + regionId2 + '\')">&times;</button>';
-      }
-      if (i > 0) {
-        var conn = document.createElement('div');
-        conn.className = 'rd-route-connector';
-        n.parentNode.insertBefore(conn, n);
+    var st = _rgStates[regionId];
+    var vbW = 800, vbH = 500;
+    var nodeW = 130, nodeH = 90;
+    var svgHTML = '';
+    svgHTML += '<svg viewBox="0 0 ' + vbW + ' ' + vbH + '">';
+    svgHTML += '<defs><pattern id="rgGrid-' + regionId + '" width="30" height="30" patternUnits="userSpaceOnUse">';
+    svgHTML += '<path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/></pattern></defs>';
+    svgHTML += '<rect class="rg-bg" width="100%" height="100%" fill="url(#rgGrid-' + regionId + ')"/>';
+    svgHTML += '<g class="rg-transform" transform="translate(' + st.panX + ',' + st.panY + ') scale(' + st.zoom + ')">';
+    // 连线层
+    svgHTML += '<g class="rg-edges">';
+    route.edges.forEach(function(edge) {
+      var fn = route.nodes.find(function(n) { return n.id === edge.from; });
+      var tn = route.nodes.find(function(n) { return n.id === edge.to; });
+      if (!fn || !tn) return;
+      var x1 = fn.x, y1 = fn.y, x2 = tn.x, y2 = tn.y;
+      svgHTML += '<line class="rg-edge-line" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" data-from="' + edge.from + '" data-to="' + edge.to + '"/>';
+      svgHTML += '<line class="rg-edge-hit" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" data-from="' + edge.from + '" data-to="' + edge.to + '"/>';
+      if (edge.label) {
+        var mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+        svgHTML += '<rect class="rg-edge-label-bg" x="' + (mx - edge.label.length * 3.5 - 4) + '" y="' + (my - 8) + '" width="' + (edge.label.length * 7 + 8) + '" height="16" rx="2"/>';
+        svgHTML += '<text class="rg-edge-label" x="' + mx + '" y="' + (my + 4) + '" text-anchor="middle" data-from="' + edge.from + '" data-to="' + edge.to + '">' + escAttr(edge.label) + '</text>';
       }
     });
-    window._saveRegionInline(regionId);
+    svgHTML += '</g>';
+    // 节点层
+    svgHTML += '<g class="rg-nodes">';
+    route.nodes.forEach(function(node, idx) {
+      var x = node.x || (100 + idx * 160);
+      var y = node.y || 250;
+      var foX = x - nodeW / 2, foY = y - nodeH / 2;
+      svgHTML += '<foreignObject x="' + foX + '" y="' + foY + '" width="' + nodeW + '" height="' + nodeH + '">';
+      svgHTML += '<div xmlns="http://www.w3.org/1999/xhtml" class="rg-node-card" data-node-id="' + node.id + '" style="width:' + nodeW + 'px;height:' + nodeH + 'px;">';
+      svgHTML += '<span class="rg-node-badge">' + (idx + 1) + '</span>';
+      svgHTML += '<div class="rg-node-name">' + escAttr(node.name || '') + '</div>';
+      svgHTML += '<div class="rg-node-desc">' + escAttr((node.desc || '').substring(0, 80)) + '</div>';
+      svgHTML += '<div class="rg-node-controls">';
+      svgHTML += '<button class="rg-node-conn-btn" data-action="connect" data-node-id="' + node.id + '">+</button>';
+      svgHTML += '<button class="rg-node-del-btn" data-action="delete" data-node-id="' + node.id + '">&times;</button>';
+      svgHTML += '</div>';
+      svgHTML += '</div></foreignObject>';
+    });
+    svgHTML += '</g></g></svg>';
+    // 缩放控件
+    svgHTML += '<div class="rg-zoom-ctrl">';
+    svgHTML += '<button class="rg-zoom-btn" data-zoom="out">−</button>';
+    svgHTML += '<span class="rg-zoom-pct">' + Math.round(st.zoom * 100) + '%</span>';
+    svgHTML += '<button class="rg-zoom-btn" data-zoom="in">+</button>';
+    svgHTML += '<button class="rg-zoom-btn" data-zoom="reset">⟲</button>';
+    svgHTML += '</div>';
+    // 添加节点 (编辑模式)
+    if (editMode) {
+      svgHTML += '<button class="rg-add-node-btn" data-action="add-node">+ 添加节点</button>';
+    }
+    // 连线模式提示
+    svgHTML += '<div class="rg-conn-toast" style="display:none;">连线模式：点击目标节点完成连线，按 Esc / 点击空白取消</div>';
+    container.innerHTML = svgHTML;
+    initRouteGraphEvents(container, regionId);
+  }
+
+  function initRouteGraphEvents(container, regionId) {
+    var st = _rgStates[regionId];
+    if (!st) return;
+    // 清理旧的事件监听器
+    if (container._rgCleanup) {
+      window.removeEventListener('mousemove', container._rgCleanup.mousemove);
+      window.removeEventListener('mouseup', container._rgCleanup.mouseup);
+      document.removeEventListener('keydown', container._rgCleanup.keydown);
+    }
+    container._rgCleanup = { mousemove: null, mouseup: null, keydown: null };
+    var svgEl = container.querySelector('svg');
+    var nodeW = 130, nodeH = 90;
+
+    function getSvgCoords(e) {
+      var rect = svgEl.getBoundingClientRect();
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+
+    function getNodeEl(target) { return target ? (target.closest('.rg-node-card') || (target.classList.contains('rg-node-card') ? target : null)) : null; }
+
+    function updateTransform() {
+      var tg = svgEl.querySelector('.rg-transform');
+      if (tg) tg.setAttribute('transform', 'translate(' + st.panX + ',' + st.panY + ') scale(' + st.zoom + ')');
+      var pct = container.querySelector('.rg-zoom-pct');
+      if (pct) pct.textContent = Math.round(st.zoom * 100) + '%';
+    }
+
+    function updateNodeEdges(nodeId) {
+      var fo = svgEl.querySelector('.rg-node-card[data-node-id="' + nodeId + '"]');
+      if (!fo) return;
+      fo = fo.closest('foreignObject');
+      if (!fo) return;
+      var cx = parseFloat(fo.getAttribute('x')) + nodeW / 2;
+      var cy = parseFloat(fo.getAttribute('y')) + nodeH / 2;
+      var lines = svgEl.querySelectorAll('.rg-edge-line[data-from="' + nodeId + '"], .rg-edge-line[data-to="' + nodeId + '"]');
+      var hits = svgEl.querySelectorAll('.rg-edge-hit[data-from="' + nodeId + '"], .rg-edge-hit[data-to="' + nodeId + '"]');
+      var labels = svgEl.querySelectorAll('.rg-edge-label[data-from="' + nodeId + '"], .rg-edge-label[data-to="' + nodeId + '"]');
+      var labelBgs = svgEl.querySelectorAll('.rg-edge-label-bg');
+      lines.forEach(function(line) {
+        if (line.getAttribute('data-from') === nodeId) { line.setAttribute('x1', cx); line.setAttribute('y1', cy); }
+        else { line.setAttribute('x2', cx); line.setAttribute('y2', cy); }
+      });
+      hits.forEach(function(hit) {
+        if (hit.getAttribute('data-from') === nodeId) { hit.setAttribute('x1', cx); hit.setAttribute('y1', cy); }
+        else { hit.setAttribute('x2', cx); hit.setAttribute('y2', cy); }
+      });
+      // 更新标签位置
+      labels.forEach(function(lbl) {
+        var fromId = lbl.getAttribute('data-from');
+        var toId = lbl.getAttribute('data-to');
+        var lineEl = svgEl.querySelector('.rg-edge-line[data-from="' + fromId + '"][data-to="' + toId + '"]');
+        if (!lineEl) return;
+        var mx = (parseFloat(lineEl.getAttribute('x1')) + parseFloat(lineEl.getAttribute('x2'))) / 2;
+        var my = (parseFloat(lineEl.getAttribute('y1')) + parseFloat(lineEl.getAttribute('y2'))) / 2;
+        lbl.setAttribute('x', mx);
+        lbl.setAttribute('y', my + 4);
+        var bg = lbl.previousElementSibling;
+        if (bg && bg.classList.contains('rg-edge-label-bg')) {
+          var len = lbl.textContent.length;
+          bg.setAttribute('x', mx - len * 3.5 - 4);
+          bg.setAttribute('y', my - 8);
+          bg.setAttribute('width', len * 7 + 8);
+        }
+      });
+    }
+
+    function showConnToast() {
+      var toast = container.querySelector('.rg-conn-toast');
+      if (toast) toast.style.display = 'block';
+    }
+    function hideConnToast() {
+      var toast = container.querySelector('.rg-conn-toast');
+      if (toast) toast.style.display = 'none';
+      st.connSource = null;
+    }
+
+    // --- 事件绑定 ---
+    container.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      var rect = svgEl.getBoundingClientRect();
+      var mx = e.clientX - rect.left, my = e.clientY - rect.top;
+      var newZoom = st.zoom * (e.deltaY > 0 ? 0.9 : 1.1);
+      newZoom = Math.max(0.3, Math.min(2.0, newZoom));
+      st.panX = mx - ((mx - st.panX) / st.zoom) * newZoom;
+      st.panY = my - ((my - st.panY) / st.zoom) * newZoom;
+      st.zoom = newZoom;
+      updateTransform();
+    }, { passive: false });
+
+    svgEl.addEventListener('mousedown', function(e) {
+      if (e.button !== 0) return;
+      var nodeEl = getNodeEl(e.target);
+      // 检查是否点击了节点上的按钮
+      if (nodeEl && (e.target.closest('.rg-node-conn-btn') || e.target.closest('.rg-node-del-btn'))) return;
+      // 检查是否点击了缩放按钮或添加按钮
+      if (e.target.closest('.rg-zoom-btn') || e.target.closest('.rg-add-node-btn')) return;
+      // 点击连线标签（编辑模式）→ 编辑
+      if (editMode && e.target.classList.contains('rg-edge-label')) {
+        return;
+      }
+      // 连线模式下点击空白取消
+      if (st.connSource && !nodeEl) { hideConnToast(); return; }
+      // 连线模式下点击目标节点
+      if (st.connSource && nodeEl) {
+        var targetId = nodeEl.getAttribute('data-node-id');
+        if (targetId && targetId !== st.connSource) {
+          finishRouteConnection(regionId, st.connSource, targetId);
+        }
+        hideConnToast();
+        return;
+      }
+
+      st.dragging = true;
+      st.dragStartX = e.clientX;
+      st.dragStartY = e.clientY;
+      if (nodeEl && editMode) {
+        st.dragNodeId = nodeEl.getAttribute('data-node-id');
+        container.style.cursor = 'grabbing';
+      } else {
+        st.dragNodeId = null;
+        st.startPanX = st.panX;
+        st.startPanY = st.panY;
+        container.classList.add('grabbing');
+      }
+      e.stopPropagation();
+    });
+
+    container._rgCleanup.mousemove = function(e) {
+      if (!st.dragging) return;
+      var dx2 = e.clientX - st.dragStartX;
+      var dy2 = e.clientY - st.dragStartY;
+      if (st.dragNodeId) {
+        var sdX2 = dx2 / st.zoom;
+        var sdY2 = dy2 / st.zoom;
+        var fo2 = svgEl.querySelector('.rg-node-card[data-node-id="' + st.dragNodeId + '"]');
+        if (!fo2) return;
+        fo2 = fo2.closest('foreignObject');
+        if (!fo2) return;
+        if (!fo2._startFOX) {
+          fo2._startFOX = parseFloat(fo2.getAttribute('x'));
+          fo2._startFOY = parseFloat(fo2.getAttribute('y'));
+        }
+        var nX = fo2._startFOX + sdX2;
+        var nY = fo2._startFOY + sdY2;
+        nX = Math.max(-nodeW / 2, Math.min(800 - nodeW / 2, nX));
+        nY = Math.max(-nodeH / 2, Math.min(500 - nodeH / 2, nY));
+        fo2.setAttribute('x', nX);
+        fo2.setAttribute('y', nY);
+        updateNodeEdges(st.dragNodeId);
+      } else {
+        st.panX = st.startPanX + dx2;
+        st.panY = st.startPanY + dy2;
+        updateTransform();
+      }
+    };
+    window.addEventListener('mousemove', container._rgCleanup.mousemove);
+
+    container._rgCleanup.mouseup = function(e) {
+      if (!st.dragging) return;
+      var dx = Math.abs(e.clientX - st.dragStartX);
+      var dy = Math.abs(e.clientY - st.dragStartY);
+      var wasDrag = dx > 3 || dy > 3;
+      if (st.dragNodeId) {
+        var fo = svgEl.querySelector('.rg-node-card[data-node-id="' + st.dragNodeId + '"]');
+        if (fo) {
+          fo = fo.closest('foreignObject');
+          if (fo) { delete fo._startFOX; delete fo._startFOY; }
+        }
+        if (wasDrag) { saveRouteGraphData(regionId); updateBadges(svgEl); }
+      }
+      st.dragging = false;
+      st.dragNodeId = null;
+      container.style.cursor = '';
+      container.classList.remove('grabbing');
+    };
+    window.addEventListener('mouseup', container._rgCleanup.mouseup);
+
+    // 双击事件 (编辑节点 / 编辑连线标签)
+    container.addEventListener('dblclick', function(e) {
+      if (!editMode) return;
+      // 双击连线标签
+      if (e.target.classList.contains('rg-edge-label')) {
+        var from = e.target.getAttribute('data-from');
+        var to = e.target.getAttribute('data-to');
+        var edgeKey = from + '|' + to;
+        editRouteEdgeLabel(container, regionId, from, to, e.target);
+        return;
+      }
+      // 双击节点
+      var nodeEl = getNodeEl(e.target);
+      if (nodeEl) {
+        editRouteNode(container, regionId, nodeEl);
+        return;
+      }
+    });
+
+    // 点击事件 (通过委托处理按钮)
+    container.addEventListener('click', function(e) {
+      // 缩放按钮
+      var zoomBtn = e.target.closest('.rg-zoom-btn');
+      if (zoomBtn) {
+        var action = zoomBtn.getAttribute('data-zoom');
+        var rect = svgEl.getBoundingClientRect();
+        var cx = rect.width / 2, cy = rect.height / 2;
+        if (action === 'in') {
+          var nz = Math.min(2.0, st.zoom * 1.2);
+          st.panX = cx - ((cx - st.panX) / st.zoom) * nz;
+          st.panY = cy - ((cy - st.panY) / st.zoom) * nz;
+          st.zoom = nz;
+        } else if (action === 'out') {
+          var nz2 = Math.max(0.3, st.zoom / 1.2);
+          st.panX = cx - ((cx - st.panX) / st.zoom) * nz2;
+          st.panY = cy - ((cy - st.panY) / st.zoom) * nz2;
+          st.zoom = nz2;
+        } else {
+          st.zoom = 1; st.panX = 0; st.panY = 0;
+        }
+        updateTransform();
+        return;
+      }
+      // 添加节点按钮
+      if (e.target.closest('.rg-add-node-btn')) {
+        addRouteGraphNode(container, regionId);
+        return;
+      }
+      // 节点连接按钮
+      var connBtn = e.target.closest('.rg-node-conn-btn');
+      if (connBtn && editMode) {
+        var nid = connBtn.getAttribute('data-node-id');
+        st.connSource = nid;
+        showConnToast();
+        return;
+      }
+      // 节点删除按钮
+      var delBtn = e.target.closest('.rg-node-del-btn');
+      if (delBtn && editMode) {
+        var dnid = delBtn.getAttribute('data-node-id');
+        deleteRouteGraphNode(container, regionId, dnid);
+        return;
+      }
+      // 连线点击 (编辑模式 → 删除)
+      if (editMode && e.target.classList.contains('rg-edge-hit')) {
+        var from = e.target.getAttribute('data-from');
+        var to = e.target.getAttribute('data-to');
+        deleteRouteEdge(container, regionId, from, to);
+        return;
+      }
+      // 连线标签双击处理在 dblclick 中
+    });
+
+    // 键盘事件
+    container._rgCleanup.keydown = function(e) {
+      if (e.key === 'Escape' && st.connSource) { hideConnToast(); }
+    };
+    document.addEventListener('keydown', container._rgCleanup.keydown);
+  }
+
+  function updateBadges(svgEl) {
+    var cards = svgEl.querySelectorAll('.rg-node-card');
+    for (var i = 0; i < cards.length; i++) {
+      var badge = cards[i].querySelector('.rg-node-badge');
+      if (badge) badge.textContent = i + 1;
+    }
+  }
+
+  function addRouteGraphNode(container, regionId) {
+    var st = _rgStates[regionId];
+    var svgEl = container.querySelector('svg');
+    if (!svgEl) return;
+    // 在视口中心创建
+    var rect = svgEl.getBoundingClientRect();
+    var vbW = 800, vbH = 500;
+    var svgRectW = rect.width, svgRectH = rect.height;
+    var scaleX = vbW / svgRectW, scaleY = vbH / svgRectH;
+    var viewCenterX = (svgRectW / 2 - st.panX) / st.zoom * scaleX;
+    var viewCenterY = (svgRectH / 2 - st.panY) / st.zoom * scaleY;
+    // 添加一些随机偏移
+    var cx = Math.round(viewCenterX + (Math.random() - 0.5) * 100);
+    var cy = Math.round(viewCenterY + (Math.random() - 0.5) * 100);
+    cx = Math.max(65, Math.min(vbW - 65, cx));
+    cy = Math.max(45, Math.min(vbH - 45, cy));
+    var nodeId = 'rn-' + Date.now();
+    var route = getRouteData(regionId);
+    route.nodes.push({ id: nodeId, name: '', desc: '', x: cx, y: cy });
+    saveData();
+    renderRouteGraph('rgContainer-' + regionId, regionId);
+  }
+
+  function deleteRouteGraphNode(container, regionId, nodeId) {
+    var route = getRouteData(regionId);
+    route.nodes = route.nodes.filter(function(n) { return n.id !== nodeId; });
+    route.edges = route.edges.filter(function(e) { return e.from !== nodeId && e.to !== nodeId; });
+    saveData();
+    renderRouteGraph('rgContainer-' + regionId, regionId);
+  }
+
+  function finishRouteConnection(regionId, fromId, toId) {
+    var route = getRouteData(regionId);
+    var exists = route.edges.some(function(e) { return e.from === fromId && e.to === toId; });
+    if (!exists) {
+      route.edges.push({ from: fromId, to: toId, label: '' });
+      saveData();
+      renderRouteGraph('rgContainer-' + regionId, regionId);
+    }
+  }
+
+  function editRouteNode(container, regionId, nodeEl) {
+    var nodeId = nodeEl.getAttribute('data-node-id');
+    var nameEl = nodeEl.querySelector('.rg-node-name');
+    var descEl = nodeEl.querySelector('.rg-node-desc');
+    var name = nameEl ? nameEl.textContent : '';
+    var desc = descEl ? descEl.textContent : '';
+    // 移除已有 popup
+    var oldPopup = container.querySelector('.rg-edit-popup');
+    if (oldPopup) oldPopup.remove();
+    var popup = document.createElement('div');
+    popup.className = 'rg-edit-popup';
+    popup.innerHTML = '<input class="rg-edit-name" value="' + escAttr(name) + '" placeholder="节点名称">'
+      + '<input class="rg-edit-desc" value="' + escAttr(desc) + '" placeholder="节点描述">'
+      + '<div class="rg-edit-popup-actions"><button class="rg-edit-save">保存</button><button class="rg-edit-cancel">取消</button></div>';
+    container.appendChild(popup);
+    var nameInp = popup.querySelector('.rg-edit-name');
+    var descInp = popup.querySelector('.rg-edit-desc');
+    nameInp.focus();
+    nameInp.select();
+    function save() {
+      var route = getRouteData(regionId);
+      var node = route.nodes.find(function(n) { return n.id === nodeId; });
+      if (node) {
+        node.name = nameInp.value.trim();
+        node.desc = descInp.value.trim();
+        saveData();
+        renderRouteGraph('rgContainer-' + regionId, regionId);
+      }
+      popup.remove();
+    }
+    function cancel() { popup.remove(); }
+    popup.querySelector('.rg-edit-save').addEventListener('click', save);
+    popup.querySelector('.rg-edit-cancel').addEventListener('click', cancel);
+    nameInp.addEventListener('keydown', function(e) { if (e.key === 'Enter') save(); if (e.key === 'Escape') cancel(); });
+    descInp.addEventListener('keydown', function(e) { if (e.key === 'Escape') cancel(); });
+  }
+
+  function editRouteEdgeLabel(container, regionId, fromId, toId, textEl) {
+    var oldPopup = container.querySelector('.rg-edit-popup');
+    if (oldPopup) oldPopup.remove();
+    var popup = document.createElement('div');
+    popup.className = 'rg-edit-popup';
+    popup.innerHTML = '<input class="rg-edit-name" value="' + escAttr(textEl.textContent) + '" placeholder="移动方式（如：步行、攀爬…）">'
+      + '<div class="rg-edit-popup-actions"><button class="rg-edit-save">保存</button><button class="rg-edit-cancel">取消</button></div>';
+    container.appendChild(popup);
+    var inp = popup.querySelector('.rg-edit-name');
+    inp.focus();
+    inp.select();
+    function save() {
+      var route = getRouteData(regionId);
+      var edge = route.edges.find(function(e) { return e.from === fromId && e.to === toId; });
+      if (edge) { edge.label = inp.value.trim(); saveData(); }
+      renderRouteGraph('rgContainer-' + regionId, regionId);
+      popup.remove();
+    }
+    function cancel() { popup.remove(); }
+    popup.querySelector('.rg-edit-save').addEventListener('click', save);
+    popup.querySelector('.rg-edit-cancel').addEventListener('click', cancel);
+    inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') save(); if (e.key === 'Escape') cancel(); });
+  }
+
+  function deleteRouteEdge(container, regionId, fromId, toId) {
+    var route = getRouteData(regionId);
+    route.edges = route.edges.filter(function(e) { return !(e.from === fromId && e.to === toId); });
+    saveData();
+    renderRouteGraph('rgContainer-' + regionId, regionId);
   }
 
   window._saveRegionInline = saveRegionInline;
   window._addRegionTag = addRegionTag;
   window._addRegionLandmark = addRegionLandmark;
-  window._addRouteNode = addRouteNode;
-  window._moveRouteNode = moveRouteNode;
 
   function openLandmarkModal(name, desc, color) {
     var overlay = document.getElementById('lmModal');
@@ -2206,25 +2634,9 @@
       sectionsHTML += '</div>'; // .rd-sections-grid
 
       // 路线预览 (全宽, 可编辑)
-      var route = r.route || [];
       sectionsHTML += '<div class="rd-section rd-section-full">';
       sectionsHTML += '<div class="rd-section-title"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M3 3h18v4H3V3zm0 6h12v4H3V9zm0 6h16v4H3v-4z" fill="currentColor"/></svg>路线预览</div>';
-      sectionsHTML += '<div class="rd-route-flow" id="rdRouteFlow-' + regionId + '">';
-      route.forEach(function(node, j) {
-        if (j > 0) sectionsHTML += '<div class="rd-route-connector"></div>';
-        sectionsHTML += '<div class="rd-route-node rd-landmark-edit" data-rd-route-node="' + j + '" data-rd-route-id="' + escAttr(node.id || '') + '">';
-        sectionsHTML += '<span class="rd-route-node-index">' + (j + 1) + '</span>';
-        sectionsHTML += '<div class="rd-route-node-controls">';
-        if (j > 0) sectionsHTML += '<button class="rd-route-move-btn" title="上移" onclick="window._moveRouteNode(\'' + regionId + '\',' + j + ',-1)">&#9650;</button>';
-        if (j < route.length - 1) sectionsHTML += '<button class="rd-route-move-btn" title="下移" onclick="window._moveRouteNode(\'' + regionId + '\',' + j + ',1)">&#9660;</button>';
-        sectionsHTML += '<button class="rd-card-remove-btn" title="删除此节点" onclick="var n=this.closest(\'[data-rd-route-node]\');n.nextElementSibling&&n.nextElementSibling.classList.contains(\'rd-route-connector\')&&n.nextElementSibling.remove();n.previousElementSibling&&n.previousElementSibling.classList.contains(\'rd-route-connector\')&&n.previousElementSibling.remove();n.remove();window._saveRegionInline(\'' + regionId + '\')">&times;</button>';
-        sectionsHTML += '</div>';
-        sectionsHTML += '<input class="rd-inline-input rd-route-node-name" data-rd-route-name data-rd-region="' + regionId + '" value="' + escAttr(node.name) + '" placeholder="节点名称">';
-        sectionsHTML += '<textarea class="rd-inline-textarea rd-route-node-desc" data-rd-route-desc data-rd-region="' + regionId + '" placeholder="节点描述">' + escAttr(node.desc || '') + '</textarea>';
-        sectionsHTML += '</div>';
-      });
-      sectionsHTML += '<button class="rd-route-add-btn" onclick="window._addRouteNode(\'' + regionId + '\')">+ 添加节点</button>';
-      sectionsHTML += '</div>';
+      sectionsHTML += '<div id="rgContainer-' + regionId + '" class="rg-container" style="min-height:450px;"></div>';
       sectionsHTML += '</div>';
 
       // 连接区域 (全宽, 只读)
@@ -2257,6 +2669,7 @@
       sectionsHTML += '</div>';
 
       elSections.innerHTML = sectionsHTML;
+      renderRouteGraph('rgContainer-' + regionId, regionId);
     } else {
       // ========== 查看模式：纯静态展示 ==========
       elTitle.textContent = r.name;
@@ -2317,23 +2730,9 @@
       sectionsHTML += '</div>'; // .rd-sections-grid
 
       // 路线预览 (全宽)
-      var route = r.route || [];
       sectionsHTML += '<div class="rd-section rd-section-full">';
       sectionsHTML += '<div class="rd-section-title"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M3 3h18v4H3V3zm0 6h12v4H3V9zm0 6h16v4H3v-4z" fill="currentColor"/></svg>路线预览</div>';
-      if (route.length > 0) {
-        sectionsHTML += '<div class="rd-route-flow">';
-        route.forEach(function(node, j) {
-          if (j > 0) sectionsHTML += '<div class="rd-route-connector"></div>';
-          sectionsHTML += '<div class="rd-route-node">';
-          sectionsHTML += '<span class="rd-route-node-index">' + (j + 1) + '</span>';
-          sectionsHTML += '<div class="rd-route-node-name">' + escAttr(node.name) + '</div>';
-          sectionsHTML += '<div class="rd-route-node-desc">' + escAttr(node.desc || '') + '</div>';
-          sectionsHTML += '</div>';
-        });
-        sectionsHTML += '</div>';
-      } else {
-        sectionsHTML += '<div style="font-size:0.78rem;color:var(--text-muted);padding:12px 0;">暂无路线数据</div>';
-      }
+      sectionsHTML += '<div id="rgContainer-' + regionId + '" class="rg-container" style="min-height:450px;"></div>';
       sectionsHTML += '</div>';
 
       // 连接区域 (全宽)
@@ -2366,6 +2765,7 @@
       sectionsHTML += '</div>';
 
       elSections.innerHTML = sectionsHTML;
+      renderRouteGraph('rgContainer-' + regionId, regionId);
     }
 
     // 3D 模型预览 & 选择器

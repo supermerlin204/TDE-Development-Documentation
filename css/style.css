@@ -1435,10 +1435,6 @@ body.edit-mode .rg-edge-label:hover { fill: var(--cyan); }
   .rd-graphic.has-model { min-height: 45vh; }
   .rd-graphic-inner { width: 80px; height: 80px; }
   .rd-sections-grid { grid-template-columns: 1fr; }
-  .rd-route-flow { flex-wrap: wrap; gap: 12px; justify-content: center; }
-  .rd-route-connector { display: none; }
-  .rd-route-add-btn { width: 150px; }
-  .rd-route-node { width: 140px; min-height: 140px; }
 }
 
 /* --- World Map --- */

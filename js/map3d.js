@@ -6,6 +6,21 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+// Draco 解码器
+var dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('lib/draco/gltf/');
+
+// 全局 GLTFLoader（带 Draco 支持）
+var _gltfLoader = null;
+function getGltfLoader() {
+  if (!_gltfLoader) {
+    _gltfLoader = new GLTFLoader();
+    _gltfLoader.setDRACOLoader(dracoLoader);
+  }
+  return _gltfLoader;
+}
 
 // ============================
 // Three.js 场景

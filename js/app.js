@@ -1941,7 +1941,50 @@
 
     // 路线节点图 — 由 saveRouteGraphData 从 DOM 读取并写回 r.route
 
+    // Boss 列表
+    var bossEls = document.querySelectorAll('#page-region-detail [data-rd-boss]');
+    r.bosses = Array.from(bossEls).map(function(el) { return el.getAttribute('data-rd-boss'); });
+
     saveData();
+  }
+
+  function addRegionBoss(regionId) {
+    var list = document.querySelector('#page-region-detail .rd-boss-list');
+    if (!list) return;
+    // 关闭已有下拉
+    var oldDD = list.querySelector('.rd-boss-dd');
+    if (oldDD) { oldDD.remove(); return; }
+    // 获取已添加的 Boss 名称
+    var existing = Array.from(list.querySelectorAll('[data-rd-boss]')).map(function(el) { return el.getAttribute('data-rd-boss'); });
+    var available = (TDE_DATA.bosses || []).filter(function(b) { return existing.indexOf(b.name) === -1; });
+    if (!available.length) return;
+    var dd = document.createElement('div');
+    dd.className = 'rd-boss-dd';
+    available.forEach(function(b) {
+      var item = document.createElement('div');
+      item.className = 'rd-boss-dd-item';
+      item.textContent = b.name;
+      item.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        var chip = document.createElement('span');
+        chip.className = 'rd-boss-chip';
+        chip.setAttribute('data-rd-boss', b.name);
+        chip.innerHTML = escAttr(b.name) + '<button class="rd-boss-remove" title="移除Boss" onclick="this.parentElement.remove();window._saveRegionInline(\'' + regionId + '\')">&times;</button>';
+        list.insertBefore(chip, list.querySelector('.rd-boss-add-btn'));
+        dd.remove();
+        window._saveRegionInline(regionId);
+      });
+      dd.appendChild(item);
+    });
+    // 点击空白关闭
+    function closeDD(e) {
+      if (!dd.contains(e.target) && e.target !== list.querySelector('.rd-boss-add-btn')) {
+        dd.remove();
+        document.removeEventListener('mousedown', closeDD);
+      }
+    }
+    setTimeout(function() { document.addEventListener('mousedown', closeDD); }, 0);
+    list.appendChild(dd);
   }
 
   function addRegionTag(regionId) {
@@ -2566,6 +2609,7 @@
   window._saveRegionInline = saveRegionInline;
   window._addRegionTag = addRegionTag;
   window._addRegionLandmark = addRegionLandmark;
+  window._addRegionBoss = addRegionBoss;
 
   function openLandmarkModal(name, desc, color) {
     var overlay = document.getElementById('lmModal');
@@ -2690,28 +2734,16 @@
       sectionsHTML += '</div>';
       sectionsHTML += '</div>';
 
-      // Boss 列表 (只读)
+      // Boss 列表 (可编辑 — 从敌人图鉴选择)
       sectionsHTML += '<div class="rd-section">';
       sectionsHTML += '<div class="rd-section-title"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>区域Boss</div>';
+      sectionsHTML += '<div class="rd-boss-list">';
       var bosses = r.bosses || [];
-      var hasBosses = bosses.length > 0 && !(bosses.length === 1 && bosses[0] === '无');
-      if (hasBosses) {
-        sectionsHTML += '<div class="rd-boss-list">';
-        bosses.forEach(function(bossName) {
-          var bossData = TDE_DATA.bosses.find(function(b) { return b.name === bossName; });
-          if (bossData) {
-            sectionsHTML += '<div class="rd-boss-item" onclick="window._showBossDetail(\'' + bossData.id + '\')">';
-            sectionsHTML += '<svg viewBox="0 0 24 24" width="14" height="14" style="fill:var(--cyan);flex-shrink:0"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
-            sectionsHTML += '<span>' + bossName + '</span>';
-            sectionsHTML += '</div>';
-          } else {
-            sectionsHTML += '<div class="rd-boss-item" style="cursor:default;border-left-color:var(--text-muted)"><span style="color:var(--text-muted)">' + bossName + '</span></div>';
-          }
-        });
-        sectionsHTML += '</div>';
-      } else {
-        sectionsHTML += '<div style="font-size:0.78rem;color:var(--text-muted);padding:12px 0;">暂无Boss数据</div>';
-      }
+      bosses.forEach(function(bossName) {
+        sectionsHTML += '<span class="rd-boss-chip" data-rd-boss="' + escAttr(bossName) + '">' + escAttr(bossName) + '<button class="rd-boss-remove" title="移除Boss" onclick="this.parentElement.remove();window._saveRegionInline(\'' + regionId + '\')">&times;</button></span>';
+      });
+      sectionsHTML += '<button class="rd-boss-add-btn rd-add-btn" onclick="window._addRegionBoss(\'' + regionId + '\')">+ 添加Boss</button>';
+      sectionsHTML += '</div>';
       sectionsHTML += '</div>';
       sectionsHTML += '</div>'; // .rd-sections-grid
 

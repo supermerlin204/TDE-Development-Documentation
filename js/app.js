@@ -1604,6 +1604,34 @@
     };
     tryNextImage();
 
+    // 多图画廊 — 扫描 _1 ~ _5 的编号变体
+    var galleryEl = document.getElementById('bdImageGallery');
+    var MAX_VARIANT = 5;
+    var galleryHTML = '';
+    for (var v = 1; v <= MAX_VARIANT; v++) {
+      var gCandidates = [];
+      exts.forEach(function(ext) { gCandidates.push('img/enemies/' + encodeURIComponent(enemy.name) + '_' + v + ext); });
+      exts.forEach(function(ext) { gCandidates.push('img/enemies/' + enemy.id + '_' + v + ext); });
+      var gSrc = gCandidates[0];
+      var gFallback = JSON.stringify(gCandidates.slice(1));
+      galleryHTML += '<div class="bd-gallery-thumb" data-variant="' + v + '" onclick="var main=document.getElementById(\'bdImage\');var thumbImg=this.querySelector(\'img\');if(!thumbImg.naturalWidth)return;main.src=thumbImg.src;main.style.display=\'block\';document.getElementById(\'bdImagePlaceholder\').style.display=\'none\';var thumbs=this.parentElement.querySelectorAll(\'.bd-gallery-thumb\');for(var i=0;i<thumbs.length;i++)thumbs[i].classList.remove(\'active\');this.classList.add(\'active\')">'
+        + '<img src="' + gSrc + '" alt="" data-fallback=\'' + gFallback + '\' onerror="var f=JSON.parse(this.getAttribute(\'data-fallback\'));if(f.length){this.setAttribute(\'data-fallback\',JSON.stringify(f.slice(1)));this.src=f[0]}else{this.parentElement.style.display=\'none\'}" onload="this.parentElement.style.display=\'\'">'
+        + '</div>';
+    }
+    galleryEl.innerHTML = galleryHTML;
+    // 清理掉空的 thumb
+    setTimeout(function() {
+      var thumbs = galleryEl.querySelectorAll('.bd-gallery-thumb');
+      var visible = [];
+      for (var t = 0; t < thumbs.length; t++) {
+        if (thumbs[t].style.display !== 'none' && thumbs[t].querySelector('img').style.display !== 'none') {
+          visible.push(thumbs[t]);
+        } else {
+          thumbs[t].remove();
+        }
+      }
+    }, 600);
+
     imgInput.value = enemy.image || '';
     imgInput.placeholder = 'img/enemies/' + enemy.name + '.gif';
     document.getElementById('bdImageControls').style.display = editMode ? 'flex' : 'none';

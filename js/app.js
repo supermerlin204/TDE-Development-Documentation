@@ -1638,11 +1638,11 @@
     document.getElementById('bdMdView').innerHTML = descText ? renderMarkdown(descText) : '<div class="bd-md-empty">暂无介绍，开启编辑模式编写</div>';
     document.getElementById('bdMdTextarea').value = descText;
 
-    // 背景故事
-    var hasLore = enemy.lore !== undefined;
+    // 背景故事 (有内容时显示，编辑模式下始终可见)
+    var loreText = enemy.lore || '';
+    var hasLore = !!loreText || editMode;
     document.getElementById('bdTabLore').style.display = hasLore ? '' : 'none';
     if (hasLore) {
-      var loreText = enemy.lore || '';
       document.getElementById('bdLoreView').innerHTML = loreText ? renderMarkdown(loreText) : '<div class="bd-md-empty">暂无背景故事，开启编辑模式编写</div>';
       document.getElementById('bdLoreTextarea').value = loreText;
     }

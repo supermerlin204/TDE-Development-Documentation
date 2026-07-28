@@ -1511,28 +1511,40 @@
       badgeEl.onclick = null;
     }
 
-    // 图片 — 优先使用自定义路径，否则按约定读取 img/enemies/{id}.gif
+    // 图片 — 优先自定义路径，其次中文名，最后英文 id
     var imgEl = document.getElementById('bdImage');
     var placeholderEl = document.getElementById('bdImagePlaceholder');
     var imgInput = document.getElementById('bdImageInput');
-    var defaultPath = 'img/enemies/' + enemy.id + '.gif';
-    var imgSrc = enemy.image || defaultPath;
+    var exts = ['.gif', '.png', '.webp', '.jpg'];
+    var candidates = [];
+    if (enemy.image) candidates.push(enemy.image);
+    // 中文名 + 各扩展名
+    exts.forEach(function(ext) { candidates.push('img/enemies/' + encodeURIComponent(enemy.name) + ext); });
+    // 英文 id + 各扩展名
+    exts.forEach(function(ext) { candidates.push('img/enemies/' + enemy.id + ext); });
 
-    imgEl.onerror = function() {
-      imgEl.style.display = 'none';
-      placeholderEl.style.display = '';
-    };
+    var tryIdx = 0;
+    function tryNextImage() {
+      if (tryIdx < candidates.length) {
+        imgEl.src = candidates[tryIdx];
+        tryIdx++;
+      } else {
+        imgEl.style.display = 'none';
+        placeholderEl.style.display = '';
+      }
+    }
+    imgEl.onerror = tryNextImage;
     imgEl.onload = function() {
       imgEl.style.display = 'block';
       placeholderEl.style.display = 'none';
     };
-    imgEl.src = imgSrc;
+    tryNextImage();
 
     imgInput.value = enemy.image || '';
-    imgInput.placeholder = defaultPath;
+    imgInput.placeholder = 'img/enemies/' + enemy.name + '.gif';
     document.getElementById('bdImageControls').style.display = editMode ? 'flex' : 'none';
     document.getElementById('bdImageWrapper').onclick = editMode ? function() {
-      var path = prompt('输入图片路径（留空则使用默认: ' + defaultPath + '）:', enemy.image || '');
+      var path = prompt('输入图片路径（留空则自动匹配 img/enemies/ 下同名文件）:', enemy.image || '');
       if (path !== null) {
         enemy.image = path.trim();
         saveData();

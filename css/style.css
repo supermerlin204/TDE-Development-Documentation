@@ -780,6 +780,51 @@ body.edit-mode .project-intro-text {
   line-height: 1.5;
 }
 
+/* --- Faction Filter --- */
+.faction-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+.faction-filter-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-right: 4px;
+}
+.faction-chip {
+  padding: 5px 14px;
+  font-size: 0.72rem;
+  border-radius: 20px;
+  border: 1px solid var(--border-card);
+  background: rgba(0,0,0,0.2);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+  white-space: nowrap;
+}
+.faction-chip:hover {
+  border-color: rgba(0,191,165,0.4);
+  color: var(--text-secondary);
+}
+.faction-chip.active {
+  background: rgba(0,191,165,0.12);
+  border-color: var(--cyan);
+  color: var(--cyan-bright);
+}
+.faction-chip .count {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+.faction-chip.active .count {
+  color: var(--cyan);
+}
+
 /* --- Bestiary Cards --- */
 .boss-grid {
   display: grid;
@@ -891,6 +936,31 @@ body.edit-mode .project-intro-text {
 .boss-resist .gloss-link:hover { color: #ff7373; background: rgba(255,82,82,0.18); }
 
 .boss-desc { font-size: 0.78rem; color: var(--text-secondary); margin-top: 8px; }
+
+.faction-badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(0,191,165,0.06);
+  border: 1px solid rgba(0,191,165,0.18);
+  color: var(--cyan);
+  margin: 4px 0 2px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.faction-badge:hover {
+  background: rgba(0,191,165,0.14);
+  border-color: var(--cyan);
+}
+
+.empty-hint {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}
 .boss-location { font-size: 0.7rem; color: var(--text-muted); margin-top: 6px; }
 .boss-drops { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .boss-drop {

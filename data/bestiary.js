@@ -4,6 +4,7 @@ TDE_DATA.bosses = [
     id: 'void_herald',
     name: '虚空先驱·深渊之喉',
     image: '',
+    faction: 'void-covenant',
     difficulty: 'legendary',
     hp: '18,500',
     phases: 3,
@@ -19,6 +20,7 @@ TDE_DATA.bosses = [
     id: 'frost_king',
     name: '冰霜之王·水晶尖塔之主',
     image: '',
+    faction: '',
     difficulty: 'hard',
     hp: '12,800',
     phases: 2,
@@ -34,6 +36,7 @@ TDE_DATA.bosses = [
     id: 'thorn_matriarch',
     name: '荆棘母体·腐朽之花',
     image: '',
+    faction: '',
     difficulty: 'medium',
     hp: '9,200',
     phases: 2,
@@ -49,6 +52,7 @@ TDE_DATA.bosses = [
     id: 'clockwork_sentinel',
     name: '发条哨兵·时间守护者',
     image: '',
+    faction: '',
     difficulty: 'hard',
     hp: '14,000',
     phases: 3,
@@ -64,6 +68,7 @@ TDE_DATA.bosses = [
     id: 'dreamless_one',
     name: '无眠者·寂静本体',
     image: '',
+    faction: 'cult-silence',
     difficulty: 'legendary',
     hp: '24,000',
     phases: 4,
@@ -79,6 +84,7 @@ TDE_DATA.bosses = [
     id: 'ashen_knight',
     name: '灰烬骑士奥德里克',
     image: '',
+    faction: 'ash-knights',
     difficulty: 'medium',
     hp: '7,500',
     phases: 1,
@@ -93,17 +99,17 @@ TDE_DATA.bosses = [
 ];
 
 TDE_DATA.elites = [
-  { id: 'void_walker', name: '虚空行者', image: '', desc: '能够短距离传送的人形敌人，从死角发动攻击。掉落虚空碎片。', location: '沉没大圣堂', hp: '2,400' },
-  { id: 'crystal_golem', name: '水晶魔像', image: '', desc: '行动缓慢但几乎不可摧毁的构造体。背部有弱点结晶。', location: '水晶尖塔', hp: '5,000' },
-  { id: 'rot_hound', name: '腐化猎犬首领', image: '', desc: '能强化附近小型猎犬的族群首领。速度快，极具攻击性。', location: '碧翠谷', hp: '1,800' },
-  { id: 'time_wraith', name: '时光魅影', image: '', desc: '命中后减缓玩家移动速度的灵体敌人。', location: '时光守护者遗迹', hp: '1,500' },
-  { id: 'shade_assassin', name: '暗影刺客', image: '', desc: '攻击前完全隐形。仔细听脚步声判断其位置。', location: '各地（仅夜间出没）', hp: '900' }
+  { id: 'void_walker', name: '虚空行者', image: '', faction: 'void-covenant', desc: '能够短距离传送的人形敌人，从死角发动攻击。掉落虚空碎片。', location: '沉没大圣堂', hp: '2,400' },
+  { id: 'crystal_golem', name: '水晶魔像', image: '', faction: '', desc: '行动缓慢但几乎不可摧毁的构造体。背部有弱点结晶。', location: '水晶尖塔', hp: '5,000' },
+  { id: 'rot_hound', name: '腐化猎犬首领', image: '', faction: '', desc: '能强化附近小型猎犬的族群首领。速度快，极具攻击性。', location: '碧翠谷', hp: '1,800' },
+  { id: 'time_wraith', name: '时光魅影', image: '', faction: '', desc: '命中后减缓玩家移动速度的灵体敌人。', location: '时光守护者遗迹', hp: '1,500' },
+  { id: 'shade_assassin', name: '暗影刺客', image: '', faction: '', desc: '攻击前完全隐形。仔细听脚步声判断其位置。', location: '各地（仅夜间出没）', hp: '900' }
 ];
 
 TDE_DATA.common = [
-  { id: 'husk', name: '空壳', image: '', desc: '最基础的敌人。攻击缓慢、前摇明显。曾是无眠之地的普通居民。', location: '全区域', hp: '200-600' },
-  { id: 'ember_thrall', name: '余烬奴仆', image: '', desc: '携带阴燃之刃，攻击附带微量火焰累积。', location: '余烬火山口、余烬锻炉', hp: '400' },
-  { id: 'frost_spider', name: '冰霜蜘蛛', image: '', desc: '喷射减速蛛网。在狭窄通道中集群出没。', location: '水晶尖塔', hp: '250' },
-  { id: 'void_spawn', name: '虚空幼体', image: '', desc: '小型快速生物，死亡时爆炸造成虚空伤害。', location: '沉没大圣堂', hp: '150' },
-  { id: 'corrupted_scholar', name: '腐化学者', image: '', desc: '远程施法者。发射追踪暗黑弹。脆弱但集群时非常危险。', location: '寂静大圣堂', hp: '350' }
+  { id: 'husk', name: '空壳', image: '', faction: '', desc: '最基础的敌人。攻击缓慢、前摇明显。曾是无眠之地的普通居民。', location: '全区域', hp: '200-600' },
+  { id: 'ember_thrall', name: '余烬奴仆', image: '', faction: 'ash-knights', desc: '携带阴燃之刃，攻击附带微量火焰累积。', location: '余烬火山口、余烬锻炉', hp: '400' },
+  { id: 'frost_spider', name: '冰霜蜘蛛', image: '', faction: '', desc: '喷射减速蛛网。在狭窄通道中集群出没。', location: '水晶尖塔', hp: '250' },
+  { id: 'void_spawn', name: '虚空幼体', image: '', faction: 'void-covenant', desc: '小型快速生物，死亡时爆炸造成虚空伤害。', location: '沉没大圣堂', hp: '150' },
+  { id: 'corrupted_scholar', name: '腐化学者', image: '', faction: 'cult-silence', desc: '远程施法者。发射追踪暗黑弹。脆弱但集群时非常危险。', location: '寂静大圣堂', hp: '350' }
 ];

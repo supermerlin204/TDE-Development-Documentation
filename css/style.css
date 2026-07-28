@@ -837,7 +837,7 @@ body.edit-mode .project-intro-text {
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
   overflow: hidden;
-  transition: all var(--transition-normal);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
   position: relative;
   cursor: pointer;
 }
@@ -862,6 +862,8 @@ body.edit-mode .project-intro-text {
   height: 100%;
   object-fit: cover;
   display: block;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 .enemy-card-img .img-placeholder {
   width: 48px;
@@ -3087,6 +3089,8 @@ body.edit-mode .bd-image-wrapper:hover .bd-image-placeholder svg {
   height: 100%;
   object-fit: cover;
   display: block;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 /* Content Panel */

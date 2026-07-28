@@ -1697,15 +1697,11 @@
         placeholderEl.style.display = '';
         return;
       }
-      // 移除并重新插入所有 img，同时显示，让 GIF 同步启动
-      for (var j = 0; j < items.length; j++) {
-        var d = items[j].div;
-        if (d.parentNode) d.parentNode.removeChild(d);
-      }
+      // 直接显示所有已加载的图片（GIF在display:none期间不会播放，显示时自然同步）
       for (var k = 0; k < items.length; k++) {
-        galleryEl.appendChild(items[k].div);
         items[k].div.style.display = '';
       }
+      document.getElementById('bdImageWrapper').style.display = '';
       placeholderEl.style.display = 'none';
     }
 

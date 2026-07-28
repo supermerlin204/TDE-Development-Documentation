@@ -1447,11 +1447,17 @@
     var diffClass = (type === 'bosses') ? ' difficulty-' + enemy.difficulty : '';
     var badgeText = type === 'bosses' ? 'BOSS' : (type === 'elites' ? '精英' : '普通');
     var badgeCls = type === 'bosses' ? 'boss-badge' : (type === 'elites' ? 'elite-badge' : 'common-badge');
-    var imgSrc = enemy.image || 'img/enemies/' + enemy.id + '.gif';
+    var exts = ['.gif', '.png', '.webp', '.jpg'];
+	    var imgCandidates = [];
+	    if (enemy.image) imgCandidates.push(enemy.image);
+	    exts.forEach(function(ext) { imgCandidates.push('img/enemies/' + encodeURIComponent(enemy.name) + ext); });
+	    exts.forEach(function(ext) { imgCandidates.push('img/enemies/' + enemy.id + ext); });
+	    var imgSrc = imgCandidates[0];
+	    var imgFallback = JSON.stringify(imgCandidates.slice(1));
     return '<div class="enemy-card' + diffClass + '" ' + editCard(dataKey + '.' + origIdx) + ' onclick="if(!document.body.classList.contains(\'edit-mode\'))window.location.hash=\'' + hash + '\'">'
       + renderCardDelete(dataKey + '.' + origIdx)
       + '<div class="enemy-card-img">'
-        + '<img src="' + imgSrc + '" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'\'">'
+        + '<img src="' + imgSrc + '" alt="" data-fallback=\'' + imgFallback + '\' onerror="var f=JSON.parse(this.getAttribute(\'data-fallback\'));if(f.length){this.setAttribute(\'data-fallback\',JSON.stringify(f.slice(1)));this.src=f[0]}else{this.style.display=\'none\';this.nextElementSibling.style.display=\'\'}">'
         + '<svg class="img-placeholder" viewBox="0 0 24 24" style="display:none"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-2-6.5l-1.5 1.5L12 18l4.5-4.5L15 12l-3 3-3-3z"/></svg>'
         + '<span class="enemy-card-badge ' + badgeCls + '">' + badgeText + '</span>'
       + '</div>'

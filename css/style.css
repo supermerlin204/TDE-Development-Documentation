@@ -3036,43 +3036,6 @@ body.edit-mode .bd-image-wrapper:hover .bd-image-placeholder svg {
   color: var(--text-muted);
 }
 
-.bd-image-controls {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-}
-.bd-image-input {
-  flex: 1;
-  padding: 7px 10px;
-  font-size: 0.72rem;
-  background: rgba(0,0,0,0.3);
-  border: 1px solid rgba(0,191,165,0.2);
-  border-radius: 6px;
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-}
-.bd-image-input:focus {
-  border-color: var(--cyan);
-  outline: none;
-}
-.bd-image-input::placeholder { color: var(--text-muted); }
-.bd-image-btn {
-  padding: 7px 14px;
-  font-size: 0.72rem;
-  background: rgba(0,191,165,0.1);
-  border: 1px solid rgba(0,191,165,0.3);
-  border-radius: 6px;
-  color: var(--cyan);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all var(--transition-fast);
-  font-family: inherit;
-}
-.bd-image-btn:hover {
-  background: rgba(0,191,165,0.2);
-  border-color: var(--cyan-bright);
-}
-
 /* Image Gallery */
 .bd-image-gallery {
   display: flex;
@@ -3427,8 +3390,7 @@ body:not(.edit-mode) .bd-md-edit { display: none; }
 body.edit-mode .bd-md-view { display: none; }
 body:not(.edit-mode) .bd-md-view { display: block; }
 
-/* Edit mode: image controls visible */
-body:not(.edit-mode) .bd-image-controls { display: none; }
+
 
 /* Detail page edit card hover */
 body.edit-mode .bd-image-panel {

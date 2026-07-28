@@ -512,6 +512,7 @@
     'damageTypes': 'attribute',
     'weaknesses': 'attribute',
     'resistances': 'attribute',
+    'faction': 'faction',
     'location': 'region',
     'connections': 'region'
   };
@@ -796,9 +797,9 @@
     // 始终根据数组名生成默认模板
     var _tpl = {
       regions: { name:"XXXXX", level:"1-10", desc:"XXXXX", tags:[], landmarks:[], bosses:["无"], route:{nodes:[],edges:[]}, connections:[] },
-      bosses: { id:"new_boss", name:"XXXXX", image:"", faction:"", difficulty:"中等", hp:"1000", phases:1, location:"XXXXX", desc:"XXXXX", lore:"", drops:[], damageTypes:[], weaknesses:[], resistances:[] },
-      elites: { id:"new_elite", name:"XXXXX", image:"", faction:"", desc:"XXXXX", location:"XXXXX", hp:"500" },
-      common: { id:"new_common", name:"XXXXX", image:"", faction:"", desc:"XXXXX", location:"XXXXX", hp:"200" },
+      bosses: { id:"new_boss", name:"XXXXX", faction:"", difficulty:"中等", phases:1, desc:"XXXXX", lore:"", drops:[], damageTypes:[], weaknesses:[], resistances:[] },
+      elites: { id:"new_elite", name:"XXXXX", faction:"", desc:"XXXXX" },
+      common: { id:"new_common", name:"XXXXX", faction:"", desc:"XXXXX" },
       weapons: { id:"new_weapon", name:"XXXXX", type:"直剑", rarity:"common", dmg:{}, scaling:{}, skill:"XXXXX", desc:"XXXXX" },
       armor: { id:"new_armor", name:"XXXXX", type:"轻甲", weight:"轻", defense:"", desc:"XXXXX" },
       talismans: { id:"new_talisman", name:"XXXXX", desc:"XXXXX", rarity:"common" },
@@ -1430,9 +1431,9 @@
     chipsHTML += '<button class="faction-chip' + (bestiaryFactionFilter === '' ? ' active' : '') + '" data-faction="">全部<span class="count">' + totalCount + '</span></button>';
     // 各阵营
     factions.forEach(function(f) {
-      var count = allEnemies.filter(function(e) { return e.faction === f.id; }).length;
+      var count = allEnemies.filter(function(e) { return e.faction === f.name; }).length;
       if (count > 0) {
-        chipsHTML += '<button class="faction-chip' + (bestiaryFactionFilter === f.id ? ' active' : '') + '" data-faction="' + f.id + '">' + f.name + '<span class="count">' + count + '</span></button>';
+        chipsHTML += '<button class="faction-chip' + (bestiaryFactionFilter === f.name ? ' active' : '') + '" data-faction="' + f.name + '">' + f.name + '<span class="count">' + count + '</span></button>';
       }
     });
     document.getElementById('factionFilter').innerHTML = chipsHTML;
@@ -1454,12 +1455,12 @@
     });
   }
 
-  function _factionBadge(factionId) {
-    if (!factionId) return '';
+  function _factionBadge(factionName) {
+    if (!factionName) return '';
     var faction = null;
     var glossary = TDE_DATA.glossary || [];
     for (var i = 0; i < glossary.length; i++) {
-      if (glossary[i].id === factionId && glossary[i].category === 'faction') {
+      if (glossary[i].name === factionName && glossary[i].category === 'faction') {
         faction = glossary[i];
         break;
       }
@@ -1593,7 +1594,6 @@
 
     // 图片 — 逐个加载，全部就绪后同步显示
     var exts = ['.gif', '.png', '.webp', '.jpg'];
-    var imgInput = document.getElementById('bdImageInput');
     var placeholderEl = document.getElementById('bdImagePlaceholder');
     var galleryEl = document.getElementById('bdImageGallery');
 
@@ -1687,35 +1687,6 @@
     }
     tryNext();
 
-    imgInput.value = enemy.image || '';
-    imgInput.placeholder = 'img/enemies/' + enemy.name + '.gif';
-    document.getElementById('bdImageControls').style.display = editMode ? 'flex' : 'none';
-    document.getElementById('bdImageWrapper').onclick = editMode ? function() {
-      var path = prompt('输入图片路径（留空则自动匹配 img/enemies/ 下同名文件）:', enemy.image || '');
-      if (path !== null) {
-        enemy.image = path.trim();
-        saveData();
-        renderBestiaryDetail(type, id);
-      }
-    } : null;
-
-    // 图片输入按钮
-    document.getElementById('bdImageBtn').onclick = function() {
-      var path = imgInput.value.trim();
-      enemy.image = path;
-      saveData();
-      renderBestiaryDetail(type, id);
-      showSaved();
-    };
-    imgInput.onkeydown = function(e) {
-      if (e.key === 'Enter') {
-        enemy.image = imgInput.value.trim();
-        saveData();
-        renderBestiaryDetail(type, id);
-        showSaved();
-      }
-    };
-
     // Markdown 介绍
     var descText = enemy.desc || '';
     document.getElementById('bdMdView').innerHTML = descText ? renderMarkdown(descText) : '<div class="bd-md-empty">暂无介绍，开启编辑模式编写</div>';
@@ -1769,7 +1740,7 @@
     var factionName = '';
     var factionDesc = '';
     if (enemy.faction) {
-      var factionEntry = (TDE_DATA.glossary || []).find(function(g) { return g.id === enemy.faction && g.category === 'faction'; });
+      var factionEntry = (TDE_DATA.glossary || []).find(function(g) { return g.name === enemy.faction && g.category === 'faction'; });
       if (factionEntry) {
         factionName = factionEntry.name;
         factionDesc = factionEntry.desc || '';
@@ -1779,7 +1750,7 @@
     }
     var factionOptions = '<option value="">— 无 —</option>';
     (TDE_DATA.glossary || []).filter(function(g) { return g.category === 'faction'; }).forEach(function(f) {
-      factionOptions += '<option value="' + f.id + '"' + (enemy.faction === f.id ? ' selected' : '') + '>' + f.name + '</option>';
+      factionOptions += '<option value="' + f.name + '"' + (enemy.faction === f.name ? ' selected' : '') + '>' + f.name + '</option>';
     });
 
     // 种族 (单选，可选)

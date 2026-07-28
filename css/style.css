@@ -2249,6 +2249,10 @@ body.edit-mode .equip-rarity:hover {
   color: var(--cyan-bright);
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ============================================================
    词条系统 (Glossary)
    ============================================================ */

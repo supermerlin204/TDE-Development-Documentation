@@ -2046,16 +2046,19 @@
       // 编辑模式下：可拖拽 + 添加连线 + 双击编辑节点
       var dragAttrs = '';
       var editControls = '';
+      var clickAttr = '';
       if (editMode) {
         dragAttrs = ' onmousedown="window._startDragNode(event,\'' + escAttr(name) + '\')"';
         editControls = '<circle cx="' + (n.x + sz.r1 + 6) + '" cy="' + (n.y - sz.r1 - 2) + '" r="7" fill="rgba(0,240,255,0.25)" stroke="#00f0ff" stroke-width="1" style="cursor:pointer" title="添加连接：' + name + '" onmousedown="event.stopPropagation()" onclick="event.stopPropagation();window._startMapConnection(\'' + escAttr(name) + '\')"/><text x="' + (n.x + sz.r1 + 6) + '" y="' + (n.y - sz.r1 + 2) + '" text-anchor="middle" fill="#00f0ff" font-size="10" font-family="sans-serif" style="cursor:pointer;pointer-events:none;">+</text>';
         // 双击打开节点编辑
         dragAttrs += ' ondblclick="event.stopPropagation();window._editMapNode(\'' + escAttr(name) + '\')"';
+      } else {
+        clickAttr = ' onclick="window._mapClickRegion(\'' + escAttr(name) + '\')"';
       }
 
       var titleText = editMode ? '拖拽移动 / 双击编辑 / 查看区域详情：' + name : '查看区域详情：' + name;
 
-      return '<g class="map-node" data-node-name="' + escAttr(name) + '"' + dragAttrs + ' style="cursor:' + (editMode ? 'grab' : 'pointer') + '" title="' + titleText + '">'
+      return '<g class="map-node" data-node-name="' + escAttr(name) + '"' + dragAttrs + clickAttr + ' style="cursor:' + (editMode ? 'grab' : 'pointer') + '" title="' + titleText + '">'
         + oi.outer + oi.inner
         + '<text class="map-node-label" x="' + n.x + '" y="' + (n.y + sz.r1 + sz.dy) + '" text-anchor="middle" fill="' + n.color + '" font-size="' + sz.fs + '" font-family="sans-serif">' + name + '</text>'
         + subLabel
@@ -2351,7 +2354,7 @@
       if (region) {
         Router.navigate('region/' + region.id);
       } else {
-        Router.navigate('world');
+        Router.navigate('region/' + region.id);
       }
     }
   }

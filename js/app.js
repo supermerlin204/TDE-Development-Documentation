@@ -700,6 +700,68 @@
     }
   }
 
+  // ===================== 搜索下拉选择器 =====================
+  function _ssOpen(input) {
+    var wrap = input.closest('.ss-wrap');
+    var dd = wrap.querySelector('.ss-dropdown');
+    dd.classList.add('open');
+    _ssFilter(input);
+  }
+  function _ssFilter(input) {
+    var wrap = input.closest('.ss-wrap');
+    var dd = wrap.querySelector('.ss-dropdown');
+    var filter = (input.value || '').toLowerCase();
+    var opts = dd.querySelectorAll('.ss-option');
+    var visible = 0;
+    opts.forEach(function(o) {
+      var text = (o.dataset.search || '').toLowerCase();
+      if (!filter || text.indexOf(filter) >= 0) { o.style.display = ''; visible++; }
+      else { o.style.display = 'none'; }
+    });
+    // 高亮第一个
+    var first = dd.querySelector('.ss-option[style=""]');
+    opts.forEach(function(o) { o.classList.remove('highlight'); });
+    if (first) first.classList.add('highlight');
+  }
+  function _ssSelect(option) {
+    var wrap = option.closest('.ss-wrap');
+    var input = wrap.querySelector('.ss-input');
+    var hidden = wrap.querySelector('.ss-hidden');
+    var dd = wrap.querySelector('.ss-dropdown');
+    input.value = option.dataset.label || option.textContent;
+    if (hidden) hidden.value = option.dataset.val;
+    dd.classList.remove('open');
+    if (wrap.dataset.ssOnchange) {
+      var fn = window[wrap.dataset.ssOnchange];
+      if (fn) fn(wrap);
+    }
+  }
+  function _ssKey(input, event) {
+    var wrap = input.closest('.ss-wrap');
+    var dd = wrap.querySelector('.ss-dropdown');
+    if (!dd.classList.contains('open')) { if (event.key === 'ArrowDown' || event.key === 'Enter') _ssOpen(input); return; }
+    if (event.key === 'Escape') { dd.classList.remove('open'); return; }
+    if (event.key === 'Enter') { event.preventDefault(); var hl = dd.querySelector('.ss-option.highlight'); if (hl) _ssSelect(hl); return; }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      var vis = Array.from(dd.querySelectorAll('.ss-option')).filter(function(o) { return o.style.display !== 'none'; });
+      if (!vis.length) return;
+      var cur = vis.indexOf(dd.querySelector('.ss-option.highlight'));
+      vis.forEach(function(o) { o.classList.remove('highlight'); });
+      var next = event.key === 'ArrowDown' ? Math.min(cur + 1, vis.length - 1) : Math.max(cur - 1, 0);
+      if (cur === -1) next = event.key === 'ArrowDown' ? 0 : vis.length - 1;
+      vis[next].classList.add('highlight');
+      vis[next].scrollIntoView({ block: 'nearest' });
+    }
+  }
+  function _ssCloseAll() {
+    document.querySelectorAll('.ss-dropdown.open').forEach(function(d) { d.classList.remove('open'); });
+  }
+  // 全局点击关闭
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.ss-wrap')) _ssCloseAll();
+  });
+
   // 通过路径获取/设置 TDE_DATA 中的值
   function getDataByPath(path) {
     const parts = path.split('.');
@@ -1748,10 +1810,7 @@
         factionName = enemy.faction;
       }
     }
-    var factionOptions = '<option value="">— 无 —</option>';
-    (TDE_DATA.glossary || []).filter(function(g) { return g.category === 'faction'; }).forEach(function(f) {
-      factionOptions += '<option value="' + f.name + '"' + (enemy.faction === f.name ? ' selected' : '') + '>' + f.name + '</option>';
-    });
+    var factionEntries = (TDE_DATA.glossary || []).filter(function(g) { return g.category === 'faction'; });
 
     // 种族 (单选，可选)
     var raceName = '';
@@ -1760,10 +1819,7 @@
       raceEntry = (TDE_DATA.glossary || []).find(function(g) { return g.id === enemy.race && g.category === 'race'; });
       raceName = raceEntry ? raceEntry.name : enemy.race;
     }
-    var raceOptions = '<option value="">— 无 —</option>';
-    (TDE_DATA.glossary || []).filter(function(g) { return g.category === 'race'; }).forEach(function(r) {
-      raceOptions += '<option value="' + r.id + '"' + (enemy.race === r.id ? ' selected' : '') + '>' + r.name + '</option>';
-    });
+    var raceEntries = (TDE_DATA.glossary || []).filter(function(g) { return g.category === 'race'; });
 
     // 相关词条 (多选，可选，排除阵营和种族)
     var relatedIds = enemy.related || [];
@@ -1780,7 +1836,15 @@
       infoHTML += '<div class="bd-info-line"><span class="bd-info-label">阵营</span><span style="color:var(--text-muted);font-size:0.82rem;">未设置</span></div>';
     }
     if (editMode) {
-      infoHTML += '<div style="margin:4px 0 12px 0;"><select style="padding:4px 8px;font-size:0.72rem;background:rgba(0,0,0,0.3);border:1px solid rgba(0,191,165,0.2);border-radius:4px;color:var(--text-primary);font-family:inherit;" onchange="window._bdSaveStat(\'' + basePath + '.faction\', this.value)">' + factionOptions + '</select></div>';
+      infoHTML += '<div class="ss-wrap" data-ss-basepath="' + basePath + '" data-ss-field="faction" data-ss-onchange="_bdSsChange" style="margin:4px 0 12px 0;">';
+      infoHTML += '<input type="text" class="ss-input" placeholder="搜索阵营..." value="' + escAttr(factionName) + '" onfocus="window._ssOpen(this)" oninput="window._ssFilter(this)" onkeydown="window._ssKey(this,event)" onblur="setTimeout(window._ssCloseAll,200)" autocomplete="off">';
+      infoHTML += '<input type="hidden" class="ss-hidden" value="' + escAttr(enemy.faction || '') + '">';
+      infoHTML += '<div class="ss-dropdown">';
+      infoHTML += '<div class="ss-option" data-val="" data-label="— 无 —" data-search="" onclick="window._ssSelect(this)" style="color:var(--text-muted)">— 无 —</div>';
+      factionEntries.forEach(function(f) {
+        infoHTML += '<div class="ss-option" data-val="' + escAttr(f.name) + '" data-label="' + escAttr(f.name) + '" data-search="' + escAttr(f.name) + '" onclick="window._ssSelect(this)">' + esc(f.name) + '</div>';
+      });
+      infoHTML += '</div></div>';
     }
 
     // 种族行
@@ -1792,7 +1856,15 @@
     }
     infoHTML += '</div>';
     if (editMode) {
-      infoHTML += '<div style="margin:4px 0 12px 0;"><select style="padding:4px 8px;font-size:0.72rem;background:rgba(0,0,0,0.3);border:1px solid rgba(0,191,165,0.2);border-radius:4px;color:var(--text-primary);font-family:inherit;" onchange="window._bdSaveStat(\'' + basePath + '.race\', this.value)">' + raceOptions + '</select></div>';
+      infoHTML += '<div class="ss-wrap" data-ss-basepath="' + basePath + '" data-ss-field="race" data-ss-onchange="_bdSsChange" style="margin:4px 0 12px 0;">';
+      infoHTML += '<input type="text" class="ss-input" placeholder="搜索种族..." value="' + escAttr(raceName) + '" onfocus="window._ssOpen(this)" oninput="window._ssFilter(this)" onkeydown="window._ssKey(this,event)" onblur="setTimeout(window._ssCloseAll,200)" autocomplete="off">';
+      infoHTML += '<input type="hidden" class="ss-hidden" value="' + escAttr(enemy.race || '') + '">';
+      infoHTML += '<div class="ss-dropdown">';
+      infoHTML += '<div class="ss-option" data-val="" data-label="— 无 —" data-search="" onclick="window._ssSelect(this)" style="color:var(--text-muted)">— 无 —</div>';
+      raceEntries.forEach(function(r) {
+        infoHTML += '<div class="ss-option" data-val="' + escAttr(r.id) + '" data-label="' + escAttr(r.name) + '" data-search="' + escAttr(r.name) + '" onclick="window._ssSelect(this)">' + esc(r.name) + '</div>';
+      });
+      infoHTML += '</div></div>';
     }
 
     // 相关词条行
@@ -1810,14 +1882,16 @@
     }
     infoHTML += '</div>';
     if (editMode) {
-      infoHTML += '<div style="margin:4px 0 0 0;display:flex;gap:6px;flex-wrap:wrap;">';
-      infoHTML += '<select id="bdRelatedSelect" style="padding:4px 8px;font-size:0.72rem;background:rgba(0,0,0,0.3);border:1px solid rgba(0,191,165,0.2);border-radius:4px;color:var(--text-primary);font-family:inherit;"><option value="">— 添加词条 —</option>';
-      for (var nf = 0; nf < nonFactionRace.length; nf++) {
-        var disabled = relatedIds.indexOf(nonFactionRace[nf].id) >= 0 ? ' disabled' : '';
-        infoHTML += '<option value="' + nonFactionRace[nf].id + '"' + disabled + '>' + nonFactionRace[nf].name + ' [' + nonFactionRace[nf].category + ']</option>';
-      }
-      infoHTML += '</select>';
-      infoHTML += '<button onclick="var s=document.getElementById(\'bdRelatedSelect\');if(s.value){window._bdAddRelated(\'' + basePath + '\',s.value);s.value=\'\'}" style="padding:4px 10px;font-size:0.7rem;background:rgba(0,191,165,0.1);border:1px solid rgba(0,191,165,0.3);border-radius:4px;color:var(--cyan);cursor:pointer;">添加</button>';
+      infoHTML += '<div style="margin:4px 0 0 0;display:flex;gap:6px;">';
+      infoHTML += '<div class="ss-wrap" data-ss-basepath="' + basePath + '" data-ss-field="related" data-ss-onchange="_bdRelatedSsChange" style="flex:1;">';
+      infoHTML += '<input type="text" class="ss-input" placeholder="搜索并添加词条..." value="" onfocus="window._ssOpen(this)" oninput="window._ssFilter(this)" onkeydown="window._ssKey(this,event)" onblur="setTimeout(window._ssCloseAll,200)" autocomplete="off">';
+      infoHTML += '<input type="hidden" class="ss-hidden" value="">';
+      infoHTML += '<div class="ss-dropdown">';
+      nonFactionRace.forEach(function(g) {
+        var isSel = relatedIds.indexOf(g.id) >= 0;
+        infoHTML += '<div class="ss-option" data-val="' + escAttr(g.id) + '" data-label="' + escAttr(g.name) + '" data-search="' + escAttr(g.name) + ' ' + escAttr(g.category) + '" onclick="window._ssSelect(this)" style="' + (isSel ? 'display:none' : '') + '">' + esc(g.name) + ' <span class="ss-cat">[' + esc(g.category) + ']</span></div>';
+      });
+      infoHTML += '</div></div>';
       infoHTML += '</div>';
     }
 
@@ -1829,6 +1903,18 @@
   window._bdSaveStat = function(path, value) {
     setDataByPath(path, value.trim());
     saveData();
+  };
+  // 搜索下拉选择器变更回调
+  window._bdSsChange = function(wrap) {
+    var hidden = wrap.querySelector('.ss-hidden');
+    var basePath = wrap.dataset.ssBasepath;
+    var field = wrap.dataset.ssField;
+    if (hidden && basePath && field) {
+      setDataByPath(basePath + '.' + field, hidden.value);
+      saveData();
+    }
+    // 重新渲染详情页以更新徽章
+    renderAll();
   };
 
   window._bdAddDrop = function(basePath) {
@@ -1847,6 +1933,18 @@
     saveData();
     renderAll();
     showSaved();
+  };
+
+  // 相关词条搜索选择器回调
+  window._bdRelatedSsChange = function(wrap) {
+    var hidden = wrap.querySelector('.ss-hidden');
+    var basePath = wrap.dataset.ssBasepath;
+    if (hidden && basePath && hidden.value) {
+      window._bdAddRelated(basePath, hidden.value);
+      hidden.value = '';
+      var input = wrap.querySelector('.ss-input');
+      if (input) input.value = '';
+    }
   };
 
   window._bdAddRelated = function(basePath, termId) {
@@ -3800,6 +3898,11 @@
   window._filterGlossaryPicker = function(input) { filterGlossaryPicker(input); };
   window._toggleGlossaryChip = function(opt) { toggleGlossaryChip(opt); };
   window._updateGlossPickerHidden = function(el) { updateGlossPickerHidden(el); };
+  window._ssOpen = function(input) { _ssOpen(input); };
+  window._ssFilter = function(input) { _ssFilter(input); };
+  window._ssSelect = function(opt) { _ssSelect(opt); };
+  window._ssKey = function(input, e) { _ssKey(input, e); };
+  window._ssCloseAll = function() { _ssCloseAll(); };
   window._startMapConnection = function(from) { startMapConnection(from); };
   window._deleteMapConnection = function(from, to) { deleteMapConnection(from, to); };
   window._startDragNode = function(e, name) { startDragNode(e, name); };

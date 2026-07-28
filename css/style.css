@@ -2883,6 +2883,35 @@ body.edit-mode .equip-rarity:hover {
 .ep-glossary-option:hover { background: rgba(0,191,165,0.15); color: var(--cyan-bright); }
 .ep-glossary-option.selected { display: none; }
 
+/* Searchable select (detail page glossary picker) */
+.ss-wrap { position: relative; }
+.ss-input {
+  width: 100%; padding: 7px 10px; font-size: 0.78rem;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(0,191,165,0.2);
+  border-radius: 6px; color: var(--text-primary); font-family: inherit;
+  box-sizing: border-box;
+}
+.ss-input:focus { border-color: var(--cyan); outline: none; }
+.ss-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
+  max-height: 200px; overflow-y: auto;
+  background: rgba(12,14,20,0.97); border: 1px solid rgba(0,191,165,0.3);
+  border-radius: 0 0 6px 6px; display: none;
+}
+.ss-dropdown.open { display: block; }
+.ss-option {
+  padding: 6px 10px; font-size: 0.76rem; cursor: pointer;
+  color: var(--text-secondary); border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: all var(--transition-fast);
+}
+.ss-option:hover, .ss-option.highlight {
+  background: rgba(0,191,165,0.15); color: var(--cyan-bright);
+}
+.ss-option:last-child { border-bottom: none; }
+.ss-option .ss-cat {
+  font-size: 0.66rem; color: var(--text-muted); margin-left: 6px;
+}
+
 /* Read-only field */
 .ep-field-readonly input {
   opacity: 0.55;

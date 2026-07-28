@@ -2271,7 +2271,7 @@ body.edit-mode .equip-rarity:hover {
   position: relative;
   display: flex;
   flex-direction: column;
-  height: 240px;
+  height: 120px;
   cursor: pointer;
 }
 .glossary-card:hover {

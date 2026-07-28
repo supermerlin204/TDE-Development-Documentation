@@ -783,32 +783,70 @@
 
   function handleArrayAdd(el) {
     if (!editMode) return;
-    const container = el.closest('[data-array-container]');
+    const container = el.closest("[data-array-container]");
     const path = container ? container.dataset.arrayContainer : null;
     if (!path) return;
 
     const arr = getDataByPath(path);
-    if (Array.isArray(arr) && arr.length > 0) {
-      if (typeof arr[0] === 'object') {
-        // 对象数组——打开编辑面板编辑新项
+    if (!Array.isArray(arr)) return;
+
+    // 有现有条目时：克隆最后一个作为模板
+    if (arr.length > 0) {
+      if (typeof arr[0] === "object") {
         const clone = JSON.parse(JSON.stringify(arr[arr.length - 1]));
-        // 清空名称字段以表示这是新条目
-        if (clone.name) clone.name = '';
-        if (clone.id) clone.id = clone.id + '_new';
+        if (clone.name) clone.name = "";
+        if (clone.id) clone.id = clone.id + "_new";
         arr.push(clone);
         saveData();
         renderAll();
-        openEditPanel(path + '.' + (arr.length - 1));
+        openEditPanel(path + "." + (arr.length - 1));
         showSaved();
       } else {
-        arr.push('新条目');
+        arr.push("XXXXX");
         saveData();
         renderAll();
         showSaved();
       }
+      return;
     }
-  }
 
+    // 空数组：根据数组名生成默认模板
+    var _tpl = {
+      regions: { id:"new_region", name:"XXXXX", level:"1-10", desc:"XXXXX", tags:[], landmarks:[], bosses:["无"], route:{nodes:[],edges:[]}, connections:[] },
+      bosses: { id:"new_boss", name:"XXXXX", image:"", faction:"", difficulty:"中等", hp:"1000", phases:1, location:"XXXXX", desc:"XXXXX", lore:"", drops:[], damageTypes:[], weaknesses:[], resistances:[] },
+      elites: { id:"new_elite", name:"XXXXX", image:"", faction:"", desc:"XXXXX", location:"XXXXX", hp:"500" },
+      common: { id:"new_common", name:"XXXXX", image:"", faction:"", desc:"XXXXX", location:"XXXXX", hp:"200" },
+      weapons: { id:"new_weapon", name:"XXXXX", type:"直剑", rarity:"common", dmg:{}, scaling:{}, skill:"XXXXX", desc:"XXXXX" },
+      armor: { id:"new_armor", name:"XXXXX", type:"轻甲", weight:"轻", defense:"", desc:"XXXXX" },
+      talismans: { id:"new_talisman", name:"XXXXX", desc:"XXXXX", rarity:"common" },
+      consumables: { id:"new_consumable", name:"XXXXX", desc:"XXXXX", rarity:"common" },
+      npcs: { id:"new_npc", name:"XXXXX", title:"XXXXX", desc:"XXXXX", location:"低语避难所", role:"XXXXX", services:[] },
+      merchants: { id:"new_merchant", name:"XXXXX", items:[], restock:"" },
+      quests: { id:"new_quest", name:"XXXXX", type:"side", npc:"", desc:"XXXXX", rewards:[], stages:[] },
+      classes: { id:"new_class", name:"XXXXX", title:"XXXXX", desc:"XXXXX", stats:{生命:10,耐力:10,力量:10,敏捷:10,智力:10,信仰:10}, weapon:"", armor:"", skill:"" },
+      statusEffects: { name:"XXXXX", icon:"", buildup:"", effect:"XXXXX", cure:"" },
+      damageMatrix: { name:"XXXXX" },
+      glossary: { id:"new_glossary", name:"XXXXX", category:"concept", desc:"XXXXX", related:[] },
+      changelog: { ver:"", date:"", changes:"XXXXX" },
+      milestones: { date:"", title:"XXXXX", desc:"", status:"pending" },
+      sprints: { name:"XXXXX", status:"todo" },
+      progress: { name:"XXXXX", pct:0 },
+      updates: { date:"", text:"XXXXX" },
+      tasks: { text:"XXXXX", priority:"medium" }
+    };
+    var arrName = path.split(".").pop();
+    var tmpl = _tpl[arrName];
+    if (tmpl) {
+      arr.push(JSON.parse(JSON.stringify(tmpl)));
+    } else if (path.indexOf(".") !== -1) {
+      arr.push("XXXXX");
+    } else {
+      arr.push({ id:"new_item", name:"XXXXX" });
+    }
+    saveData();
+    renderAll();
+    showSaved();
+  }
   function handleCardDelete(el) {
     if (!editMode) return;
     const card = el.closest('[data-edit-card]');

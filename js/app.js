@@ -1604,7 +1604,7 @@
     };
     tryNextImage();
 
-    // 多图画廊 — 扫描 _1 ~ _5 的编号变体
+    // 多图画廊 — 扫描 _1 ~ _5 的编号变体，横向并排展示
     var galleryEl = document.getElementById('bdImageGallery');
     var MAX_VARIANT = 5;
     var galleryHTML = '';
@@ -1614,23 +1614,11 @@
       exts.forEach(function(ext) { gCandidates.push('img/enemies/' + enemy.id + '_' + v + ext); });
       var gSrc = gCandidates[0];
       var gFallback = JSON.stringify(gCandidates.slice(1));
-      galleryHTML += '<div class="bd-gallery-thumb" data-variant="' + v + '" onclick="var main=document.getElementById(\'bdImage\');var thumbImg=this.querySelector(\'img\');if(!thumbImg.naturalWidth)return;main.src=thumbImg.src;main.style.display=\'block\';document.getElementById(\'bdImagePlaceholder\').style.display=\'none\';var thumbs=this.parentElement.querySelectorAll(\'.bd-gallery-thumb\');for(var i=0;i<thumbs.length;i++)thumbs[i].classList.remove(\'active\');this.classList.add(\'active\')">'
+      galleryHTML += '<div class="bd-gallery-item">'
         + '<img src="' + gSrc + '" alt="" data-fallback=\'' + gFallback + '\' onerror="var f=JSON.parse(this.getAttribute(\'data-fallback\'));if(f.length){this.setAttribute(\'data-fallback\',JSON.stringify(f.slice(1)));this.src=f[0]}else{this.parentElement.style.display=\'none\'}" onload="this.parentElement.style.display=\'\'">'
         + '</div>';
     }
     galleryEl.innerHTML = galleryHTML;
-    // 清理掉空的 thumb
-    setTimeout(function() {
-      var thumbs = galleryEl.querySelectorAll('.bd-gallery-thumb');
-      var visible = [];
-      for (var t = 0; t < thumbs.length; t++) {
-        if (thumbs[t].style.display !== 'none' && thumbs[t].querySelector('img').style.display !== 'none') {
-          visible.push(thumbs[t]);
-        } else {
-          thumbs[t].remove();
-        }
-      }
-    }, 600);
 
     imgInput.value = enemy.image || '';
     imgInput.placeholder = 'img/enemies/' + enemy.name + '.gif';

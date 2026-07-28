@@ -3073,35 +3073,23 @@ body.edit-mode .bd-image-wrapper:hover .bd-image-placeholder svg {
 /* Image Gallery */
 .bd-image-gallery {
   display: flex;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 12px;
+  margin-top: 12px;
   overflow-x: auto;
   padding-bottom: 4px;
 }
 .bd-image-gallery:empty { display: none; }
-.bd-gallery-thumb {
-  flex: 0 0 80px;
-  width: 80px;
-  height: 80px;
-  border-radius: 6px;
+.bd-gallery-item {
+  flex: 0 0 auto;
+  width: calc((100% - 36px) / 3);
+  min-width: 180px;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-md);
   overflow: hidden;
-  border: 2px solid var(--border-card);
-  cursor: pointer;
-  opacity: 0.55;
-  transition: all 0.2s;
   background: var(--bg-card);
-  flex-shrink: 0;
+  border: 1px solid var(--border-card);
 }
-.bd-gallery-thumb:hover {
-  opacity: 0.85;
-  border-color: var(--cyan);
-}
-.bd-gallery-thumb.active {
-  opacity: 1;
-  border-color: var(--cyan-bright);
-  box-shadow: 0 0 10px rgba(0,191,165,0.2);
-}
-.bd-gallery-thumb img {
+.bd-gallery-item img {
   width: 100%;
   height: 100%;
   object-fit: cover;

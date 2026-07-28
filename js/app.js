@@ -1511,25 +1511,30 @@
       badgeEl.onclick = null;
     }
 
-    // 图片
+    // 图片 — 优先使用自定义路径，否则按约定读取 img/enemies/{id}.gif
     var imgEl = document.getElementById('bdImage');
     var placeholderEl = document.getElementById('bdImagePlaceholder');
     var imgInput = document.getElementById('bdImageInput');
-    if (enemy.image) {
-      imgEl.src = enemy.image;
-      imgEl.style.display = 'block';
-      placeholderEl.style.display = 'none';
-    } else {
-      imgEl.src = '';
+    var defaultPath = 'img/enemies/' + enemy.id + '.gif';
+    var imgSrc = enemy.image || defaultPath;
+
+    imgEl.onerror = function() {
       imgEl.style.display = 'none';
       placeholderEl.style.display = '';
-    }
+    };
+    imgEl.onload = function() {
+      imgEl.style.display = 'block';
+      placeholderEl.style.display = 'none';
+    };
+    imgEl.src = imgSrc;
+
     imgInput.value = enemy.image || '';
+    imgInput.placeholder = defaultPath;
     document.getElementById('bdImageControls').style.display = editMode ? 'flex' : 'none';
     document.getElementById('bdImageWrapper').onclick = editMode ? function() {
-      var path = prompt('输入图片路径（如 img/enemies/boss.gif）:', enemy.image || '');
+      var path = prompt('输入图片路径（留空则使用默认: ' + defaultPath + '）:', enemy.image || '');
       if (path !== null) {
-        enemy.image = path;
+        enemy.image = path.trim();
         saveData();
         renderBestiaryDetail(type, id);
       }

@@ -2198,7 +2198,7 @@
     e.preventDefault();
     var nodes = TDE_DATA.worldMap && TDE_DATA.worldMap.nodes;
     if (!nodes || !nodes[name]) return;
-    cancelMapConnection();
+    if (!_mapConnSource) cancelMapConnection();
 
     var svg = document.querySelector('#worldMap svg');
     if (!svg) return;

@@ -817,7 +817,9 @@
     var arrName = path.split(".").pop();
     var tmpl = _tpl[arrName];
     if (tmpl) {
-      arr.push(JSON.parse(JSON.stringify(tmpl)));
+      var clone = JSON.parse(JSON.stringify(tmpl));
+      if (clone.id) clone.id = clone.id + '_' + Date.now();
+      arr.push(clone);
       saveData();
       renderAll();
       openEditPanel(path + "." + (arr.length - 1));
@@ -2349,13 +2351,11 @@
   function mapClickRegion(name) {
     if (_mapConnSource) {
       finishMapConnection(name);
-    } else {
-      var region = (TDE_DATA.regions || []).find(function(r) { return r.name === name; });
-      if (region) {
-        Router.navigate('region/' + region.id);
-      } else {
-        Router.navigate('region/' + region.id);
-      }
+      return;
+    }
+    var region = (TDE_DATA.regions || []).find(function(r) { return r.name === name; });
+    if (region) {
+      Router.navigate('region/' + region.id);
     }
   }
 

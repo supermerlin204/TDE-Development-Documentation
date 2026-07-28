@@ -3291,12 +3291,60 @@ body.edit-mode .bd-image-wrapper:hover .bd-image-placeholder svg {
   align-items: center;
   gap: 10px;
 }
+.bd-info-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bd-info-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+  min-width: 4em;
+}
+.bd-info-value {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+.bd-related-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.bd-related-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(0,191,165,0.07);
+  border: 1px solid rgba(0,191,165,0.2);
+  color: var(--text-secondary);
+}
+.bd-related-chip .gloss-link {
+  font-size: 0.72rem;
+}
+.bd-chip-del {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0 0 0 2px;
+}
+.bd-chip-del:hover { color: var(--red); }
+
 .bd-faction-label {
   font-size: 0.7rem;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   flex-shrink: 0;
+  min-width: 4em;
 }
 .bd-faction-badge {
   display: inline-flex;

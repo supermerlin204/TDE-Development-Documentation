@@ -1736,17 +1736,76 @@
     (TDE_DATA.glossary || []).filter(function(g) { return g.category === 'faction'; }).forEach(function(f) {
       factionOptions += '<option value="' + f.id + '"' + (enemy.faction === f.id ? ' selected' : '') + '>' + f.name + '</option>';
     });
-    var factionHTML = '';
+
+    // 种族 (单选，可选)
+    var raceName = '';
+    var raceEntry = null;
+    if (enemy.race) {
+      raceEntry = (TDE_DATA.glossary || []).find(function(g) { return g.id === enemy.race && g.category === 'race'; });
+      raceName = raceEntry ? raceEntry.name : enemy.race;
+    }
+    var raceOptions = '<option value="">— 无 —</option>';
+    (TDE_DATA.glossary || []).filter(function(g) { return g.category === 'race'; }).forEach(function(r) {
+      raceOptions += '<option value="' + r.id + '"' + (enemy.race === r.id ? ' selected' : '') + '>' + r.name + '</option>';
+    });
+
+    // 相关词条 (多选，可选，排除阵营和种族)
+    var relatedIds = enemy.related || [];
+    var nonFactionRace = (TDE_DATA.glossary || []).filter(function(g) { return g.category !== 'faction' && g.category !== 'race'; });
+
+    // 构建 HTML
+    var infoHTML = '';
+
+    // 阵营行
     if (factionName) {
-      factionHTML += '<div class="bd-faction-line"><span class="bd-faction-label">阵营</span><span class="bd-faction-badge">' + _factionBadge(enemy.faction) + factionName + '</span></div>';
-      if (factionDesc) factionHTML += '<p class="bd-faction-desc">' + factionDesc + '</p>';
+      infoHTML += '<div class="bd-info-line"><span class="bd-info-label">阵营</span><span class="bd-faction-badge">' + _factionBadge(enemy.faction) + factionName + '</span></div>';
+      if (factionDesc) infoHTML += '<p class="bd-faction-desc">' + factionDesc + '</p>';
     } else {
-      factionHTML += '<span class="bd-faction-label">阵营</span> <span style="color:var(--text-muted);">未设置</span>';
+      infoHTML += '<div class="bd-info-line"><span class="bd-info-label">阵营</span><span style="color:var(--text-muted);font-size:0.82rem;">未设置</span></div>';
     }
     if (editMode) {
-      factionHTML += '<div style="margin-top:8px;"><select style="width:auto;padding:4px 8px;font-size:0.72rem;background:rgba(0,0,0,0.3);border:1px solid rgba(0,191,165,0.2);border-radius:4px;color:var(--text-primary);font-family:inherit;" onchange="window._bdSaveStat(\'' + basePath + '.faction\', this.value)">' + factionOptions + '</select></div>';
+      infoHTML += '<div style="margin:4px 0 12px 0;"><select style="padding:4px 8px;font-size:0.72rem;background:rgba(0,0,0,0.3);border:1px solid rgba(0,191,165,0.2);border-radius:4px;color:var(--text-primary);font-family:inherit;" onchange="window._bdSaveStat(\'' + basePath + '.faction\', this.value)">' + factionOptions + '</select></div>';
     }
-    document.getElementById('bdStatsGrid').innerHTML = factionHTML;
+
+    // 种族行
+    infoHTML += '<div class="bd-info-line" style="margin-top:10px;"><span class="bd-info-label">种族</span>';
+    if (raceName) {
+      infoHTML += '<span class="bd-info-value">' + glossLink(raceName) + '</span>';
+    } else {
+      infoHTML += '<span style="color:var(--text-muted);font-size:0.82rem;">未设置</span>';
+    }
+    infoHTML += '</div>';
+    if (editMode) {
+      infoHTML += '<div style="margin:4px 0 12px 0;"><select style="padding:4px 8px;font-size:0.72rem;background:rgba(0,0,0,0.3);border:1px solid rgba(0,191,165,0.2);border-radius:4px;color:var(--text-primary);font-family:inherit;" onchange="window._bdSaveStat(\'' + basePath + '.race\', this.value)">' + raceOptions + '</select></div>';
+    }
+
+    // 相关词条行
+    infoHTML += '<div class="bd-info-line" style="margin-top:10px;"><span class="bd-info-label">相关词条</span>';
+    if (relatedIds.length > 0) {
+      infoHTML += '<span class="bd-related-chips">';
+      for (var ri = 0; ri < relatedIds.length; ri++) {
+        var rEntry = (TDE_DATA.glossary || []).find(function(g) { return g.id === relatedIds[ri]; });
+        var rName = rEntry ? rEntry.name : relatedIds[ri];
+        infoHTML += '<span class="bd-related-chip">' + glossLink(rName) + (editMode ? '<button class="bd-chip-del" onclick="window._bdDelRelated(\'' + basePath + '\',' + ri + ')" title="移除">&times;</button>' : '') + '</span>';
+      }
+      infoHTML += '</span>';
+    } else {
+      infoHTML += '<span style="color:var(--text-muted);font-size:0.82rem;">未设置</span>';
+    }
+    infoHTML += '</div>';
+    if (editMode) {
+      infoHTML += '<div style="margin:4px 0 0 0;display:flex;gap:6px;flex-wrap:wrap;">';
+      infoHTML += '<select id="bdRelatedSelect" style="padding:4px 8px;font-size:0.72rem;background:rgba(0,0,0,0.3);border:1px solid rgba(0,191,165,0.2);border-radius:4px;color:var(--text-primary);font-family:inherit;"><option value="">— 添加词条 —</option>';
+      for (var nf = 0; nf < nonFactionRace.length; nf++) {
+        var disabled = relatedIds.indexOf(nonFactionRace[nf].id) >= 0 ? ' disabled' : '';
+        infoHTML += '<option value="' + nonFactionRace[nf].id + '"' + disabled + '>' + nonFactionRace[nf].name + ' [' + nonFactionRace[nf].category + ']</option>';
+      }
+      infoHTML += '</select>';
+      infoHTML += '<button onclick="var s=document.getElementById(\'bdRelatedSelect\');if(s.value){window._bdAddRelated(\'' + basePath + '\',s.value);s.value=\'\'}" style="padding:4px 10px;font-size:0.7rem;background:rgba(0,191,165,0.1);border:1px solid rgba(0,191,165,0.3);border-radius:4px;color:var(--cyan);cursor:pointer;">添加</button>';
+      infoHTML += '</div>';
+    }
+
+    document.getElementById('bdStatsGrid').innerHTML = infoHTML;
     document.getElementById('bdDropsSection').style.display = 'none';
   }
 
@@ -1769,6 +1828,26 @@
     var enemy = getDataByPath(basePath);
     if (!enemy || !enemy.drops) return;
     enemy.drops.splice(idx, 1);
+    saveData();
+    renderAll();
+    showSaved();
+  };
+
+  window._bdAddRelated = function(basePath, termId) {
+    var enemy = getDataByPath(basePath);
+    if (!enemy) return;
+    if (!enemy.related) enemy.related = [];
+    if (enemy.related.indexOf(termId) >= 0) return;
+    enemy.related.push(termId);
+    saveData();
+    renderAll();
+    showSaved();
+  };
+
+  window._bdDelRelated = function(basePath, idx) {
+    var enemy = getDataByPath(basePath);
+    if (!enemy || !enemy.related) return;
+    enemy.related.splice(idx, 1);
     saveData();
     renderAll();
     showSaved();

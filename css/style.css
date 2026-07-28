@@ -3265,42 +3265,22 @@ body.edit-mode .bd-image-wrapper:hover .bd-image-placeholder svg {
 /* Stats Section */
 .bd-stats-section {
   margin-top: 28px;
-  padding: 14px 18px;
+  padding: 20px 18px;
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
   background: var(--bg-card);
-}
-.bd-stats-section[open] {
-  padding-bottom: 20px;
 }
 .bd-stats-title {
   font-size: 0.78rem;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  cursor: pointer;
-  list-style: none;
-  user-select: none;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.bd-stats-title::-webkit-details-marker { display: none; }
-.bd-stats-title::before {
-  content: '▸';
-  display: inline-block;
-  font-size: 0.65rem;
-  transition: transform 0.2s;
-  color: var(--cyan);
-}
-details[open] .bd-stats-title::before {
-  transform: rotate(90deg);
+  margin-bottom: 12px;
 }
 .bd-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;
-  margin-top: 14px;
 }
 .bd-stat-item {
   background: var(--bg-card);

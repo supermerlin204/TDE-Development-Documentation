@@ -790,27 +790,7 @@
     const arr = getDataByPath(path);
     if (!Array.isArray(arr)) return;
 
-    // 有现有条目时：克隆最后一个作为模板
-    if (arr.length > 0) {
-      if (typeof arr[0] === "object") {
-        const clone = JSON.parse(JSON.stringify(arr[arr.length - 1]));
-        if (clone.name) clone.name = "";
-        if (clone.id) clone.id = clone.id + "_new";
-        arr.push(clone);
-        saveData();
-        renderAll();
-        openEditPanel(path + "." + (arr.length - 1));
-        showSaved();
-      } else {
-        arr.push("XXXXX");
-        saveData();
-        renderAll();
-        showSaved();
-      }
-      return;
-    }
-
-    // 空数组：根据数组名生成默认模板
+    // 始终根据数组名生成默认模板
     var _tpl = {
       regions: { id:"new_region", name:"XXXXX", level:"1-10", desc:"XXXXX", tags:[], landmarks:[], bosses:["无"], route:{nodes:[],edges:[]}, connections:[] },
       bosses: { id:"new_boss", name:"XXXXX", image:"", faction:"", difficulty:"中等", hp:"1000", phases:1, location:"XXXXX", desc:"XXXXX", lore:"", drops:[], damageTypes:[], weaknesses:[], resistances:[] },
@@ -838,14 +818,21 @@
     var tmpl = _tpl[arrName];
     if (tmpl) {
       arr.push(JSON.parse(JSON.stringify(tmpl)));
+      saveData();
+      renderAll();
+      openEditPanel(path + "." + (arr.length - 1));
+      showSaved();
     } else if (path.indexOf(".") !== -1) {
       arr.push("XXXXX");
+      saveData();
+      renderAll();
+      showSaved();
     } else {
       arr.push({ id:"new_item", name:"XXXXX" });
+      saveData();
+      renderAll();
+      showSaved();
     }
-    saveData();
-    renderAll();
-    showSaved();
   }
   function handleCardDelete(el) {
     if (!editMode) return;
@@ -3684,7 +3671,7 @@
     document.getElementById('glossaryGrid').innerHTML = filtered.map((g, i) => {
       const gIdx = entries.indexOf(g);
       return `
-        <div class="glossary-card" ${editCard(`glossary.${gIdx}`)}>
+        <div class="glossary-card" ${editCard(`glossary.${gIdx}`)} onclick="window._showGlossaryDetail('${g.id}')">
           ${renderCardDelete(`glossary.${gIdx}`)}
           <div class="glossary-card-header">
             <span class="glossary-cat-badge cat-${g.category}">${catNames[g.category] || g.category}</span>
@@ -3738,6 +3725,28 @@
       </div>
       <p><strong>掉落：</strong>${b.drops.join(' / ')}</p>
     `);
+  };
+
+  window._showGlossaryDetail = function(id) {
+    if (document.body.classList.contains('edit-mode')) return;
+    var g = TDE_DATA.glossary.find(function(x) { return x.id === id; });
+    if (!g) return;
+    var catNames = {
+      faction:'阵营', family:'家族', organization:'组织', concept:'概念', race:'种族', event:'事件',
+      region:'区域', status:'异常状态', attribute:'属性'
+    };
+    Modal.open(
+      '<div class="glossary-detail-popup">' +
+      '<span class="glossary-cat-badge cat-' + g.category + '">' + (catNames[g.category] || g.category) + '</span>' +
+      '<h3 style="margin-top:12px;">' + g.name + '</h3>' +
+      '<div style="white-space:pre-wrap;line-height:1.8;margin:16px 0;color:var(--text-primary);">' + g.desc + '</div>' +
+      (g.related && g.related.length > 0
+        ? '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;"><span style="font-size:0.7rem;color:var(--text-muted);">关联：</span>' +
+          g.related.map(function(r) { return '<span class="glossary-related-tag">' + r + '</span>'; }).join('') +
+          '</div>'
+        : '') +
+      '</div>'
+    );
   };
 
   // ============================

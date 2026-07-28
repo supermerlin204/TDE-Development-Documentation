@@ -2269,6 +2269,10 @@ body.edit-mode .equip-rarity:hover {
   padding: 20px;
   transition: all var(--transition-fast);
   position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 240px;
+  cursor: pointer;
 }
 .glossary-card:hover {
   border-color: var(--border-glow);
@@ -2278,7 +2282,8 @@ body.edit-mode .equip-rarity:hover {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
 }
 .glossary-cat-badge {
   display: inline-block;
@@ -2312,12 +2317,17 @@ body.edit-mode .equip-rarity:hover {
   color: var(--text-secondary);
   line-height: 1.65;
   margin-bottom: 10px;
+  flex: 1;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .glossary-related {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   align-items: center;
+  flex-shrink: 0;
 }
 .glossary-related-label {
   font-size: 0.62rem;
@@ -2337,6 +2347,17 @@ body.edit-mode .equip-rarity:hover {
 .glossary-related-tag:hover {
   background: rgba(0,191,165,0.18);
   border-color: var(--cyan);
+}
+
+/* 词条详情弹窗 */
+.glossary-detail-popup .glossary-cat-badge {
+  font-size: 0.75rem;
+  padding: 3px 14px;
+}
+.glossary-detail-popup h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 /* ============================================================

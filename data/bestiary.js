@@ -103,7 +103,8 @@ TDE_DATA.elites = [
   { id: 'crystal_golem', name: '水晶魔像', image: '', faction: '', desc: '行动缓慢但几乎不可摧毁的构造体。背部有弱点结晶。', location: '水晶尖塔', hp: '5,000' },
   { id: 'rot_hound', name: '腐化猎犬首领', image: '', faction: '', desc: '能强化附近小型猎犬的族群首领。速度快，极具攻击性。', location: '碧翠谷', hp: '1,800' },
   { id: 'time_wraith', name: '时光魅影', image: '', faction: '', desc: '命中后减缓玩家移动速度的灵体敌人。', location: '时光守护者遗迹', hp: '1,500' },
-  { id: 'shade_assassin', name: '暗影刺客', image: '', faction: '', desc: '攻击前完全隐形。仔细听脚步声判断其位置。', location: '各地（仅夜间出没）', hp: '900' }
+  { id: 'shade_assassin', name: '暗影刺客', image: '', faction: '', desc: '攻击前完全隐形。仔细听脚步声判断其位置。', location: '各地（仅夜间出没）', hp: '900' },
+  { id: 'zealot_guardian', name: '卫道士', image: '', faction: 'calamity-legion', desc: '灾厄军团的中坚力量。身披厚重黑甲，手持燃烧的灾厄大锤，攻击缓慢但无法格挡。死亡时会引爆体内的灾厄之力，对周围造成范围伤害。', location: '灾厄前线', hp: '3,200' }
 ];
 
 TDE_DATA.common = [

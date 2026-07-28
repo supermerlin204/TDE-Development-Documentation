@@ -1575,48 +1575,59 @@
       badgeEl.onclick = null;
     }
 
-    // 图片 — 主图 + _1~_5 变体，逐个加载，加载出一个显示一个
+    // 图片 — 逐个加载，全部就绪后同步显示
     var exts = ['.gif', '.png', '.webp', '.jpg'];
     var imgInput = document.getElementById('bdImageInput');
     var placeholderEl = document.getElementById('bdImagePlaceholder');
     var galleryEl = document.getElementById('bdImageGallery');
 
-    // 隐藏旧的主图区
     document.getElementById('bdImageWrapper').style.display = 'none';
     galleryEl.innerHTML = '';
     placeholderEl.style.display = 'none';
 
-    // 构建某编号的候选路径: variants[v] = [candidates...]
+    // 代际标记，防止旧回调污染
+    var genId = Date.now();
+    window._bdImgGenId = genId;
+    function isStale() { return genId !== window._bdImgGenId; }
+
     function buildCandidates(suffix) {
       var c = [];
       exts.forEach(function(ext) { c.push('img/enemies/' + encodeURIComponent(enemy.name) + suffix + ext); });
       exts.forEach(function(ext) { c.push('img/enemies/' + enemy.id + suffix + ext); });
       return c;
     }
-    // 主图候选 (优先自定义路径)
     var primaryCandidates = [];
     if (enemy.image) primaryCandidates.push(enemy.image);
     primaryCandidates = primaryCandidates.concat(buildCandidates(''));
 
-    var allVariants = [primaryCandidates]; // v=0: 主图
+    var allVariants = [primaryCandidates];
     for (var v = 1; v <= 5; v++) { allVariants.push(buildCandidates('_' + v)); }
 
-    var anyLoaded = false;
+    var items = [];       // { div, ok }
     var currentV = 0;
+    var anyLoaded = false;
 
-    function syncGifs() {
-      var imgs = galleryEl.querySelectorAll('img');
-      for (var i = 0; i < imgs.length; i++) {
-        imgs[i].src = imgs[i].src;
+    function revealAll() {
+      if (isStale()) return;
+      for (var i = items.length - 1; i >= 0; i--) {
+        if (!items[i].ok) { items[i].div.remove(); items.splice(i, 1); }
       }
+      if (items.length === 0) { placeholderEl.style.display = ''; return; }
+      // 移除并重新插入所有 img，同时显示，让 GIF 同步启动
+      for (var j = 0; j < items.length; j++) {
+        var d = items[j].div;
+        if (d.parentNode) d.parentNode.removeChild(d);
+      }
+      for (var k = 0; k < items.length; k++) {
+        galleryEl.appendChild(items[k].div);
+        items[k].div.style.display = '';
+      }
+      placeholderEl.style.display = 'none';
     }
 
-    function loadNext() {
-      if (currentV >= allVariants.length) {
-        if (!anyLoaded) placeholderEl.style.display = '';
-        else setTimeout(syncGifs, 200);
-        return;
-      }
+    function tryNext() {
+      if (isStale()) return;
+      if (currentV >= allVariants.length) { revealAll(); return; }
       var candidates = allVariants[currentV];
       var idx = 0;
       var itemDiv = document.createElement('div');
@@ -1625,59 +1636,34 @@
       var img = document.createElement('img');
       img.alt = '';
 
+      var entry = { div: itemDiv, ok: false };
+      items.push(entry);
+
       img.onload = function() {
-        itemDiv.style.display = '';
+        if (isStale()) return;
+        entry.ok = true;
         anyLoaded = true;
-        placeholderEl.style.display = 'none';
         currentV++;
-        loadNext();
+        tryNext();
       };
       img.onerror = function() {
+        if (isStale()) return;
         idx++;
         if (idx < candidates.length) {
           img.src = candidates[idx];
         } else {
+          // 此变体全部失败，移除并停止
           itemDiv.remove();
-          setTimeout(syncGifs, 200);
+          var entryIdx = items.indexOf(entry);
+          if (entryIdx >= 0) items.splice(entryIdx, 1);
+          revealAll();
         }
       };
       img.src = candidates[0];
       itemDiv.appendChild(img);
       galleryEl.appendChild(itemDiv);
     }
-
-    // 先用 onload/onerror 驱动第一个，后续由 loadNext 链式触发
-    function startFirst() {
-      var candidates = allVariants[0];
-      var idx = 0;
-      var itemDiv = document.createElement('div');
-      itemDiv.className = 'bd-gallery-item';
-      itemDiv.style.display = 'none';
-      var img = document.createElement('img');
-      img.alt = '';
-
-      img.onload = function() {
-        itemDiv.style.display = '';
-        anyLoaded = true;
-        placeholderEl.style.display = 'none';
-        currentV = 1;
-        loadNext();
-      };
-      img.onerror = function() {
-        idx++;
-        if (idx < candidates.length) {
-          img.src = candidates[idx];
-        } else {
-          itemDiv.remove();
-          currentV = 1;
-          loadNext();
-        }
-      };
-      img.src = candidates[0];
-      itemDiv.appendChild(img);
-      galleryEl.appendChild(itemDiv);
-    }
-    startFirst();
+    tryNext();
 
     imgInput.value = enemy.image || '';
     imgInput.placeholder = 'img/enemies/' + enemy.name + '.gif';

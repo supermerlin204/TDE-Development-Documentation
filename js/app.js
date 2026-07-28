@@ -1444,7 +1444,6 @@
   function _renderEnemyCard(enemy, type, origIdx) {
     var dataKey = type === 'bosses' ? 'bosses' : (type === 'elites' ? 'elites' : 'common');
     var hash = 'bestiary/' + dataKey + '/' + enemy.id;
-    var diffClass = (type === 'bosses') ? ' difficulty-' + enemy.difficulty : '';
     var badgeText = type === 'bosses' ? 'BOSS' : (type === 'elites' ? '精英' : '普通');
     var badgeCls = type === 'bosses' ? 'boss-badge' : (type === 'elites' ? 'elite-badge' : 'common-badge');
     var exts = ['.gif', '.png', '.webp', '.jpg'];
@@ -1454,7 +1453,7 @@
 	    exts.forEach(function(ext) { imgCandidates.push('img/enemies/' + enemy.id + ext); });
 	    var imgSrc = imgCandidates[0];
 	    var imgFallback = JSON.stringify(imgCandidates.slice(1));
-    return '<div class="enemy-card' + diffClass + '" ' + editCard(dataKey + '.' + origIdx) + ' onclick="if(!document.body.classList.contains(\'edit-mode\'))window.location.hash=\'' + hash + '\'">'
+    return '<div class="enemy-card" ' + editCard(dataKey + '.' + origIdx) +' onclick="if(!document.body.classList.contains(\'edit-mode\'))window.location.hash=\'' + hash + '\'">'
       + renderCardDelete(dataKey + '.' + origIdx)
       + '<div class="enemy-card-img">'
         + '<img src="' + imgSrc + '" alt="" data-fallback=\'' + imgFallback + '\' onerror="var f=JSON.parse(this.getAttribute(\'data-fallback\'));if(f.length){this.setAttribute(\'data-fallback\',JSON.stringify(f.slice(1)));this.src=f[0]}else{this.style.display=\'none\';this.nextElementSibling.style.display=\'\'}">'
@@ -1534,20 +1533,9 @@
     var idx = TDE_DATA[dataKey].indexOf(enemy);
     var basePath = dataKey + '.' + idx;
 
-    // 难度/类型徽章
-    var diffMap = { legendary: '传说', hard: '困难', medium: '中等', easy: '简单' };
-    var badgeText = '';
-    var badgeClass = '';
-    if (type === 'bosses') {
-      badgeText = diffMap[enemy.difficulty] || enemy.difficulty;
-      badgeClass = 'diff-' + enemy.difficulty;
-    } else if (type === 'elites') {
-      badgeText = '精英';
-      badgeClass = 'diff-medium';
-    } else {
-      badgeText = '普通';
-      badgeClass = 'diff-easy';
-    }
+    // 类型徽章
+    var badgeText = type === 'bosses' ? 'BOSS' : (type === 'elites' ? '精英' : '普通');
+    var badgeCls = type === 'bosses' ? 'boss-badge' : (type === 'elites' ? 'elite-badge' : 'common-badge');
 
     // 页面头部
     var nameEl = document.getElementById('bdName');
@@ -1556,24 +1544,7 @@
     nameEl.onblur = editMode ? function() { enemy.name = nameEl.textContent.trim(); saveData(); } : null;
     var badgeEl = document.getElementById('bdBadge');
     badgeEl.textContent = badgeText;
-    badgeEl.className = 'bd-badge boss-difficulty ' + badgeClass;
-    if (type === 'bosses' && editMode) {
-      badgeEl.style.cursor = 'pointer';
-      badgeEl.title = '点击切换难度';
-      badgeEl.onclick = function(e) {
-        e.stopPropagation();
-        var diffs = ['legendary', 'hard', 'medium', 'easy'];
-        var cur = diffs.indexOf(enemy.difficulty);
-        enemy.difficulty = diffs[(cur + 1) % diffs.length];
-        saveData();
-        renderBestiaryDetail(type, id);
-        showSaved();
-      };
-    } else {
-      badgeEl.style.cursor = '';
-      badgeEl.title = '';
-      badgeEl.onclick = null;
-    }
+    badgeEl.className = 'bd-badge ' + badgeCls;
 
     // 图片 — 逐个加载，全部就绪后同步显示
     var exts = ['.gif', '.png', '.webp', '.jpg'];
@@ -3603,9 +3574,8 @@
     if (document.body.classList.contains('edit-mode')) return;
     const b = TDE_DATA.bosses.find(x => x.id === id);
     if (!b) return;
-    const diffMap = { legendary:'传说', hard:'困难', medium:'中等', easy:'简单' };
     Modal.open(`
-      <h3>${b.name} <span class="boss-difficulty diff-${b.difficulty}" style="margin-left:10px;">${diffMap[b.difficulty]||b.difficulty}</span></h3>
+      <h3>${b.name}</h3>
       <p>${b.desc}</p>
       <p style="color:var(--text-muted);font-style:italic;">"${b.lore}"</p>
       <div class="detail-grid">

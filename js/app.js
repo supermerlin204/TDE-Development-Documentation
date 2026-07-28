@@ -1,4 +1,10 @@
-/* ============================================================
+
+    const catOrder = ["faction","family","organization","concept","race","event","attribute","region","status","myth","figure","technique"];
+    entries.sort(function(a,b) {
+      var ca = catOrder.indexOf(a.category), cb = catOrder.indexOf(b.category);
+      if (ca !== cb) return (ca === -1 ? 99 : ca) - (cb === -1 ? 99 : cb);
+      return (a.name || "").localeCompare(b.name || "", "zh");
+    });/* ============================================================
    无眠纪 — The Dreamless Era
    主应用逻辑 (含内联编辑系统)
    ============================================================ */
@@ -1362,6 +1368,8 @@
   }
 
   function renderNPCs() {
+    TDE_DATA.npcs.sort(function(a,b) { var l = (a.location||"").localeCompare(b.location||"","zh"); if (l !== 0) return l; return (a.name||"").localeCompare(b.name||"","zh"); });
+
     document.getElementById('tab-npcs').innerHTML = `
       <div class="char-grid">${TDE_DATA.npcs.map((n, i) => `
         <div class="char-card" ${editCard(`npcs.${i}`)}>
@@ -2370,6 +2378,9 @@
   window._mapClickRegion = mapClickRegion;
 
   function renderRegions() {
+    var _levelNum = function(lv) { if (lv === "主城") return 0; var m = String(lv).match(/\d+/); return m ? parseInt(m[0]) : 99; };
+    TDE_DATA.regions.sort(function(a,b) { return _levelNum(a.level) - _levelNum(b.level) || (a.name||"").localeCompare(b.name||"","zh"); });
+  
     document.getElementById('regionGrid').innerHTML = TDE_DATA.regions.map((r, i) => `
       <div class="region-card" ${editCard(`regions.${i}`)} onclick="if(!document.body.classList.contains('edit-mode'))window.location.hash='region/${r.id}'">
         ${renderCardDelete(`regions.${i}`)}
@@ -3518,6 +3529,8 @@
 
   // --- 装备 ---
   function renderWeapons() {
+    TDE_DATA.weapons.sort(function(a,b) { var t = (a.type||"").localeCompare(b.type||"","zh"); if (t !== 0) return t; return (a.name||"").localeCompare(b.name||"","zh"); });
+  
     const rarityMap = { legendary:'传说', epic:'史诗', rare:'稀有', common:'普通' };
     document.getElementById('etab-weapons').innerHTML = `
       <div class="equip-grid">${TDE_DATA.weapons.map((w, i) => `
@@ -3542,6 +3555,8 @@
   }
 
   function renderArmor() {
+    TDE_DATA.armor.sort(function(a,b) { var t = (a.type||"").localeCompare(b.type||"","zh"); if (t !== 0) return t; return (a.name||"").localeCompare(b.name||"","zh"); });
+  
     document.getElementById('etab-armor').innerHTML = `
       <div class="equip-grid">${TDE_DATA.armor.map((a, i) => `
         <div class="equip-card" ${editCard(`armor.${i}`)}>
@@ -3562,6 +3577,9 @@
   }
 
   function renderTalismans() {
+    var _rarityOrder = { legendary:0, epic:1, rare:2, common:3 };
+    TDE_DATA.talismans.sort(function(a,b) { var r = (_rarityOrder[a.rarity]||9) - (_rarityOrder[b.rarity]||9); if (r !== 0) return r; return (a.name||"").localeCompare(b.name||"","zh"); });
+  
     const rarityMap = { legendary:'传说', epic:'史诗', rare:'稀有', common:'普通' };
     document.getElementById('etab-talismans').innerHTML = `
       <div class="equip-grid">${TDE_DATA.talismans.map((t, i) => `
@@ -3595,6 +3613,8 @@
 
   // --- 任务 ---
   function renderQuests() {
+    TDE_DATA.quests.sort(function(a,b) { if (a.type !== b.type) return a.type === "main" ? -1 : 1; return (a.name||"").localeCompare(b.name||"","zh"); });
+  
     document.getElementById('questGrid').innerHTML = TDE_DATA.quests.map((q, i) => `
       <div class="quest-card ${q.type === 'main' ? 'main-quest' : 'side-quest'}" ${editCard(`quests.${i}`)}>
         ${renderCardDelete(`quests.${i}`)}
@@ -3658,6 +3678,13 @@
       region:'区域', status:'异常状态', attribute:'属性'
     };
     const entries = TDE_DATA.glossary || [];
+    const catOrder = ["faction","family","organization","concept","race","event","attribute","region","status","myth","figure","technique"];
+    entries.sort(function(a,b) {
+      var ca = catOrder.indexOf(a.category), cb = catOrder.indexOf(b.category);
+      if (ca !== cb) return (ca === -1 ? 99 : ca) - (cb === -1 ? 99 : cb);
+      return (a.name || "").localeCompare(b.name || "", "zh");
+    });
+    
     const filtered = cat === 'all' ? entries : entries.filter(e => e.category === cat);
 
     document.getElementById('glossaryGrid').innerHTML = filtered.map((g, i) => {

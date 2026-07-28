@@ -1268,7 +1268,7 @@
       var color = node.color || '#00bfa5';
       var bossCount = (r.bosses || []).filter(function(b) { return b && b !== '无'; }).length;
       var connCount = (r.connections || []).filter(function(c) { return c && c !== '无'; }).length;
-      html += '<a class="ro-card" href="#region/' + encodeURIComponent(r.name) + '" title="查看区域详情：' + r.name + '">'
+      html += '<a class="ro-card" href="#region/' + r.name + '" title="查看区域详情：' + r.name + '">'
         + '<span class="ro-dot" style="background:' + color + ';box-shadow:0 0 8px ' + color + ';"></span>'
         + '<div class="ro-info">'
         + '<span class="ro-name">' + r.name + '</span>'
@@ -2356,7 +2356,7 @@
     }
     var region = (TDE_DATA.regions || []).find(function(r) { return r.name === name; });
     if (region) {
-      Router.navigate('region/' + encodeURIComponent(region.name));
+      Router.navigate('region/' + region.name);
     }
   }
 
@@ -2367,7 +2367,7 @@
     TDE_DATA.regions.sort(function(a,b) { return _levelNum(a.level) - _levelNum(b.level) || (a.name||"").localeCompare(b.name||"","zh"); });
   
     document.getElementById('regionGrid').innerHTML = TDE_DATA.regions.map((r, i) => `
-      <div class="region-card" ${editCard(`regions.${i}`)} onclick="if(!document.body.classList.contains('edit-mode'))window.location.hash='region/${encodeURIComponent(r.name)}'">
+      <div class="region-card" ${editCard(`regions.${i}`)} onclick="if(!document.body.classList.contains('edit-mode'))window.location.hash='region/${r.name}'">
         ${renderCardDelete(`regions.${i}`)}
         <div class="region-card-header">
           <span class="region-name" ${edit(`regions.${i}.name`)}>${r.name}</span>
@@ -2395,7 +2395,7 @@
 
   // --- 区域详情页辅助函数 ---
   function saveRegionInline(regionId) {
-    var idx = TDE_DATA.regions.findIndex(function(r) { return r.name === decodeURIComponent(regionId); });
+    var idx = TDE_DATA.regions.findIndex(function(r) { return r.name === regionId; });
     if (idx === -1) return;
     var r = TDE_DATA.regions[idx];
 
@@ -2530,7 +2530,7 @@
   var _rgStates = {}; // { panX, panY, zoom, dragging, dragStartX, dragStartY, startPanX, startPanY, dragNodeId, connSource, lastTap, lastTapNodeId }
 
   function getRouteData(regionId) {
-    var region = TDE_DATA.regions.find(function(r) { return r.name === decodeURIComponent(regionId); });
+    var region = TDE_DATA.regions.find(function(r) { return r.name === regionId; });
     if (!region) return { nodes: [], edges: [] };
     // 迁移旧格式
     if (Array.isArray(region.route)) {
@@ -2547,7 +2547,7 @@
   }
 
   function saveRouteGraphData(regionId) {
-    var region = TDE_DATA.regions.find(function(r) { return r.name === decodeURIComponent(regionId); });
+    var region = TDE_DATA.regions.find(function(r) { return r.name === regionId; });
     if (!region) return;
     var container = document.getElementById('rgContainer-' + regionId);
     if (!container) return;
@@ -3147,7 +3147,7 @@
 
   function renderRegionDetail(regionId, focusLandmark) {
     var regions = TDE_DATA.regions || [];
-    var idx = regions.findIndex(function(r) { return r.name === decodeURIComponent(regionId); });
+    var idx = regions.findIndex(function(r) { return r.name === regionId; });
 
     var elTitle = document.getElementById('rdTitle');
     var elSub = document.getElementById('rdSubtitle');

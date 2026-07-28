@@ -1575,54 +1575,100 @@
       badgeEl.onclick = null;
     }
 
-    // 图片 — 所有图片横向并排，主图 + _1~_5 变体
+    // 图片 — 主图 + _1~_5 变体，逐个加载，加载出一个显示一个
     var exts = ['.gif', '.png', '.webp', '.jpg'];
     var imgInput = document.getElementById('bdImageInput');
     var placeholderEl = document.getElementById('bdImagePlaceholder');
+    var galleryEl = document.getElementById('bdImageGallery');
 
-    // 隐藏旧的主图区，改用画廊统一展示
+    // 隐藏旧的主图区
     document.getElementById('bdImageWrapper').style.display = 'none';
+    galleryEl.innerHTML = '';
+    placeholderEl.style.display = 'none';
 
-    // 构建主图候选 + 编号变体候选
+    // 构建某编号的候选路径: variants[v] = [candidates...]
+    function buildCandidates(suffix) {
+      var c = [];
+      exts.forEach(function(ext) { c.push('img/enemies/' + encodeURIComponent(enemy.name) + suffix + ext); });
+      exts.forEach(function(ext) { c.push('img/enemies/' + enemy.id + suffix + ext); });
+      return c;
+    }
+    // 主图候选 (优先自定义路径)
     var primaryCandidates = [];
     if (enemy.image) primaryCandidates.push(enemy.image);
-    exts.forEach(function(ext) { primaryCandidates.push('img/enemies/' + encodeURIComponent(enemy.name) + ext); });
-    exts.forEach(function(ext) { primaryCandidates.push('img/enemies/' + enemy.id + ext); });
+    primaryCandidates = primaryCandidates.concat(buildCandidates(''));
 
-    var galleryEl = document.getElementById('bdImageGallery');
-    var MAX_VARIANT = 5;
-    var galleryHTML = '';
+    var allVariants = [primaryCandidates]; // v=0: 主图
+    for (var v = 1; v <= 5; v++) { allVariants.push(buildCandidates('_' + v)); }
 
-    // 主图 (v=0)
-    var pSrc = primaryCandidates[0];
-    var pFallback = JSON.stringify(primaryCandidates.slice(1));
-    galleryHTML += '<div class="bd-gallery-item">'
-      + '<img src="' + pSrc + '" alt="" data-fallback=\'' + pFallback + '\' onerror="var f=JSON.parse(this.getAttribute(\'data-fallback\'));if(f.length){this.setAttribute(\'data-fallback\',JSON.stringify(f.slice(1)));this.src=f[0]}else{this.parentElement.style.display=\'none\'}" onload="this.parentElement.style.display=\'\'">'
-      + '</div>';
+    var anyLoaded = false;
+    var currentV = 0;
 
-    // 编号变体
-    for (var v = 1; v <= MAX_VARIANT; v++) {
-      var gCandidates = [];
-      exts.forEach(function(ext) { gCandidates.push('img/enemies/' + encodeURIComponent(enemy.name) + '_' + v + ext); });
-      exts.forEach(function(ext) { gCandidates.push('img/enemies/' + enemy.id + '_' + v + ext); });
-      var gSrc = gCandidates[0];
-      var gFallback = JSON.stringify(gCandidates.slice(1));
-      galleryHTML += '<div class="bd-gallery-item">'
-        + '<img src="' + gSrc + '" alt="" data-fallback=\'' + gFallback + '\' onerror="var f=JSON.parse(this.getAttribute(\'data-fallback\'));if(f.length){this.setAttribute(\'data-fallback\',JSON.stringify(f.slice(1)));this.src=f[0]}else{this.parentElement.style.display=\'none\'}" onload="this.parentElement.style.display=\'\'">'
-        + '</div>';
-    }
-    galleryEl.innerHTML = galleryHTML;
-
-    // 如果没有任何图片加载成功，显示占位符
-    setTimeout(function() {
-      var items = galleryEl.querySelectorAll('.bd-gallery-item');
-      var anyVisible = false;
-      for (var i = 0; i < items.length; i++) {
-        if (items[i].style.display !== 'none') { anyVisible = true; break; }
+    function loadNext() {
+      if (currentV >= allVariants.length) {
+        if (!anyLoaded) placeholderEl.style.display = '';
+        return;
       }
-      if (!anyVisible) placeholderEl.style.display = '';
-      else placeholderEl.style.display = 'none';
-    }, 800);
+      var candidates = allVariants[currentV];
+      var idx = 0;
+      var itemDiv = document.createElement('div');
+      itemDiv.className = 'bd-gallery-item';
+      itemDiv.style.display = 'none';
+      var img = document.createElement('img');
+      img.alt = '';
+
+      img.onload = function() {
+        itemDiv.style.display = '';
+        anyLoaded = true;
+        placeholderEl.style.display = 'none';
+        currentV++;
+        loadNext();
+      };
+      img.onerror = function() {
+        idx++;
+        if (idx < candidates.length) {
+          img.src = candidates[idx];
+        } else {
+          itemDiv.remove();
+        }
+      };
+      img.src = candidates[0];
+      itemDiv.appendChild(img);
+      galleryEl.appendChild(itemDiv);
+    }
+
+    // 先用 onload/onerror 驱动第一个，后续由 loadNext 链式触发
+    function startFirst() {
+      var candidates = allVariants[0];
+      var idx = 0;
+      var itemDiv = document.createElement('div');
+      itemDiv.className = 'bd-gallery-item';
+      itemDiv.style.display = 'none';
+      var img = document.createElement('img');
+      img.alt = '';
+
+      img.onload = function() {
+        itemDiv.style.display = '';
+        anyLoaded = true;
+        placeholderEl.style.display = 'none';
+        currentV = 1;
+        loadNext();
+      };
+      img.onerror = function() {
+        idx++;
+        if (idx < candidates.length) {
+          img.src = candidates[idx];
+        } else {
+          itemDiv.remove();
+          currentV = 1;
+          loadNext();
+        }
+      };
+      img.src = candidates[0];
+      itemDiv.appendChild(img);
+      galleryEl.appendChild(itemDiv);
+    }
+    startFirst();
 
     imgInput.value = enemy.image || '';
     imgInput.placeholder = 'img/enemies/' + enemy.name + '.gif';

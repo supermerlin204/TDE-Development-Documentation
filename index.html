@@ -276,6 +276,55 @@
         <div class="tab-content" id="btab-common"></div>
       </section>
 
+      <!-- 敌人详情页 -->
+      <section id="page-bestiary-detail" class="page">
+        <header class="page-header bd-header">
+          <a class="bd-back-link" href="#bestiary">&larr; 返回图鉴</a>
+          <h2 class="page-title" id="bdName"></h2>
+          <span class="bd-badge" id="bdBadge"></span>
+        </header>
+        <div class="bd-hero">
+          <div class="bd-image-panel" id="bdImagePanel">
+            <div class="bd-image-wrapper" id="bdImageWrapper">
+              <img id="bdImage" src="" alt="" style="display:none">
+              <div class="bd-image-placeholder" id="bdImagePlaceholder">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-2-6.5l-1.5 1.5L12 18l4.5-4.5L15 12l-3 3-3-3z"/></svg>
+                <span>点击设置敌人展示图</span>
+              </div>
+            </div>
+            <div class="bd-image-controls" id="bdImageControls" style="display:none">
+              <input type="text" class="bd-image-input" id="bdImageInput" placeholder="输入图片路径，如 img/enemies/boss.gif">
+              <button class="bd-image-btn" id="bdImageBtn">更换图片</button>
+            </div>
+          </div>
+          <div class="bd-content-panel">
+            <div class="bd-tabs" id="bdTabs">
+              <button class="bd-tab-btn active" data-bdtab="intro">介绍</button>
+              <button class="bd-tab-btn" data-bdtab="lore" id="bdTabLore" style="display:none">背景故事</button>
+            </div>
+            <div class="bd-tab-content active" id="bdtab-intro">
+              <div class="bd-md-view" id="bdMdView"></div>
+              <div class="bd-md-edit" id="bdMdEdit">
+                <textarea class="bd-md-textarea" id="bdMdTextarea" placeholder="使用 Markdown 语法编写敌人介绍..."></textarea>
+                <div class="bd-md-preview" id="bdMdPreview"></div>
+              </div>
+            </div>
+            <div class="bd-tab-content" id="bdtab-lore">
+              <div class="bd-md-view" id="bdLoreView"></div>
+              <div class="bd-md-edit" id="bdLoreEdit">
+                <textarea class="bd-md-textarea" id="bdLoreTextarea" placeholder="使用 Markdown 语法编写背景故事..."></textarea>
+                <div class="bd-md-preview" id="bdLorePreview"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bd-stats-section">
+          <h3 class="bd-stats-title">战斗数据</h3>
+          <div class="bd-stats-grid" id="bdStatsGrid"></div>
+          <div class="bd-drops-section" id="bdDropsSection"></div>
+        </div>
+      </section>
+
 
       <!-- 装备道具 -->
       <section id="page-equipment" class="page">
@@ -368,6 +417,7 @@
   </div>
 
   <!-- 数据文件（_init.js 必须在最前，其余顺序无关） -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js"></script>
   <script src="data/_init.js"></script>
   <script src="data/dashboard.js"></script>
   <script src="data/classes.js"></script>

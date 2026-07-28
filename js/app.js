@@ -83,6 +83,8 @@
     currentPage: 'dashboard',
     currentSub: null,
     currentLandmark: null,
+    currentBestiaryType: null,
+    currentBestiaryId: null,
     init() {
       const hash = window.location.hash.slice(1) || 'dashboard';
       this.navigate(hash);
@@ -106,8 +108,24 @@
       this.currentSub = (basePage === 'region-detail') ? regionId : null;
       this.currentLandmark = (basePage === 'region-detail') ? landmark : null;
 
-      // 高亮导航：区域详情页时高亮"世界地图"
-      var navMatch = (basePage === 'region-detail') ? 'world' : basePage;
+      // 解析：bestiary/{type}/{id}
+      var bestiaryType = null;
+      var bestiaryId = null;
+      if (basePage === 'bestiary' && sub) {
+        var bParts = sub.split('/');
+        if (bParts.length >= 2) {
+          bestiaryType = bParts[0];
+          bestiaryId = decodeURIComponent(bParts.slice(1).join('/'));
+          basePage = 'bestiary-detail';
+        }
+      }
+      this.currentBestiaryType = (basePage === 'bestiary-detail') ? bestiaryType : null;
+      this.currentBestiaryId = (basePage === 'bestiary-detail') ? bestiaryId : null;
+
+      // 高亮导航：区域详情页或敌人详情页时高亮对应父页面
+      var navMatch = basePage;
+      if (basePage === 'region-detail') navMatch = 'world';
+      if (basePage === 'bestiary-detail') navMatch = 'bestiary';
       document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page === navMatch));
 
       // 显示/隐藏页面
@@ -126,11 +144,15 @@
 
       // 区域详情页渲染
       if (basePage === 'region-detail' && regionId) {
-        // 无地标聚焦时清除高亮
         if (!landmark && window._clearLandmarkHighlight) {
           window._clearLandmarkHighlight();
         }
         renderRegionDetail(regionId, landmark);
+      }
+
+      // 敌人详情页渲染
+      if (basePage === 'bestiary-detail' && bestiaryType && bestiaryId) {
+        renderBestiaryDetail(bestiaryType, bestiaryId);
       }
     }
   };
@@ -277,6 +299,10 @@
     if (Router.currentPage.startsWith('region/')) {
       renderRegionDetail(Router.currentSub, Router.currentLandmark);
     }
+    // 若在敌人详情页，切换编辑/查看模式
+    if (Router.currentPage.startsWith('bestiary/')) {
+      renderBestiaryDetail(Router.currentBestiaryType, Router.currentBestiaryId);
+    }
   }
 
   // ============================
@@ -405,6 +431,10 @@
     // 若当前在区域详情页，刷新之
     if (Router.currentPage.startsWith('region/')) {
       renderRegionDetail(Router.currentSub, Router.currentLandmark);
+    }
+    // 若当前在敌人详情页，刷新之
+    if (Router.currentPage.startsWith('bestiary/')) {
+      renderBestiaryDetail(Router.currentBestiaryType, Router.currentBestiaryId);
     }
   }
 
@@ -1356,7 +1386,7 @@
     const diffMap = { legendary:'传说', hard:'困难', medium:'中等', easy:'简单' };
     document.getElementById('btab-bosses').innerHTML = `
       <div class="boss-grid">${TDE_DATA.bosses.map((b, i) => `
-        <div class="boss-card difficulty-${b.difficulty}" ${editCard(`bosses.${i}`)} onclick="if(!document.body.classList.contains('edit-mode'))window._showBossDetail('${b.id}')">
+        <div class="boss-card difficulty-${b.difficulty}" ${editCard(`bosses.${i}`)} onclick="if(!document.body.classList.contains('edit-mode'))window.location.hash='bestiary/bosses/${b.id}'">
           ${renderCardDelete(`bosses.${i}`)}
           <div class="boss-header">
             <span class="boss-name" ${edit(`bosses.${i}.name`)}>${b.name}</span>
@@ -1389,7 +1419,7 @@
   function renderElites() {
     document.getElementById('btab-elites').innerHTML = `
       <div class="boss-grid">${TDE_DATA.elites.map((e, i) => `
-        <div class="boss-card" ${editCard(`elites.${i}`)}>
+        <div class="boss-card" ${editCard(`elites.${i}`)} onclick="if(!document.body.classList.contains('edit-mode'))window.location.hash='bestiary/elites/${e.id}'">
           ${renderCardDelete(`elites.${i}`)}
           <div class="boss-header">
             <span class="boss-name" ${edit(`elites.${i}.name`)}>${e.name}</span>
@@ -1408,7 +1438,7 @@
   function renderCommon() {
     document.getElementById('btab-common').innerHTML = `
       <div class="boss-grid">${TDE_DATA.common.map((e, i) => `
-        <div class="boss-card" ${editCard(`common.${i}`)}>
+        <div class="boss-card" ${editCard(`common.${i}`)} onclick="if(!document.body.classList.contains('edit-mode'))window.location.hash='bestiary/common/${e.id}'">
           ${renderCardDelete(`common.${i}`)}
           <div class="boss-header">
             <span class="boss-name" ${edit(`common.${i}.name`)}>${e.name}</span>
@@ -1422,6 +1452,230 @@
         </div>
       `).join('')}</div>
     ` + renderArrayControls('common');
+  }
+
+  // --- 敌人详情页 ---
+  function renderBestiaryDetail(type, id) {
+    var enemy = null;
+    var dataKey = '';
+    if (type === 'bosses') { enemy = TDE_DATA.bosses.find(function(x) { return x.id === id; }); dataKey = 'bosses'; }
+    else if (type === 'elites') { enemy = TDE_DATA.elites.find(function(x) { return x.id === id; }); dataKey = 'elites'; }
+    else if (type === 'common') { enemy = TDE_DATA.common.find(function(x) { return x.id === id; }); dataKey = 'common'; }
+
+    if (!enemy) {
+      document.getElementById('bdName').textContent = '敌人未找到';
+      return;
+    }
+
+    var idx = TDE_DATA[dataKey].indexOf(enemy);
+    var basePath = dataKey + '.' + idx;
+
+    // 难度/类型徽章
+    var diffMap = { legendary: '传说', hard: '困难', medium: '中等', easy: '简单' };
+    var badgeText = '';
+    var badgeClass = '';
+    if (type === 'bosses') {
+      badgeText = diffMap[enemy.difficulty] || enemy.difficulty;
+      badgeClass = 'diff-' + enemy.difficulty;
+    } else if (type === 'elites') {
+      badgeText = '精英';
+      badgeClass = 'diff-medium';
+    } else {
+      badgeText = '普通';
+      badgeClass = 'diff-easy';
+    }
+
+    // 页面头部
+    var nameEl = document.getElementById('bdName');
+    nameEl.textContent = enemy.name;
+    nameEl.contentEditable = editMode ? 'true' : 'false';
+    nameEl.onblur = editMode ? function() { enemy.name = nameEl.textContent.trim(); saveData(); } : null;
+    var badgeEl = document.getElementById('bdBadge');
+    badgeEl.textContent = badgeText;
+    badgeEl.className = 'bd-badge boss-difficulty ' + badgeClass;
+    if (type === 'bosses' && editMode) {
+      badgeEl.style.cursor = 'pointer';
+      badgeEl.title = '点击切换难度';
+      badgeEl.onclick = function(e) {
+        e.stopPropagation();
+        var diffs = ['legendary', 'hard', 'medium', 'easy'];
+        var cur = diffs.indexOf(enemy.difficulty);
+        enemy.difficulty = diffs[(cur + 1) % diffs.length];
+        saveData();
+        renderBestiaryDetail(type, id);
+        showSaved();
+      };
+    } else {
+      badgeEl.style.cursor = '';
+      badgeEl.title = '';
+      badgeEl.onclick = null;
+    }
+
+    // 图片
+    var imgEl = document.getElementById('bdImage');
+    var placeholderEl = document.getElementById('bdImagePlaceholder');
+    var imgInput = document.getElementById('bdImageInput');
+    if (enemy.image) {
+      imgEl.src = enemy.image;
+      imgEl.style.display = 'block';
+      placeholderEl.style.display = 'none';
+    } else {
+      imgEl.src = '';
+      imgEl.style.display = 'none';
+      placeholderEl.style.display = '';
+    }
+    imgInput.value = enemy.image || '';
+    document.getElementById('bdImageControls').style.display = editMode ? 'flex' : 'none';
+    document.getElementById('bdImageWrapper').onclick = editMode ? function() {
+      var path = prompt('输入图片路径（如 img/enemies/boss.gif）:', enemy.image || '');
+      if (path !== null) {
+        enemy.image = path;
+        saveData();
+        renderBestiaryDetail(type, id);
+      }
+    } : null;
+
+    // 图片输入按钮
+    document.getElementById('bdImageBtn').onclick = function() {
+      var path = imgInput.value.trim();
+      enemy.image = path;
+      saveData();
+      renderBestiaryDetail(type, id);
+      showSaved();
+    };
+    imgInput.onkeydown = function(e) {
+      if (e.key === 'Enter') {
+        enemy.image = imgInput.value.trim();
+        saveData();
+        renderBestiaryDetail(type, id);
+        showSaved();
+      }
+    };
+
+    // Markdown 介绍
+    var descText = enemy.desc || '';
+    document.getElementById('bdMdView').innerHTML = descText ? renderMarkdown(descText) : '<div class="bd-md-empty">暂无介绍，开启编辑模式编写</div>';
+    document.getElementById('bdMdTextarea').value = descText;
+
+    // 背景故事 (仅Boss)
+    var hasLore = type === 'bosses' && enemy.lore !== undefined;
+    document.getElementById('bdTabLore').style.display = hasLore ? '' : 'none';
+    if (hasLore) {
+      var loreText = enemy.lore || '';
+      document.getElementById('bdLoreView').innerHTML = loreText ? renderMarkdown(loreText) : '<div class="bd-md-empty">暂无背景故事，开启编辑模式编写</div>';
+      document.getElementById('bdLoreTextarea').value = loreText;
+    }
+
+    // Markdown 实时预览
+    var mdTextarea = document.getElementById('bdMdTextarea');
+    var mdPreview = document.getElementById('bdMdPreview');
+    mdTextarea.oninput = function() {
+      enemy.desc = mdTextarea.value;
+      mdPreview.innerHTML = renderMarkdown(mdTextarea.value);
+      saveData();
+    };
+    var loreTextarea = document.getElementById('bdLoreTextarea');
+    var lorePreview = document.getElementById('bdLorePreview');
+    if (hasLore) {
+      loreTextarea.oninput = function() {
+        enemy.lore = loreTextarea.value;
+        lorePreview.innerHTML = renderMarkdown(loreTextarea.value);
+        saveData();
+      };
+    }
+
+    // 标签页切换
+    document.querySelectorAll('#bdTabs .bd-tab-btn').forEach(function(btn) {
+      btn.onclick = function() {
+        var tab = btn.dataset.bdtab;
+        document.querySelectorAll('#bdTabs .bd-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        document.querySelectorAll('#page-bestiary-detail .bd-tab-content').forEach(function(c) { c.classList.remove('active'); });
+        document.getElementById('bdtab-' + tab).classList.add('active');
+      };
+    });
+
+    // 进入编辑模式时初始化预览
+    if (editMode) {
+      mdPreview.innerHTML = renderMarkdown(mdTextarea.value);
+      if (hasLore) lorePreview.innerHTML = renderMarkdown(loreTextarea.value);
+    }
+
+    // 统计网格
+    var statsHTML = '';
+    // HP
+    statsHTML += '<div class="bd-stat-item"><div class="bd-stat-label">' + glossLink('生命值') + '</div><div class="bd-stat-value" ' + (editMode ? 'contenteditable="true" onblur="window._bdSaveStat(\'' + basePath + '.hp\', this.textContent)"' : '') + '>' + (enemy.hp || '-') + '</div></div>';
+    // 阶段 (仅Boss)
+    if (type === 'bosses') {
+      statsHTML += '<div class="bd-stat-item"><div class="bd-stat-label">阶段数</div><div class="bd-stat-value" ' + (editMode ? 'contenteditable="true" onblur="window._bdSaveStat(\'' + basePath + '.phases\', this.textContent)"' : '') + '>' + (enemy.phases || '-') + '</div></div>';
+    }
+    // 位置
+    statsHTML += '<div class="bd-stat-item"><div class="bd-stat-label">所在区域</div><div class="bd-stat-value" ' + (editMode ? 'contenteditable="true" onblur="window._bdSaveStat(\'' + basePath + '.location\', this.textContent)"' : '') + '>' + (enemy.location || '-') + '</div></div>';
+    // 伤害类型 (仅Boss)
+    if (type === 'bosses' && enemy.damageTypes) {
+      statsHTML += '<div class="bd-stat-item"><div class="bd-stat-label">伤害类型</div><div class="bd-stat-value">' + glossLinks(enemy.damageTypes) + '</div></div>';
+    }
+    // 弱点 (仅Boss)
+    if (type === 'bosses' && enemy.weaknesses) {
+      statsHTML += '<div class="bd-stat-item"><div class="bd-stat-label">弱点属性</div><div class="bd-stat-value" style="color:#69f0ae;">' + glossLinks(enemy.weaknesses) + '</div></div>';
+    }
+    // 抗性 (仅Boss)
+    if (type === 'bosses' && enemy.resistances) {
+      statsHTML += '<div class="bd-stat-item"><div class="bd-stat-label">抗性属性</div><div class="bd-stat-value" style="color:#ff5252;">' + glossLinks(enemy.resistances) + '</div></div>';
+    }
+    document.getElementById('bdStatsGrid').innerHTML = statsHTML;
+
+    // 掉落物 (仅Boss)
+    var dropsSection = document.getElementById('bdDropsSection');
+    if (type === 'bosses' && enemy.drops && enemy.drops.length) {
+      dropsSection.style.display = '';
+      dropsSection.innerHTML = '<div class="bd-drops-label">掉落物品</div><div class="bd-drops-list">' + enemy.drops.map(function(d, j) {
+        return '<span class="bd-drop-chip">' +
+          '<span ' + (editMode ? 'contenteditable="true" onblur="window._bdSaveStat(\'' + basePath + '.drops.' + j + '\', this.textContent)"' : '') + '>' + d + '</span>' +
+          (editMode ? '<button class="bd-drop-del" onclick="window._bdDelDrop(\'' + basePath + '\', ' + j + ')" title="删除">&times;</button>' : '') +
+        '</span>';
+      }).join('') + (editMode ? '<button class="inline-add-btn" onclick="window._bdAddDrop(\'' + basePath + '\')" style="margin-left:4px;">+ 添加</button>' : '') + '</div>';
+    } else if (type === 'bosses') {
+      dropsSection.style.display = '';
+      dropsSection.innerHTML = '<div class="bd-drops-label">掉落物品</div><div class="bd-drops-list">' + (editMode ? '<button class="inline-add-btn" onclick="window._bdAddDrop(\'' + basePath + '\')">+ 添加掉落</button>' : '<span style="color:var(--text-muted);font-size:0.72rem;">暂无</span>') + '</div>';
+    } else {
+      dropsSection.style.display = 'none';
+    }
+  }
+
+  // 敌人详情页内联保存
+  window._bdSaveStat = function(path, value) {
+    setDataByPath(path, value.trim());
+    saveData();
+  };
+
+  window._bdAddDrop = function(basePath) {
+    var enemy = getDataByPath(basePath);
+    if (!enemy || !enemy.drops) return;
+    enemy.drops.push('新掉落物');
+    saveData();
+    renderAll();
+    showSaved();
+  };
+
+  window._bdDelDrop = function(basePath, idx) {
+    var enemy = getDataByPath(basePath);
+    if (!enemy || !enemy.drops) return;
+    enemy.drops.splice(idx, 1);
+    saveData();
+    renderAll();
+    showSaved();
+  };
+
+  // Markdown 渲染
+  function renderMarkdown(text) {
+    if (!text) return '';
+    if (typeof marked !== 'undefined') {
+      marked.setOptions({ breaks: true, gfm: true });
+      return marked.parse(text);
+    }
+    // 降级：简单的纯文本渲染
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
   }
 
   // --- 世界 ---
@@ -2850,7 +3104,7 @@
         bosses.forEach(function(bossName) {
           var bossData = TDE_DATA.bosses.find(function(b) { return b.name === bossName; });
           if (bossData) {
-            sectionsHTML += '<div class="rd-boss-item" onclick="window._showBossDetail(\'' + bossData.id + '\')">';
+            sectionsHTML += '<div class="rd-boss-item" onclick="window.location.hash=\'bestiary/bosses/' + bossData.id + '\'">';
             sectionsHTML += '<svg viewBox="0 0 24 24" width="14" height="14" style="fill:var(--cyan);flex-shrink:0"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
             sectionsHTML += '<span>' + bossName + '</span>';
             sectionsHTML += '</div>';
@@ -3572,6 +3826,9 @@
     renderRegions();
     if (Router.currentPage.startsWith('region/')) {
       renderRegionDetail(Router.currentSub, Router.currentLandmark);
+    }
+    if (Router.currentPage.startsWith('bestiary/')) {
+      renderBestiaryDetail(Router.currentBestiaryType, Router.currentBestiaryId);
     }
     renderWeapons();
     renderArmor();

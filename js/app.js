@@ -859,7 +859,7 @@
     // 始终根据数组名生成默认模板
     var _tpl = {
       regions: { name:"XXXXX", level:"1-10", desc:"XXXXX", tags:[], landmarks:[], bosses:["无"], route:{nodes:[],edges:[]}, connections:[] },
-      bosses: { id:"new_boss", name:"XXXXX", faction:"", difficulty:"中等", phases:1, desc:"XXXXX", lore:"", drops:[], damageTypes:[], weaknesses:[], resistances:[] },
+      bosses: { id:"new_boss", name:"XXXXX", faction:"", difficulty:"中等", phases:1, desc:"XXXXX", lore:"", drops:[] },
       elites: { id:"new_elite", name:"XXXXX", faction:"", desc:"XXXXX" },
       common: { id:"new_common", name:"XXXXX", faction:"", desc:"XXXXX" },
       weapons: { id:"new_weapon", name:"XXXXX", type:"直剑", rarity:"common", dmg:{}, scaling:{}, skill:"XXXXX", desc:"XXXXX" },
@@ -3798,12 +3798,7 @@
       <p>${b.desc}</p>
       <p style="color:var(--text-muted);font-style:italic;">"${b.lore}"</p>
       <div class="detail-grid">
-        <div class="detail-item">${glossLink('生命值')} <span class="detail-value">${b.hp}</span></div>
         <div class="detail-item"><span class="detail-label">阶段数</span> <span class="detail-value">${b.phases}</span></div>
-        <div class="detail-item"><span class="detail-label">所在区域</span> <span class="detail-value">${b.location}</span></div>
-        <div class="detail-item"><span class="detail-label">伤害类型</span> <span class="detail-value">${glossLinks(b.damageTypes)}</span></div>
-        <div class="detail-item"><span class="detail-label">弱点属性</span> <span class="detail-value" style="color:var(--green);">${glossLinks(b.weaknesses)}</span></div>
-        <div class="detail-item"><span class="detail-label">抗性属性</span> <span class="detail-value" style="color:var(--red);">${glossLinks(b.resistances)}</span></div>
       </div>
       <p><strong>掉落：</strong>${b.drops.join(' / ')}</p>
     `);

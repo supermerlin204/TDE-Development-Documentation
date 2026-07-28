@@ -1575,39 +1575,32 @@
       badgeEl.onclick = null;
     }
 
-    // 图片 — 优先自定义路径，其次中文名，最后英文 id
-    var imgEl = document.getElementById('bdImage');
-    var placeholderEl = document.getElementById('bdImagePlaceholder');
-    var imgInput = document.getElementById('bdImageInput');
+    // 图片 — 所有图片横向并排，主图 + _1~_5 变体
     var exts = ['.gif', '.png', '.webp', '.jpg'];
-    var candidates = [];
-    if (enemy.image) candidates.push(enemy.image);
-    // 中文名 + 各扩展名
-    exts.forEach(function(ext) { candidates.push('img/enemies/' + encodeURIComponent(enemy.name) + ext); });
-    // 英文 id + 各扩展名
-    exts.forEach(function(ext) { candidates.push('img/enemies/' + enemy.id + ext); });
+    var imgInput = document.getElementById('bdImageInput');
+    var placeholderEl = document.getElementById('bdImagePlaceholder');
 
-    var tryIdx = 0;
-    function tryNextImage() {
-      if (tryIdx < candidates.length) {
-        imgEl.src = candidates[tryIdx];
-        tryIdx++;
-      } else {
-        imgEl.style.display = 'none';
-        placeholderEl.style.display = '';
-      }
-    }
-    imgEl.onerror = tryNextImage;
-    imgEl.onload = function() {
-      imgEl.style.display = 'block';
-      placeholderEl.style.display = 'none';
-    };
-    tryNextImage();
+    // 隐藏旧的主图区，改用画廊统一展示
+    document.getElementById('bdImageWrapper').style.display = 'none';
 
-    // 多图画廊 — 扫描 _1 ~ _5 的编号变体，横向并排展示
+    // 构建主图候选 + 编号变体候选
+    var primaryCandidates = [];
+    if (enemy.image) primaryCandidates.push(enemy.image);
+    exts.forEach(function(ext) { primaryCandidates.push('img/enemies/' + encodeURIComponent(enemy.name) + ext); });
+    exts.forEach(function(ext) { primaryCandidates.push('img/enemies/' + enemy.id + ext); });
+
     var galleryEl = document.getElementById('bdImageGallery');
     var MAX_VARIANT = 5;
     var galleryHTML = '';
+
+    // 主图 (v=0)
+    var pSrc = primaryCandidates[0];
+    var pFallback = JSON.stringify(primaryCandidates.slice(1));
+    galleryHTML += '<div class="bd-gallery-item">'
+      + '<img src="' + pSrc + '" alt="" data-fallback=\'' + pFallback + '\' onerror="var f=JSON.parse(this.getAttribute(\'data-fallback\'));if(f.length){this.setAttribute(\'data-fallback\',JSON.stringify(f.slice(1)));this.src=f[0]}else{this.parentElement.style.display=\'none\'}" onload="this.parentElement.style.display=\'\'">'
+      + '</div>';
+
+    // 编号变体
     for (var v = 1; v <= MAX_VARIANT; v++) {
       var gCandidates = [];
       exts.forEach(function(ext) { gCandidates.push('img/enemies/' + encodeURIComponent(enemy.name) + '_' + v + ext); });
@@ -1619,6 +1612,17 @@
         + '</div>';
     }
     galleryEl.innerHTML = galleryHTML;
+
+    // 如果没有任何图片加载成功，显示占位符
+    setTimeout(function() {
+      var items = galleryEl.querySelectorAll('.bd-gallery-item');
+      var anyVisible = false;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].style.display !== 'none') { anyVisible = true; break; }
+      }
+      if (!anyVisible) placeholderEl.style.display = '';
+      else placeholderEl.style.display = 'none';
+    }, 800);
 
     imgInput.value = enemy.image || '';
     imgInput.placeholder = 'img/enemies/' + enemy.name + '.gif';

@@ -105,6 +105,9 @@
       // 解析地标：region/{id}/{landmark}
       var subParts = (sub || '').split('/');
       var regionId = subParts[0] || null;
+      if (regionId && regionId.indexOf('%') !== -1) {
+        try { regionId = decodeURIComponent(regionId); } catch(e) {}
+      }
       var landmark = subParts[1] ? decodeURIComponent(subParts.slice(1).join('/')) : null;
       this.currentSub = (basePage === 'region-detail') ? regionId : null;
       this.currentLandmark = (basePage === 'region-detail') ? landmark : null;
@@ -1268,7 +1271,7 @@
       var color = node.color || '#00bfa5';
       var bossCount = (r.bosses || []).filter(function(b) { return b && b !== '无'; }).length;
       var connCount = (r.connections || []).filter(function(c) { return c && c !== '无'; }).length;
-      html += '<a class="ro-card" href="#region/' + r.name + '" title="查看区域详情：' + r.name + '">'
+      html += '<a class="ro-card" href="#region/' + encodeURIComponent(r.name) + '" title="查看区域详情：' + r.name + '">'
         + '<span class="ro-dot" style="background:' + color + ';box-shadow:0 0 8px ' + color + ';"></span>'
         + '<div class="ro-info">'
         + '<span class="ro-name">' + r.name + '</span>'
@@ -2356,7 +2359,7 @@
     }
     var region = (TDE_DATA.regions || []).find(function(r) { return r.name === name; });
     if (region) {
-      Router.navigate('region/' + region.name);
+      Router.navigate('region/' + encodeURIComponent(region.name));
     }
   }
 
@@ -2367,7 +2370,7 @@
     TDE_DATA.regions.sort(function(a,b) { return _levelNum(a.level) - _levelNum(b.level) || (a.name||"").localeCompare(b.name||"","zh"); });
   
     document.getElementById('regionGrid').innerHTML = TDE_DATA.regions.map((r, i) => `
-      <div class="region-card" ${editCard(`regions.${i}`)} onclick="if(!document.body.classList.contains('edit-mode'))window.location.hash='region/${r.name}'">
+      <div class="region-card" ${editCard(`regions.${i}`)} onclick="if(!document.body.classList.contains('edit-mode'))window.location.hash='region/${encodeURIComponent(r.name)}'">
         ${renderCardDelete(`regions.${i}`)}
         <div class="region-card-header">
           <span class="region-name" ${edit(`regions.${i}.name`)}>${r.name}</span>

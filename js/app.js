@@ -1923,6 +1923,12 @@
     var nodes = TDE_DATA.worldMap.nodes;
     var regions = TDE_DATA.regions || [];
 
+    // 清理已被删除的区域对应的地图节点
+    var regionNames = regions.map(function(r) { return r.name; });
+    Object.keys(nodes).forEach(function(nodeName) {
+      if (regionNames.indexOf(nodeName) === -1) delete nodes[nodeName];
+    });
+
     // 自动为没有节点的区域生成节点（圆形排列，颜色随机选择）
     var missingRegions = regions.filter(function(r) { return !nodes[r.name]; });
     if (missingRegions.length > 0) {

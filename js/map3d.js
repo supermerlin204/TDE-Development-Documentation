@@ -124,7 +124,7 @@ function initScene(container) {
 
 function disposeScene(container) {
   if (_animId) { cancelAnimationFrame(_animId); _animId = null; }
-  if (_model) { _scene.remove(_model); disposeModel(_model); _model = null; }
+  if (_model && _scene) { _scene.remove(_model); disposeModel(_model); _model = null; }
   if (_renderer) { _renderer.dispose(); _renderer = null; }
   _scene = null; _camera = null; _controls = null; _currentRegion = null;
   if (container) container.innerHTML = '';
@@ -148,6 +148,7 @@ let _highlightedMesh = null;
 let _highlightOriginalMaterial = null;
 
 function processLoadedModel(gltf) {
+  if (!_scene) return; // 场景已被销毁（用户已离开页面）
   if (_model) { _scene.remove(_model); disposeModel(_model); }
   clearLandmarkHighlight();
   _model = gltf.scene;
@@ -311,6 +312,7 @@ async function initMap3D(container, regionId, modelPath) {
 
   const loaded = await loadModelIntoScene(regionId, modelPath);
   if (spinner.parentNode) spinner.remove();
+  if (!_scene) { console.log('[map3d] scene disposed during load'); return false; }
   if (!loaded) {
     console.log('[map3d] model load failed, disposing scene');
     disposeScene(container);

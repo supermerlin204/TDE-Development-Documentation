@@ -136,7 +136,7 @@
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       // 离开区域详情页时清理 3D 场景
       if (basePage !== 'region-detail' && window._disposeMap3D) {
-        window._disposeMap3D(document.getElementById('rdGraphic'));
+        try { window._disposeMap3D(document.getElementById('rdGraphic')); } catch(e) { console.warn(e); }
       }
       var targetPage = document.getElementById('page-' + basePage);
       if (targetPage) targetPage.classList.add('active');

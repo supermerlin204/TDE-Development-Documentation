@@ -1471,7 +1471,6 @@
         + '<div class="enemy-card-name" title="' + enemy.name + '">' + enemy.name + '</div>'
         + '<div class="enemy-card-meta">'
           + _factionBadge(enemy.faction)
-          + '<span class="enemy-card-hp">' + (enemy.hp ? (type === 'bosses' ? '' : '') + enemy.hp : '') + '</span>'
         + '</div>'
       + '</div>'
     + '</div>';

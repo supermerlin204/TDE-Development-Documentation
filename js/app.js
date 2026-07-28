@@ -1531,7 +1531,10 @@
       all = all.filter(function(x) { return x.enemy.faction === bestiaryFactionFilter; });
     }
     if (!all.length) {
-      document.getElementById('btab-all').innerHTML = '<div class="empty-hint">该阵营暂无敌人</div>';
+      document.getElementById('btab-all').innerHTML = '<div class="empty-hint">该阵营暂无敌人</div>'
+        + renderArrayControls('bosses')
+        + renderArrayControls('elites')
+        + renderArrayControls('common');
       return;
     }
     var html = '<div class="enemy-grid">';
@@ -1540,7 +1543,10 @@
       var origIdx = list.indexOf(all[i].enemy);
       html += _renderEnemyCard(all[i].enemy, all[i].type, origIdx);
     }
-    html += '</div>';
+    html += '</div>'
+      + renderArrayControls('bosses')
+      + renderArrayControls('elites')
+      + renderArrayControls('common');
     document.getElementById('btab-all').innerHTML = html;
   }
 

@@ -825,41 +825,118 @@ body.edit-mode .project-intro-text {
   color: var(--cyan);
 }
 
-/* --- Bestiary Cards --- */
-.boss-grid {
+/* --- Bestiary Cards (image-centric) --- */
+.enemy-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
 }
 
-.boss-card {
+.enemy-card {
   background: var(--bg-card);
   border: 1px solid var(--border-card);
-  border-radius: var(--radius-lg);
-  padding: 20px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
   transition: all var(--transition-normal);
   position: relative;
-  overflow: hidden;
+  cursor: pointer;
 }
-.boss-card:hover {
+.enemy-card:hover {
   border-color: var(--border-glow);
   box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
 }
-.boss-card.difficulty-legendary {
+.enemy-card.difficulty-legendary {
   border-color: rgba(255,213,79,0.3);
 }
-.boss-card.difficulty-legendary:hover {
+.enemy-card.difficulty-legendary:hover {
   border-color: var(--gold);
-  box-shadow: 0 0 30px rgba(255,213,79,0.2);
+  box-shadow: 0 0 24px rgba(255,213,79,0.18);
 }
 
-.boss-header {
+/* Image area */
+.enemy-card-img {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: rgba(0,0,0,0.3);
+  overflow: hidden;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  justify-content: center;
 }
-.boss-name { font-size: 1.05rem; font-weight: 700; }
+.enemy-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.enemy-card-img .img-placeholder {
+  width: 48px;
+  height: 48px;
+  fill: rgba(0,191,165,0.1);
+}
+
+/* Type badge on image */
+.enemy-card-badge {
+  position: absolute;
+  top: 8px; right: 8px;
+  font-size: 0.6rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(6px);
+}
+.enemy-card-badge.boss-badge { background: rgba(255,82,82,0.7); color: #fff; }
+.enemy-card-badge.elite-badge { background: rgba(255,171,64,0.7); color: #fff; }
+.enemy-card-badge.common-badge { background: rgba(105,240,174,0.6); color: #000; }
+
+/* Info area below image */
+.enemy-card-info {
+  padding: 10px 12px 12px;
+}
+.enemy-card-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.enemy-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.enemy-card-hp {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--cyan);
+}
+
+/* Faction badge (compact) */
+.faction-badge {
+  display: inline-block;
+  font-size: 0.58rem;
+  padding: 2px 7px;
+  border-radius: 8px;
+  background: rgba(0,191,165,0.06);
+  border: 1px solid rgba(0,191,165,0.18);
+  color: var(--cyan);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  line-height: 1.3;
+}
+.faction-badge:hover {
+  background: rgba(0,191,165,0.14);
+  border-color: var(--cyan);
+}
+
+/* Keep old diff tags for detail page */
 .boss-difficulty {
   font-size: 0.65rem;
   padding: 3px 10px;
@@ -873,19 +950,7 @@ body.edit-mode .project-intro-text {
 .diff-hard { background: rgba(255,82,82,0.15); color: var(--red); }
 .diff-legendary { background: rgba(255,213,79,0.15); color: var(--gold); }
 
-.boss-stats-row {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 8px;
-}
-.boss-stat-mini {
-  display: flex; flex-direction: column; gap: 2px;
-}
-.boss-stat-mini .label { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; }
-.boss-stat-mini .value { font-size: 0.85rem; font-family: var(--font-mono); color: var(--cyan); }
-
-/* Glossary links in cards */
+/* Keep gloss-link for detail page stats */
 .gloss-link {
   color: var(--cyan);
   cursor: pointer;
@@ -897,62 +962,28 @@ body.edit-mode .project-intro-text {
   color: var(--cyan-bright);
   border-bottom-color: var(--cyan-bright);
 }
-.boss-stat-mini .gloss-link {
-  font-size: 0.6rem;
-  text-transform: uppercase;
-}
 
-/* Boss damage type chips */
-.boss-dmg-types {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 4px;
-  font-size: 0.7rem;
-}
-.boss-dmg-label {
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-.boss-dmg-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-}
-.boss-dmg-chips .gloss-link {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: var(--radius-sm);
-  font-size: 0.65rem;
-  background: rgba(0,191,165,0.08);
-  border-bottom: none;
-}
-.boss-dmg-chips .gloss-link:hover {
-  background: rgba(0,191,165,0.18);
-}
+/* Keep old card styles for edit panel cards */
+.boss-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.boss-name { font-size: 1.05rem; font-weight: 700; }
+.boss-stats-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+.boss-stat-mini { display: flex; flex-direction: column; gap: 2px; }
+.boss-stat-mini .label { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; }
+.boss-stat-mini .value { font-size: 0.85rem; font-family: var(--font-mono); color: var(--cyan); }
+.boss-stat-mini .gloss-link { font-size: 0.6rem; text-transform: uppercase; }
+.boss-dmg-types { display: flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 0.7rem; }
+.boss-dmg-label { color: var(--text-muted); flex-shrink: 0; }
+.boss-dmg-chips { display: flex; flex-wrap: wrap; gap: 3px; }
+.boss-dmg-chips .gloss-link { display: inline-block; padding: 1px 6px; border-radius: var(--radius-sm); font-size: 0.65rem; background: rgba(0,191,165,0.08); border-bottom: none; }
+.boss-dmg-chips .gloss-link:hover { background: rgba(0,191,165,0.18); }
 .boss-weak .gloss-link { color: #69f0ae; background: rgba(105,240,174,0.08); }
 .boss-weak .gloss-link:hover { color: #8df5c0; background: rgba(105,240,174,0.18); }
 .boss-resist .gloss-link { color: #ff5252; background: rgba(255,82,82,0.08); }
 .boss-resist .gloss-link:hover { color: #ff7373; background: rgba(255,82,82,0.18); }
-
 .boss-desc { font-size: 0.78rem; color: var(--text-secondary); margin-top: 8px; }
-
-.faction-badge {
-  display: inline-block;
-  font-size: 0.6rem;
-  padding: 2px 8px;
-  border-radius: 10px;
-  background: rgba(0,191,165,0.06);
-  border: 1px solid rgba(0,191,165,0.18);
-  color: var(--cyan);
-  margin: 4px 0 2px;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-.faction-badge:hover {
-  background: rgba(0,191,165,0.14);
-  border-color: var(--cyan);
-}
+.boss-drop { font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; background: rgba(255,213,79,0.08); color: var(--gold-dark); }
+.boss-drops { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.boss-location { font-size: 0.7rem; color: var(--text-muted); margin-top: 6px; }
 
 .empty-hint {
   text-align: center;

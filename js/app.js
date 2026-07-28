@@ -1412,7 +1412,8 @@
         // 重渲染当前活跃的标签页
         var activeTab = document.querySelector('#page-bestiary .tab-content.active');
         if (activeTab) {
-          if (activeTab.id === 'btab-bosses') renderBosses();
+          if (activeTab.id === 'btab-all') renderAllEnemies();
+          else if (activeTab.id === 'btab-bosses') renderBosses();
           else if (activeTab.id === 'btab-elites') renderElites();
           else if (activeTab.id === 'btab-common') renderCommon();
         }
@@ -1439,88 +1440,89 @@
     return list.filter(function(e) { return e.faction === bestiaryFactionFilter; });
   }
 
+  // 统一的图片中心卡片渲染
+  function _renderEnemyCard(enemy, type, origIdx) {
+    var dataKey = type === 'bosses' ? 'bosses' : (type === 'elites' ? 'elites' : 'common');
+    var hash = 'bestiary/' + dataKey + '/' + enemy.id;
+    var diffMap = { legendary:'传说', hard:'困难', medium:'中等', easy:'简单' };
+    var diffClass = '';
+    var badgeText = '';
+    var badgeCls = '';
+    if (type === 'bosses') {
+      diffClass = ' difficulty-' + enemy.difficulty;
+      badgeText = diffMap[enemy.difficulty] || enemy.difficulty;
+      badgeCls = 'boss-badge';
+    } else if (type === 'elites') {
+      badgeText = '精英';
+      badgeCls = 'elite-badge';
+    } else {
+      badgeText = '普通';
+      badgeCls = 'common-badge';
+    }
+    var imgSrc = enemy.image || 'img/enemies/' + enemy.id + '.gif';
+    return '<div class="enemy-card' + diffClass + '" ' + editCard(dataKey + '.' + origIdx) + ' onclick="if(!document.body.classList.contains(\'edit-mode\'))window.location.hash=\'' + hash + '\'">'
+      + renderCardDelete(dataKey + '.' + origIdx)
+      + '<div class="enemy-card-img">'
+        + '<img src="' + imgSrc + '" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'\'">'
+        + '<svg class="img-placeholder" viewBox="0 0 24 24" style="display:none"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-2-6.5l-1.5 1.5L12 18l4.5-4.5L15 12l-3 3-3-3z"/></svg>'
+        + '<span class="enemy-card-badge ' + badgeCls + '">' + badgeText + '</span>'
+      + '</div>'
+      + '<div class="enemy-card-info">'
+        + '<div class="enemy-card-name" title="' + enemy.name + '">' + enemy.name + '</div>'
+        + '<div class="enemy-card-meta">'
+          + _factionBadge(enemy.faction)
+          + '<span class="enemy-card-hp">' + (enemy.hp ? (type === 'bosses' ? '' : '') + enemy.hp : '') + '</span>'
+        + '</div>'
+      + '</div>'
+    + '</div>';
+  }
+
+  function _renderEnemyGrid(list, type, emptyMsg) {
+    var filtered = _filterByFaction(list);
+    if (!filtered.length) return '<div class="empty-hint">' + emptyMsg + '</div>';
+    var html = '<div class="enemy-grid">';
+    for (var i = 0; i < filtered.length; i++) {
+      html += _renderEnemyCard(filtered[i], type, list.indexOf(filtered[i]));
+    }
+    html += '</div>';
+    if (type === 'bosses') html += renderArrayControls('bosses');
+    else if (type === 'elites') html += renderArrayControls('elites');
+    else html += renderArrayControls('common');
+    return html;
+  }
+
+  function renderAllEnemies() {
+    var all = [];
+    TDE_DATA.bosses.forEach(function(b) { all.push({ enemy: b, type: 'bosses' }); });
+    TDE_DATA.elites.forEach(function(e) { all.push({ enemy: e, type: 'elites' }); });
+    TDE_DATA.common.forEach(function(c) { all.push({ enemy: c, type: 'common' }); });
+    if (bestiaryFactionFilter) {
+      all = all.filter(function(x) { return x.enemy.faction === bestiaryFactionFilter; });
+    }
+    if (!all.length) {
+      document.getElementById('btab-all').innerHTML = '<div class="empty-hint">该阵营暂无敌人</div>';
+      return;
+    }
+    var html = '<div class="enemy-grid">';
+    for (var i = 0; i < all.length; i++) {
+      var list = all[i].type === 'bosses' ? TDE_DATA.bosses : (all[i].type === 'elites' ? TDE_DATA.elites : TDE_DATA.common);
+      var origIdx = list.indexOf(all[i].enemy);
+      html += _renderEnemyCard(all[i].enemy, all[i].type, origIdx);
+    }
+    html += '</div>';
+    document.getElementById('btab-all').innerHTML = html;
+  }
+
   function renderBosses() {
-    var bosses = _filterByFaction(TDE_DATA.bosses);
-    const diffMap = { legendary:'传说', hard:'困难', medium:'中等', easy:'简单' };
-    document.getElementById('btab-bosses').innerHTML = bosses.length ? `
-      <div class="boss-grid">${bosses.map((b, i) => {
-        var origIdx = TDE_DATA.bosses.indexOf(b);
-        return `
-        <div class="boss-card difficulty-${b.difficulty}" ${editCard(`bosses.${origIdx}`)} onclick="if(!document.body.classList.contains('edit-mode'))window.location.hash='bestiary/bosses/${b.id}'">
-          ${renderCardDelete(`bosses.${origIdx}`)}
-          <div class="boss-header">
-            <span class="boss-name" ${edit(`bosses.${origIdx}.name`)}>${b.name}</span>
-            <span class="boss-difficulty diff-${b.difficulty}" ${enumField(`bosses.${origIdx}.difficulty`, 'legendary,hard,medium,easy')} onclick="event.stopPropagation();window._enumClick(event)">${diffMap[b.difficulty] || b.difficulty}</span>
-          </div>
-          ${_factionBadge(b.faction)}
-          <div class="boss-desc" ${edit(`bosses.${origIdx}.desc`)}>${b.desc}</div>
-          <div class="boss-stats-row">
-            <div class="boss-stat-mini">${glossLink('生命值')}<span class="value" ${edit(`bosses.${origIdx}.hp`)}>${b.hp}</span></div>
-            <div class="boss-stat-mini"><span class="label">阶段</span><span class="value" ${edit(`bosses.${origIdx}.phases`)}>${b.phases}</span></div>
-            <div class="boss-stat-mini"><span class="label">位置</span><span class="value" ${edit(`bosses.${origIdx}.location`)}>${b.location}</span></div>
-          </div>
-          <div class="boss-dmg-types">
-            ${b.damageTypes && b.damageTypes.length ? `<span class="boss-dmg-label gloss-link" onclick="event.stopPropagation();window._goGlossary('attribute')">伤害：</span><span class="boss-dmg-chips">${glossLinks(b.damageTypes)}</span>` : ''}
-          </div>
-          <div class="boss-dmg-types">
-            ${b.weaknesses && b.weaknesses.length ? `<span class="boss-dmg-label gloss-link" onclick="event.stopPropagation();window._goGlossary('attribute')">弱点：</span><span class="boss-dmg-chips boss-weak">${glossLinks(b.weaknesses)}</span>` : ''}
-          </div>
-          <div class="boss-dmg-types">
-            ${b.resistances && b.resistances.length ? `<span class="boss-dmg-label gloss-link" onclick="event.stopPropagation();window._goGlossary('attribute')">抗性：</span><span class="boss-dmg-chips boss-resist">${glossLinks(b.resistances)}</span>` : ''}
-          </div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;" ${arrayContainer(`bosses.${origIdx}.drops`)}>
-            ${b.drops.map((d, j) => `<span class="boss-drop" ${arrayItem(j)}><span ${edit(`bosses.${origIdx}.drops.${j}`)}>${d}</span>${renderArrayItemControls(j)}</span>`).join('')}
-            ${`<button class="inline-add-btn" style="margin-left:4px;" onclick="event.stopPropagation();window._addItem(this)">+ 添加掉落</button>`}
-          </div>
-        </div>
-      `}).join('')}</div>
-    ` + renderArrayControls('bosses') : '<div class="empty-hint">该阵营暂无 Boss</div>';
+    document.getElementById('btab-bosses').innerHTML = _renderEnemyGrid(TDE_DATA.bosses, 'bosses', '该阵营暂无 Boss');
   }
 
   function renderElites() {
-    var elites = _filterByFaction(TDE_DATA.elites);
-    document.getElementById('btab-elites').innerHTML = elites.length ? `
-      <div class="boss-grid">${elites.map((e, i) => {
-        var origIdx = TDE_DATA.elites.indexOf(e);
-        return `
-        <div class="boss-card" ${editCard(`elites.${origIdx}`)} onclick="if(!document.body.classList.contains('edit-mode'))window.location.hash='bestiary/elites/${e.id}'">
-          ${renderCardDelete(`elites.${origIdx}`)}
-          <div class="boss-header">
-            <span class="boss-name" ${edit(`elites.${origIdx}.name`)}>${e.name}</span>
-            <span class="boss-difficulty diff-medium">精英</span>
-          </div>
-          ${_factionBadge(e.faction)}
-          <div class="boss-desc" ${edit(`elites.${origIdx}.desc`)}>${e.desc}</div>
-          <div class="boss-stats-row">
-            <div class="boss-stat-mini">${glossLink('生命值')}<span class="value" ${edit(`elites.${origIdx}.hp`)}>${e.hp}</span></div>
-            <div class="boss-stat-mini"><span class="label">位置</span><span class="value" ${edit(`elites.${origIdx}.location`)}>${e.location}</span></div>
-          </div>
-        </div>
-      `}).join('')}</div>
-    ` + renderArrayControls('elites') : '<div class="empty-hint">该阵营暂无精英敌人</div>';
+    document.getElementById('btab-elites').innerHTML = _renderEnemyGrid(TDE_DATA.elites, 'elites', '该阵营暂无精英敌人');
   }
 
   function renderCommon() {
-    var common = _filterByFaction(TDE_DATA.common);
-    document.getElementById('btab-common').innerHTML = common.length ? `
-      <div class="boss-grid">${common.map((e, i) => {
-        var origIdx = TDE_DATA.common.indexOf(e);
-        return `
-        <div class="boss-card" ${editCard(`common.${origIdx}`)} onclick="if(!document.body.classList.contains('edit-mode'))window.location.hash='bestiary/common/${e.id}'">
-          ${renderCardDelete(`common.${origIdx}`)}
-          <div class="boss-header">
-            <span class="boss-name" ${edit(`common.${origIdx}.name`)}>${e.name}</span>
-            <span class="boss-difficulty diff-easy">普通</span>
-          </div>
-          ${_factionBadge(e.faction)}
-          <div class="boss-desc" ${edit(`common.${origIdx}.desc`)}>${e.desc}</div>
-          <div class="boss-stats-row">
-            <div class="boss-stat-mini">${glossLink('生命值')}<span class="value" ${edit(`common.${origIdx}.hp`)}>${e.hp}</span></div>
-            <div class="boss-stat-mini"><span class="label">位置</span><span class="value" ${edit(`common.${origIdx}.location`)}>${e.location}</span></div>
-          </div>
-        </div>
-      `}).join('')}</div>
-    ` + renderArrayControls('common') : '<div class="empty-hint">该阵营暂无普通敌人</div>';
+    document.getElementById('btab-common').innerHTML = _renderEnemyGrid(TDE_DATA.common, 'common', '该阵营暂无普通敌人');
   }
 
   // --- 敌人详情页 ---
@@ -3917,6 +3919,7 @@
     renderNPCs();
     renderMerchants();
     renderFactionFilter();
+    renderAllEnemies();
     renderBosses();
     renderElites();
     renderCommon();

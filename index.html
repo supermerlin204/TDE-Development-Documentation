@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script>if(!sessionStorage.getItem('_ld')){sessionStorage.setItem('_ld','1');location.reload()}</script>
   <title>无眠纪 The Dreamless Era — 开发文档</title>
-  <link rel="stylesheet" href="css/style.css?v=52">
+  <link rel="stylesheet" href="css/style.css?v=53">
   <script type="importmap">
   {
     "imports": {
@@ -268,11 +268,13 @@
         </header>
         <div class="faction-filter" id="factionFilter"></div>
         <div class="tab-nav">
-          <button class="tab-btn active" data-btab="bosses">Boss</button>
+          <button class="tab-btn active" data-btab="all">全部</button>
+          <button class="tab-btn" data-btab="bosses">Boss</button>
           <button class="tab-btn" data-btab="elites">精英敌人</button>
           <button class="tab-btn" data-btab="common">普通敌人</button>
         </div>
-        <div class="tab-content active" id="btab-bosses"></div>
+        <div class="tab-content active" id="btab-all"></div>
+        <div class="tab-content" id="btab-bosses"></div>
         <div class="tab-content" id="btab-elites"></div>
         <div class="tab-content" id="btab-common"></div>
       </section>
@@ -431,7 +433,7 @@
   <script src="data/glossary.js"></script>
   <script src="data/changelog.js"></script>
   <script src="js/modelStore.js?v=31"></script>
-  <script src="js/app.js?v=55"></script>
+  <script src="js/app.js?v=56"></script>
   <script type="module" src="js/map3d.js?v=39"></script>
 </body>
 </html>

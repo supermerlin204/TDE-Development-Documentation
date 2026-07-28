@@ -90,8 +90,8 @@ TDE_DATA.regions = [
       "无"
     ],
     "route": {
-      "nodes": "",
-      "edges": ""
+      "nodes": [],
+      "edges": []
     },
     "connections": [],
     "id": "XXXXX_1785248577576"

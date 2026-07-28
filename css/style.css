@@ -3073,13 +3073,14 @@ body.edit-mode .bd-image-wrapper:hover .bd-image-placeholder svg {
 /* Image Gallery */
 .bd-image-gallery {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: center;
   gap: 12px;
 }
 .bd-image-gallery:empty { display: none; }
 .bd-gallery-item {
-  width: 300px;
+  width: 420px;
   max-width: 100%;
+  flex-shrink: 0;
   aspect-ratio: 1 / 1;
   border-radius: var(--radius-md);
   overflow: hidden;

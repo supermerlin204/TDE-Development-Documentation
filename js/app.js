@@ -1,10 +1,4 @@
-
-    const catOrder = ["faction","family","organization","concept","race","event","attribute","region","status","myth","figure","technique"];
-    entries.sort(function(a,b) {
-      var ca = catOrder.indexOf(a.category), cb = catOrder.indexOf(b.category);
-      if (ca !== cb) return (ca === -1 ? 99 : ca) - (cb === -1 ? 99 : cb);
-      return (a.name || "").localeCompare(b.name || "", "zh");
-    });/* ============================================================
+/* ============================================================
    无眠纪 — The Dreamless Era
    主应用逻辑 (含内联编辑系统)
    ============================================================ */

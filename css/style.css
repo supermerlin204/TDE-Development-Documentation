@@ -3310,6 +3310,25 @@ body.edit-mode .bd-image-wrapper:hover .bd-image-placeholder svg {
 }
 .bd-drop-del:hover { color: var(--red); }
 
+.bd-stat-value select {
+  padding: 5px 8px;
+  font-size: 0.72rem;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(0,191,165,0.2);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-family: inherit;
+  cursor: pointer;
+}
+.bd-stat-value select:focus {
+  border-color: var(--cyan);
+  outline: none;
+}
+.bd-stat-value select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
 /* Edit mode: inline editable stat values */
 body.edit-mode .bd-stat-value {
   border-bottom: 1px dashed rgba(0,191,165,0.3);

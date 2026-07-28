@@ -155,6 +155,11 @@
       if (basePage === 'bestiary-detail' && bestiaryType && bestiaryId) {
         renderBestiaryDetail(bestiaryType, bestiaryId);
       }
+
+      // 进入敌人图鉴列表页时刷新阵营筛选
+      if (basePage === 'bestiary') {
+        renderFactionFilter();
+      }
     }
   };
 
@@ -1417,11 +1422,16 @@
 
   function _factionBadge(factionId) {
     if (!factionId) return '';
-    var g = _glossNameMap;
-    if (!g) buildGlossNameMap();
-    var faction = TDE_DATA.glossary.find(function(x) { return x.id === factionId; });
+    var faction = null;
+    var glossary = TDE_DATA.glossary || [];
+    for (var i = 0; i < glossary.length; i++) {
+      if (glossary[i].id === factionId && glossary[i].category === 'faction') {
+        faction = glossary[i];
+        break;
+      }
+    }
     if (!faction) return '';
-    return '<span class="faction-badge" onclick="event.stopPropagation();window._goGlossary(\'faction\')" title="' + faction.name + '">' + faction.name + '</span>';
+    return '<span class="faction-badge" onclick="event.stopPropagation();window._goGlossary(\'faction\')" title="查看阵营：' + faction.name + '">' + faction.name + '</span>';
   }
 
   function _filterByFaction(list) {
@@ -1687,7 +1697,11 @@
       var factionEntry = (TDE_DATA.glossary || []).find(function(g) { return g.id === enemy.faction && g.category === 'faction'; });
       factionName = factionEntry ? factionEntry.name : enemy.faction;
     }
-    statsHTML += '<div class="bd-stat-item"><div class="bd-stat-label">所属阵营</div><div class="bd-stat-value">' + (factionName ? glossLink(factionName) : '<span style="color:var(--text-muted);">-</span>') + (editMode ? '<div style="margin-top:4px;"><input style="width:100%;padding:4px 6px;font-size:0.7rem;background:rgba(0,0,0,0.3);border:1px solid rgba(0,191,165,0.2);border-radius:4px;color:var(--text-primary);font-family:var(--font-mono);" value="' + (enemy.faction || '') + '" placeholder="faction id" onchange="window._bdSaveStat(\'' + basePath + '.faction\', this.value)"></div>' : '') + '</div></div>';
+    var factionOptions = '<option value="">— 无 —</option>';
+    (TDE_DATA.glossary || []).filter(function(g) { return g.category === 'faction'; }).forEach(function(f) {
+      factionOptions += '<option value="' + f.id + '"' + (enemy.faction === f.id ? ' selected' : '') + '>' + f.name + '</option>';
+    });
+    statsHTML += '<div class="bd-stat-item"><div class="bd-stat-label">所属阵营</div><div class="bd-stat-value">' + (factionName ? glossLink(factionName) : '<span style="color:var(--text-muted);">-</span>') + (editMode ? '<div style="margin-top:4px;"><select style="width:100%;padding:4px 6px;font-size:0.72rem;background:rgba(0,0,0,0.3);border:1px solid rgba(0,191,165,0.2);border-radius:4px;color:var(--text-primary);font-family:inherit;" onchange="window._bdSaveStat(\'' + basePath + '.faction\', this.value)">' + factionOptions + '</select></div>' : '') + '</div></div>';
     // 阶段 (仅Boss)
     if (type === 'bosses') {
       statsHTML += '<div class="bd-stat-item"><div class="bd-stat-label">阶段数</div><div class="bd-stat-value" ' + (editMode ? 'contenteditable="true" onblur="window._bdSaveStat(\'' + basePath + '.phases\', this.textContent)"' : '') + '>' + (enemy.phases || '-') + '</div></div>';

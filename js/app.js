@@ -1444,21 +1444,9 @@
   function _renderEnemyCard(enemy, type, origIdx) {
     var dataKey = type === 'bosses' ? 'bosses' : (type === 'elites' ? 'elites' : 'common');
     var hash = 'bestiary/' + dataKey + '/' + enemy.id;
-    var diffMap = { legendary:'传说', hard:'困难', medium:'中等', easy:'简单' };
-    var diffClass = '';
-    var badgeText = '';
-    var badgeCls = '';
-    if (type === 'bosses') {
-      diffClass = ' difficulty-' + enemy.difficulty;
-      badgeText = diffMap[enemy.difficulty] || enemy.difficulty;
-      badgeCls = 'boss-badge';
-    } else if (type === 'elites') {
-      badgeText = '精英';
-      badgeCls = 'elite-badge';
-    } else {
-      badgeText = '普通';
-      badgeCls = 'common-badge';
-    }
+    var diffClass = (type === 'bosses') ? ' difficulty-' + enemy.difficulty : '';
+    var badgeText = type === 'bosses' ? 'BOSS' : (type === 'elites' ? '精英' : '普通');
+    var badgeCls = type === 'bosses' ? 'boss-badge' : (type === 'elites' ? 'elite-badge' : 'common-badge');
     var imgSrc = enemy.image || 'img/enemies/' + enemy.id + '.gif';
     return '<div class="enemy-card' + diffClass + '" ' + editCard(dataKey + '.' + origIdx) + ' onclick="if(!document.body.classList.contains(\'edit-mode\'))window.location.hash=\'' + hash + '\'">'
       + renderCardDelete(dataKey + '.' + origIdx)

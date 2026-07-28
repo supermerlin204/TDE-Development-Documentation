@@ -1604,9 +1604,17 @@
     var anyLoaded = false;
     var currentV = 0;
 
+    function syncGifs() {
+      var imgs = galleryEl.querySelectorAll('img');
+      for (var i = 0; i < imgs.length; i++) {
+        imgs[i].src = imgs[i].src;
+      }
+    }
+
     function loadNext() {
       if (currentV >= allVariants.length) {
         if (!anyLoaded) placeholderEl.style.display = '';
+        else setTimeout(syncGifs, 200);
         return;
       }
       var candidates = allVariants[currentV];
@@ -1630,6 +1638,7 @@
           img.src = candidates[idx];
         } else {
           itemDiv.remove();
+          setTimeout(syncGifs, 200);
         }
       };
       img.src = candidates[0];

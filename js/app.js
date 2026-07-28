@@ -3773,6 +3773,16 @@
     }
     setupTabs('page-characters', 'tab', 'tab-');
     setupTabs('page-bestiary', 'btab', 'btab-');
+    // 敌人图鉴：标签切换时应用当前阵营筛选重新渲染
+    document.querySelectorAll('#page-bestiary .tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        var tab = this.dataset.btab;
+        if (tab === 'all') renderAllEnemies();
+        else if (tab === 'bosses') renderBosses();
+        else if (tab === 'elites') renderElites();
+        else if (tab === 'common') renderCommon();
+      });
+    });
     setupTabs('page-equipment', 'etab', 'etab-');
 
     // 词条系统标签页

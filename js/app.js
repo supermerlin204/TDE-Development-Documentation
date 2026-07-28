@@ -1960,10 +1960,21 @@
     if (!available.length) return;
     var dd = document.createElement('div');
     dd.className = 'rd-boss-dd';
+    // 搜索输入框
+    var searchWrap = document.createElement('div');
+    searchWrap.className = 'rd-boss-dd-search';
+    var searchInp = document.createElement('input');
+    searchInp.placeholder = '搜索Boss…';
+    searchWrap.appendChild(searchInp);
+    dd.appendChild(searchWrap);
+    // 列表容器
+    var itemList = document.createElement('div');
+    itemList.className = 'rd-boss-dd-items';
     available.forEach(function(b) {
       var item = document.createElement('div');
       item.className = 'rd-boss-dd-item';
       item.textContent = b.name;
+      item.setAttribute('data-boss-name', b.name);
       item.addEventListener('mousedown', function(e) {
         e.preventDefault();
         var chip = document.createElement('span');
@@ -1974,8 +1985,17 @@
         dd.remove();
         window._saveRegionInline(regionId);
       });
-      dd.appendChild(item);
+      itemList.appendChild(item);
     });
+    dd.appendChild(itemList);
+    // 搜索过滤
+    searchInp.addEventListener('input', function() {
+      var q = searchInp.value.toLowerCase();
+      Array.from(itemList.querySelectorAll('.rd-boss-dd-item')).forEach(function(el) {
+        el.style.display = q && el.getAttribute('data-boss-name').toLowerCase().indexOf(q) === -1 ? 'none' : '';
+      });
+    });
+    setTimeout(function() { searchInp.focus(); }, 50);
     // 点击空白关闭
     function closeDD(e) {
       if (!dd.contains(e.target) && e.target !== list.querySelector('.rd-boss-add-btn')) {

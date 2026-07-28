@@ -1177,6 +1177,14 @@ body.edit-mode .project-intro-text {
   border-radius: var(--radius-md); max-height: 200px; overflow-y: auto;
   box-shadow: var(--shadow-glow-strong); min-width: 200px;
 }
+.rd-boss-dd-search { padding: 6px 8px; border-bottom: 1px solid var(--border-subtle); }
+.rd-boss-dd-search input {
+  width: 100%; padding: 6px 10px; font-size: 0.8rem;
+  background: var(--bg-deep); border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm); color: var(--text-primary); outline: none;
+}
+.rd-boss-dd-search input:focus { border-color: var(--border-glow); }
+.rd-boss-dd-items { max-height: 150px; overflow-y: auto; }
 .rd-boss-dd-item {
   padding: 8px 14px; font-size: 0.82rem; color: var(--text-secondary);
   cursor: pointer; transition: all var(--transition-fast);

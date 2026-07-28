@@ -792,7 +792,7 @@
 
     // 始终根据数组名生成默认模板
     var _tpl = {
-      regions: { id:"new_region", name:"XXXXX", level:"1-10", desc:"XXXXX", tags:[], landmarks:[], bosses:["无"], route:{nodes:[],edges:[]}, connections:[] },
+      regions: { name:"XXXXX", level:"1-10", desc:"XXXXX", tags:[], landmarks:[], bosses:["无"], route:{nodes:[],edges:[]}, connections:[] },
       bosses: { id:"new_boss", name:"XXXXX", image:"", faction:"", difficulty:"中等", hp:"1000", phases:1, location:"XXXXX", desc:"XXXXX", lore:"", drops:[], damageTypes:[], weaknesses:[], resistances:[] },
       elites: { id:"new_elite", name:"XXXXX", image:"", faction:"", desc:"XXXXX", location:"XXXXX", hp:"500" },
       common: { id:"new_common", name:"XXXXX", image:"", faction:"", desc:"XXXXX", location:"XXXXX", hp:"200" },
@@ -818,7 +818,8 @@
     var tmpl = _tpl[arrName];
     if (tmpl) {
       var clone = JSON.parse(JSON.stringify(tmpl));
-      if (clone.id) clone.id = clone.id + '_' + Date.now();
+      if (clone.id !== undefined) { clone.id = clone.id + '_' + Date.now(); }
+      else if (clone.name !== undefined) { clone.id = clone.name + '_' + Date.now(); }
       arr.push(clone);
       saveData();
       renderAll();
@@ -963,7 +964,7 @@
     TDE_DATA.bosses.forEach(b => add('boss', 'Boss', b.id, b.name));
     TDE_DATA.elites.forEach(e => add('elite', '精英', e.id, e.name));
     TDE_DATA.common.forEach(e => add('enemy', '敌人', e.id, e.name));
-    TDE_DATA.regions.forEach(r => add('region', '区域', r.id, r.name));
+    TDE_DATA.regions.forEach(r => add('region', '区域', r.name, r.name));
     TDE_DATA.weapons.forEach(w => add('weapon', '武器', w.id, w.name));
     TDE_DATA.armor.forEach(a => add('armor', '防具', a.id, a.name));
     TDE_DATA.talismans.forEach(t => add('talisman', '护符', t.id, t.name));
@@ -1267,7 +1268,7 @@
       var color = node.color || '#00bfa5';
       var bossCount = (r.bosses || []).filter(function(b) { return b && b !== '无'; }).length;
       var connCount = (r.connections || []).filter(function(c) { return c && c !== '无'; }).length;
-      html += '<a class="ro-card" href="#region/' + r.id + '" title="查看区域详情：' + r.name + '">'
+      html += '<a class="ro-card" href="#region/' + encodeURIComponent(r.name) + '" title="查看区域详情：' + r.name + '">'
         + '<span class="ro-dot" style="background:' + color + ';box-shadow:0 0 8px ' + color + ';"></span>'
         + '<div class="ro-info">'
         + '<span class="ro-name">' + r.name + '</span>'
@@ -2355,7 +2356,7 @@
     }
     var region = (TDE_DATA.regions || []).find(function(r) { return r.name === name; });
     if (region) {
-      Router.navigate('region/' + region.id);
+      Router.navigate('region/' + encodeURIComponent(region.name));
     }
   }
 
@@ -2366,7 +2367,7 @@
     TDE_DATA.regions.sort(function(a,b) { return _levelNum(a.level) - _levelNum(b.level) || (a.name||"").localeCompare(b.name||"","zh"); });
   
     document.getElementById('regionGrid').innerHTML = TDE_DATA.regions.map((r, i) => `
-      <div class="region-card" ${editCard(`regions.${i}`)} onclick="if(!document.body.classList.contains('edit-mode'))window.location.hash='region/${r.id}'">
+      <div class="region-card" ${editCard(`regions.${i}`)} onclick="if(!document.body.classList.contains('edit-mode'))window.location.hash='region/${encodeURIComponent(r.name)}'">
         ${renderCardDelete(`regions.${i}`)}
         <div class="region-card-header">
           <span class="region-name" ${edit(`regions.${i}.name`)}>${r.name}</span>
@@ -2394,7 +2395,7 @@
 
   // --- 区域详情页辅助函数 ---
   function saveRegionInline(regionId) {
-    var idx = TDE_DATA.regions.findIndex(function(r) { return r.id === regionId; });
+    var idx = TDE_DATA.regions.findIndex(function(r) { return r.name === decodeURIComponent(regionId); });
     if (idx === -1) return;
     var r = TDE_DATA.regions[idx];
 
@@ -2403,6 +2404,7 @@
     var levelEl = document.querySelector('#page-region-detail [data-rd-field="level"]');
     var descEl = document.querySelector('#page-region-detail [data-rd-field="desc"]');
     if (nameEl) r.name = nameEl.value;
+    r.id = r.name;
     if (levelEl) r.level = levelEl.value;
     if (descEl) r.desc = descEl.value;
 
@@ -2528,7 +2530,7 @@
   var _rgStates = {}; // { panX, panY, zoom, dragging, dragStartX, dragStartY, startPanX, startPanY, dragNodeId, connSource, lastTap, lastTapNodeId }
 
   function getRouteData(regionId) {
-    var region = TDE_DATA.regions.find(function(r) { return r.id === regionId; });
+    var region = TDE_DATA.regions.find(function(r) { return r.name === decodeURIComponent(regionId); });
     if (!region) return { nodes: [], edges: [] };
     // 迁移旧格式
     if (Array.isArray(region.route)) {
@@ -2545,7 +2547,7 @@
   }
 
   function saveRouteGraphData(regionId) {
-    var region = TDE_DATA.regions.find(function(r) { return r.id === regionId; });
+    var region = TDE_DATA.regions.find(function(r) { return r.name === decodeURIComponent(regionId); });
     if (!region) return;
     var container = document.getElementById('rgContainer-' + regionId);
     if (!container) return;
@@ -3145,7 +3147,7 @@
 
   function renderRegionDetail(regionId, focusLandmark) {
     var regions = TDE_DATA.regions || [];
-    var idx = regions.findIndex(function(r) { return r.id === regionId; });
+    var idx = regions.findIndex(function(r) { return r.name === decodeURIComponent(regionId); });
 
     var elTitle = document.getElementById('rdTitle');
     var elSub = document.getElementById('rdSubtitle');
@@ -3159,14 +3161,7 @@
     if (!elTitle) return;
 
     if (idx === -1) {
-      elTitle.textContent = '区域未找到';
-      elSub.textContent = '';
-      elDesc.innerHTML = '<p style="color:var(--text-muted)">该区域不存在或已被删除。</p>';
-      elMeta.innerHTML = '';
-      elGraphic.innerHTML = '';
-      elSections.innerHTML = '';
-      if (elEditBtn) elEditBtn.style.display = 'none';
-      if (elLmInfo) elLmInfo.style.display = 'none';
+      window.location.hash = 'world';
       return;
     }
 

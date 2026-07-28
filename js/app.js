@@ -1710,57 +1710,34 @@
       if (hasLore) lorePreview.innerHTML = renderMarkdown(loreTextarea.value);
     }
 
-    // 统计网格
-    var statsHTML = '';
-    // HP
-    statsHTML += '<div class="bd-stat-item"><div class="bd-stat-label">' + glossLink('生命值') + '</div><div class="bd-stat-value" ' + (editMode ? 'contenteditable="true" onblur="window._bdSaveStat(\'' + basePath + '.hp\', this.textContent)"' : '') + '>' + (enemy.hp || '-') + '</div></div>';
-    // 阵营
+    // 阵营 (显著展示)
     var factionName = '';
+    var factionDesc = '';
     if (enemy.faction) {
       var factionEntry = (TDE_DATA.glossary || []).find(function(g) { return g.id === enemy.faction && g.category === 'faction'; });
-      factionName = factionEntry ? factionEntry.name : enemy.faction;
+      if (factionEntry) {
+        factionName = factionEntry.name;
+        factionDesc = factionEntry.desc || '';
+      } else {
+        factionName = enemy.faction;
+      }
     }
     var factionOptions = '<option value="">— 无 —</option>';
     (TDE_DATA.glossary || []).filter(function(g) { return g.category === 'faction'; }).forEach(function(f) {
       factionOptions += '<option value="' + f.id + '"' + (enemy.faction === f.id ? ' selected' : '') + '>' + f.name + '</option>';
     });
-    statsHTML += '<div class="bd-stat-item"><div class="bd-stat-label">所属阵营</div><div class="bd-stat-value">' + (factionName ? glossLink(factionName) : '<span style="color:var(--text-muted);">-</span>') + (editMode ? '<div style="margin-top:4px;"><select style="width:100%;padding:4px 6px;font-size:0.72rem;background:rgba(0,0,0,0.3);border:1px solid rgba(0,191,165,0.2);border-radius:4px;color:var(--text-primary);font-family:inherit;" onchange="window._bdSaveStat(\'' + basePath + '.faction\', this.value)">' + factionOptions + '</select></div>' : '') + '</div></div>';
-    // 阶段 (仅Boss)
-    if (type === 'bosses') {
-      statsHTML += '<div class="bd-stat-item"><div class="bd-stat-label">阶段数</div><div class="bd-stat-value" ' + (editMode ? 'contenteditable="true" onblur="window._bdSaveStat(\'' + basePath + '.phases\', this.textContent)"' : '') + '>' + (enemy.phases || '-') + '</div></div>';
-    }
-    // 位置
-    statsHTML += '<div class="bd-stat-item"><div class="bd-stat-label">所在区域</div><div class="bd-stat-value" ' + (editMode ? 'contenteditable="true" onblur="window._bdSaveStat(\'' + basePath + '.location\', this.textContent)"' : '') + '>' + (enemy.location || '-') + '</div></div>';
-    // 伤害类型 (仅Boss)
-    if (type === 'bosses' && enemy.damageTypes) {
-      statsHTML += '<div class="bd-stat-item"><div class="bd-stat-label">伤害类型</div><div class="bd-stat-value">' + glossLinks(enemy.damageTypes) + '</div></div>';
-    }
-    // 弱点 (仅Boss)
-    if (type === 'bosses' && enemy.weaknesses) {
-      statsHTML += '<div class="bd-stat-item"><div class="bd-stat-label">弱点属性</div><div class="bd-stat-value" style="color:#69f0ae;">' + glossLinks(enemy.weaknesses) + '</div></div>';
-    }
-    // 抗性 (仅Boss)
-    if (type === 'bosses' && enemy.resistances) {
-      statsHTML += '<div class="bd-stat-item"><div class="bd-stat-label">抗性属性</div><div class="bd-stat-value" style="color:#ff5252;">' + glossLinks(enemy.resistances) + '</div></div>';
-    }
-    document.getElementById('bdStatsGrid').innerHTML = statsHTML;
-
-    // 掉落物 (仅Boss)
-    var dropsSection = document.getElementById('bdDropsSection');
-    if (type === 'bosses' && enemy.drops && enemy.drops.length) {
-      dropsSection.style.display = '';
-      dropsSection.innerHTML = '<div class="bd-drops-label">掉落物品</div><div class="bd-drops-list">' + enemy.drops.map(function(d, j) {
-        return '<span class="bd-drop-chip">' +
-          '<span ' + (editMode ? 'contenteditable="true" onblur="window._bdSaveStat(\'' + basePath + '.drops.' + j + '\', this.textContent)"' : '') + '>' + d + '</span>' +
-          (editMode ? '<button class="bd-drop-del" onclick="window._bdDelDrop(\'' + basePath + '\', ' + j + ')" title="删除">&times;</button>' : '') +
-        '</span>';
-      }).join('') + (editMode ? '<button class="inline-add-btn" onclick="window._bdAddDrop(\'' + basePath + '\')" style="margin-left:4px;">+ 添加</button>' : '') + '</div>';
-    } else if (type === 'bosses') {
-      dropsSection.style.display = '';
-      dropsSection.innerHTML = '<div class="bd-drops-label">掉落物品</div><div class="bd-drops-list">' + (editMode ? '<button class="inline-add-btn" onclick="window._bdAddDrop(\'' + basePath + '\')">+ 添加掉落</button>' : '<span style="color:var(--text-muted);font-size:0.72rem;">暂无</span>') + '</div>';
+    var factionHTML = '';
+    if (factionName) {
+      factionHTML += '<div class="bd-faction-badge">' + _factionBadge(enemy.faction) + factionName + '</div>';
+      if (factionDesc) factionHTML += '<p class="bd-faction-desc">' + factionDesc + '</p>';
     } else {
-      dropsSection.style.display = 'none';
+      factionHTML += '<span style="color:var(--text-muted);">未设置阵营</span>';
     }
+    if (editMode) {
+      factionHTML += '<div style="margin-top:8px;"><select style="width:auto;padding:4px 8px;font-size:0.72rem;background:rgba(0,0,0,0.3);border:1px solid rgba(0,191,165,0.2);border-radius:4px;color:var(--text-primary);font-family:inherit;" onchange="window._bdSaveStat(\'' + basePath + '.faction\', this.value)">' + factionOptions + '</select></div>';
+    }
+    document.getElementById('bdStatsGrid').innerHTML = factionHTML;
+    document.getElementById('bdDropsSection').style.display = 'none';
   }
 
   // 敌人详情页内联保存

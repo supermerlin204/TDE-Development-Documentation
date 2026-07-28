@@ -1504,7 +1504,13 @@
 
   function _renderEnemyGrid(list, type, emptyMsg) {
     var filtered = _filterByFaction(list);
-    if (!filtered.length) return '<div class="empty-hint">' + emptyMsg + '</div>';
+    if (!filtered.length) {
+      var emptyHTML = '<div class="empty-hint">' + emptyMsg + '</div>';
+      if (type === 'bosses') emptyHTML += renderArrayControls('bosses');
+      else if (type === 'elites') emptyHTML += renderArrayControls('elites');
+      else emptyHTML += renderArrayControls('common');
+      return emptyHTML;
+    }
     var html = '<div class="enemy-grid">';
     for (var i = 0; i < filtered.length; i++) {
       html += _renderEnemyCard(filtered[i], type, list.indexOf(filtered[i]));

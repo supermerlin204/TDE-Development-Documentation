@@ -1728,10 +1728,10 @@
     });
     var factionHTML = '';
     if (factionName) {
-      factionHTML += '<div class="bd-faction-badge">' + _factionBadge(enemy.faction) + factionName + '</div>';
+      factionHTML += '<div class="bd-faction-line"><span class="bd-faction-label">阵营</span><span class="bd-faction-badge">' + _factionBadge(enemy.faction) + factionName + '</span></div>';
       if (factionDesc) factionHTML += '<p class="bd-faction-desc">' + factionDesc + '</p>';
     } else {
-      factionHTML += '<span style="color:var(--text-muted);">未设置阵营</span>';
+      factionHTML += '<span class="bd-faction-label">阵营</span> <span style="color:var(--text-muted);">未设置</span>';
     }
     if (editMode) {
       factionHTML += '<div style="margin-top:8px;"><select style="width:auto;padding:4px 8px;font-size:0.72rem;background:rgba(0,0,0,0.3);border:1px solid rgba(0,191,165,0.2);border-radius:4px;color:var(--text-primary);font-family:inherit;" onchange="window._bdSaveStat(\'' + basePath + '.faction\', this.value)">' + factionOptions + '</select></div>';

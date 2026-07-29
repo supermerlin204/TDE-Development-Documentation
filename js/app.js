@@ -1592,7 +1592,7 @@
     var badgeText = isNpc ? '' : (type === 'bosses' ? 'BOSS' : (type === 'elites' ? '精英' : '普通'));
     var badgeCls = isNpc ? '' : (type === 'bosses' ? 'boss-badge' : (type === 'elites' ? 'elite-badge' : 'common-badge'));
     var exts = ['.gif', '.png', '.webp', '.jpg'];
-	    var imgDir = isNpc ? 'img/npcs/' : 'img/enemies/';
+	    var imgDir = 'img/entities/';
 	    var imgCandidates = [];
 	    if (enemy.image) imgCandidates.push(enemy.image);
 	    exts.forEach(function(ext) { imgCandidates.push(imgDir + encodeURIComponent(enemy.name) + ext); });
@@ -1732,8 +1732,8 @@
 
     function buildCandidates(suffix) {
       var c = [];
-      exts.forEach(function(ext) { c.push('img/enemies/' + encodeURIComponent(enemy.name) + suffix + ext); });
-      exts.forEach(function(ext) { c.push('img/enemies/' + enemy.id + suffix + ext); });
+      exts.forEach(function(ext) { c.push('img/entities/' + encodeURIComponent(enemy.name) + suffix + ext); });
+      exts.forEach(function(ext) { c.push('img/entities/' + enemy.id + suffix + ext); });
       return c;
     }
     var primaryCandidates = [];
@@ -2057,8 +2057,8 @@
 
     function buildCandidates(suffix) {
       var c = [];
-      exts.forEach(function(ext) { c.push('img/npcs/' + encodeURIComponent(npc.name) + suffix + ext); });
-      exts.forEach(function(ext) { c.push('img/npcs/' + npc.id + suffix + ext); });
+      exts.forEach(function(ext) { c.push('img/entities/' + encodeURIComponent(npc.name) + suffix + ext); });
+      exts.forEach(function(ext) { c.push('img/entities/' + npc.id + suffix + ext); });
       return c;
     }
     var primaryCandidates = [];

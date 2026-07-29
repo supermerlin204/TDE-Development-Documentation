@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script>if(!sessionStorage.getItem('_ld')){sessionStorage.setItem('_ld','1');location.reload()}</script>
   <title>无眠纪 The Dreamless Era — 开发文档</title>
-  <link rel="stylesheet" href="css/style.css?v=70">
+  <link rel="stylesheet" href="css/style.css?v=71">
   <script type="importmap">
   {
     "imports": {
@@ -248,19 +248,23 @@
       <section id="page-characters" class="page">
         <header class="page-header">
           <h2 class="page-title">角色资料库</h2>
-          <p class="page-desc">职业、NPC与商人信息</p>
+          <p class="page-desc">NPC与商人信息</p>
         </header>
+        <div class="faction-filter" id="npcFactionFilter"></div>
         <div class="tab-nav">
-          <button class="tab-btn active" data-tab="classes">初始职业</button>
+          <button class="tab-btn active" data-tab="all">全部</button>
           <button class="tab-btn" data-tab="npcs">NPC</button>
           <button class="tab-btn" data-tab="merchants">商人</button>
         </div>
-        <div class="tab-content active" id="tab-classes"></div>
+        <div class="tab-content active" id="tab-all">
+          <div id="allCharsGrid"></div>
+        </div>
         <div class="tab-content" id="tab-npcs">
-          <div class="faction-filter" id="npcFactionFilter"></div>
           <div id="npcGrid"></div>
         </div>
-        <div class="tab-content" id="tab-merchants"></div>
+        <div class="tab-content" id="tab-merchants">
+          <div id="merchantGrid"></div>
+        </div>
       </section>
 
       <!-- 敌人图鉴 -->
@@ -464,7 +468,7 @@
   <script src="data/glossary.js?v=11"></script>
   <script src="data/changelog.js?v=11"></script>
   <script src="js/modelStore.js?v=31"></script>
-  <script src="js/app.js?v=77"></script>
+  <script src="js/app.js?v=78"></script>
   <script type="module" src="js/map3d.js?v=60"></script>
 </body>
 </html>

@@ -1454,7 +1454,7 @@
     document.querySelectorAll('#npcFactionFilter .faction-chip').forEach(function(chip) {
       chip.addEventListener('click', function() {
         npcFactionFilter = this.dataset.faction;
-        renderNPCs();
+        renderCharactersTab();
       });
     });
   }
@@ -1464,9 +1464,49 @@
     return list.filter(function(n) { return n.faction === npcFactionFilter; });
   }
 
-  function renderNPCs() {
-    TDE_DATA.npcs.sort(function(a,b) { return (a.name||"").localeCompare(b.name||"","zh"); });
+  function renderCharactersTab() {
+    var pageEl = document.getElementById('page-characters');
+    var activeTab = pageEl.querySelector('.tab-btn.active');
+    var tab = activeTab ? activeTab.dataset.tab : 'all';
+    var filterEl = document.getElementById('npcFactionFilter');
+
+    if (tab === 'merchants') {
+      filterEl.style.display = 'none';
+      renderMerchantsGrid();
+    } else if (tab === 'npcs') {
+      filterEl.style.display = '';
+      renderNPCsGrid();
+    } else {
+      filterEl.style.display = '';
+      renderAllCharsGrid();
+    }
+  }
+
+  function renderAllCharsGrid() {
     renderNPCFactionFilter();
+    TDE_DATA.npcs.sort(function(a,b) { return (a.name||"").localeCompare(b.name||"","zh"); });
+    TDE_DATA.merchants.sort(function(a,b) { return (a.name||"").localeCompare(b.name||"","zh"); });
+
+    var filteredNpcs = _npcFilterByFaction(TDE_DATA.npcs);
+    var all = [];
+    filteredNpcs.forEach(function(n) { all.push({ entity: n, type: 'npcs', idx: TDE_DATA.npcs.indexOf(n) }); });
+    TDE_DATA.merchants.forEach(function(m) { all.push({ entity: m, type: 'merchants', idx: TDE_DATA.merchants.indexOf(m) }); });
+
+    if (!all.length) {
+      document.getElementById('allCharsGrid').innerHTML = '<div class="empty-hint">暂无角色</div>' + renderArrayControls('npcs') + renderArrayControls('merchants');
+      return;
+    }
+    var html = '<div class="enemy-grid">';
+    for (var i = 0; i < all.length; i++) {
+      html += _renderEnemyCard(all[i].entity, all[i].type, all[i].idx);
+    }
+    html += '</div>' + renderArrayControls('npcs') + renderArrayControls('merchants');
+    document.getElementById('allCharsGrid').innerHTML = html;
+  }
+
+  function renderNPCsGrid() {
+    renderNPCFactionFilter();
+    TDE_DATA.npcs.sort(function(a,b) { return (a.name||"").localeCompare(b.name||"","zh"); });
 
     var filtered = _npcFilterByFaction(TDE_DATA.npcs);
     if (!filtered.length) {
@@ -1481,25 +1521,27 @@
     document.getElementById('npcGrid').innerHTML = html;
   }
 
+  function renderNPCs() {
+    renderNPCsGrid();
+  }
+
+  function renderMerchantsGrid() {
+    TDE_DATA.merchants.sort(function(a,b) { return (a.name||"").localeCompare(b.name||"","zh"); });
+    if (!TDE_DATA.merchants.length) {
+      document.getElementById('merchantGrid').innerHTML = '<div class="empty-hint">暂无商人</div>' + renderArrayControls('merchants');
+      return;
+    }
+    var html = '<div class="enemy-grid">';
+    for (var i = 0; i < TDE_DATA.merchants.length; i++) {
+      html += _renderEnemyCard(TDE_DATA.merchants[i], 'merchants', i);
+    }
+    html += '</div>' + renderArrayControls('merchants');
+    document.getElementById('merchantGrid').innerHTML = html;
+  }
+
   function renderMerchants() {
-    document.getElementById('tab-merchants').innerHTML = `
-      <div class="char-grid">${TDE_DATA.merchants.map((m, i) => `
-        <div class="char-card" ${editCard(`merchants.${i}`)}>
-          ${renderCardDelete(`merchants.${i}`)}
-          <div class="char-name" style="margin-bottom:8px;" ${edit(`merchants.${i}.name`)}>${m.name}</div>
-          <div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:6px;">补货：<span ${edit(`merchants.${i}.restock`)}>${m.restock}</span></div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;" ${arrayContainer(`merchants.${i}.items`)}>
-            ${m.items.map((it, j) => `
-              <span class="char-stat" ${arrayItem(j)}>
-                <span ${edit(`merchants.${i}.items.${j}`)}>${it}</span>
-                ${renderArrayItemControls(j)}
-              </span>
-            `).join('')}
-          </div>
-          ${`<button class="inline-add-btn" style="margin-top:6px;" ${arrayContainer(`merchants.${i}.items`)} onclick="event.stopPropagation();window._addItem(this)">+ 添加商品</button>`}
-        </div>
-      `).join('')}</div>
-    ` + renderArrayControls('merchants');
+    // Keep backward compat — not called directly anymore
+    renderMerchantsGrid();
   }
 
   // --- 图鉴 ---
@@ -1587,10 +1629,12 @@
   // 统一的图片中心卡片渲染
   function _renderEnemyCard(enemy, type, origIdx) {
     var isNpc = type === 'npcs';
-    var dataKey = isNpc ? 'npcs' : (type === 'bosses' ? 'bosses' : (type === 'elites' ? 'elites' : 'common'));
-    var hash = isNpc ? ('npc/' + enemy.id) : ('bestiary/' + dataKey + '/' + enemy.id);
-    var badgeText = isNpc ? '' : (type === 'bosses' ? 'BOSS' : (type === 'elites' ? '精英' : '普通'));
-    var badgeCls = isNpc ? '' : (type === 'bosses' ? 'boss-badge' : (type === 'elites' ? 'elite-badge' : 'common-badge'));
+    var isMerchant = type === 'merchants';
+    var isChar = isNpc || isMerchant;
+    var dataKey = isMerchant ? 'merchants' : (isNpc ? 'npcs' : (type === 'bosses' ? 'bosses' : (type === 'elites' ? 'elites' : 'common')));
+    var hash = isNpc ? ('npc/' + enemy.id) : (isMerchant ? '' : ('bestiary/' + dataKey + '/' + enemy.id));
+    var badgeText = isNpc ? 'NPC' : (isMerchant ? '商人' : (type === 'bosses' ? 'BOSS' : (type === 'elites' ? '精英' : '普通')));
+    var badgeCls = isNpc ? 'npc-badge' : (isMerchant ? 'merchant-badge' : (type === 'bosses' ? 'boss-badge' : (type === 'elites' ? 'elite-badge' : 'common-badge')));
     var exts = ['.gif', '.png', '.webp', '.jpg'];
 	    var imgDir = 'img/entities/';
 	    var imgCandidates = [];
@@ -1604,12 +1648,13 @@
     if (enemy.related && enemy.related.length > 0) {
       firstRelated = _glossNameById(enemy.related[0]);
     }
-    return '<div class="enemy-card" ' + editCard(dataKey + '.' + origIdx) +' onclick="if(!document.body.classList.contains(\'edit-mode\'))window.location.hash=\'' + hash + '\'">'
+    var clickHandler = hash ? ' onclick="if(!document.body.classList.contains(\'edit-mode\'))window.location.hash=\'' + hash + '\'"' : '';
+    return '<div class="enemy-card" ' + editCard(dataKey + '.' + origIdx) + clickHandler + '>'
       + renderCardDelete(dataKey + '.' + origIdx)
       + '<div class="enemy-card-img">'
         + '<img src="' + imgSrc + '" alt="" data-fallback=\'' + imgFallback + '\' onerror="var f=JSON.parse(this.getAttribute(\'data-fallback\'));if(f.length){this.setAttribute(\'data-fallback\',JSON.stringify(f.slice(1)));this.src=f[0]}else{this.style.display=\'none\';this.nextElementSibling.style.display=\'\'}">'
         + '<svg class="img-placeholder" viewBox="0 0 24 24" style="display:none"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-2-6.5l-1.5 1.5L12 18l4.5-4.5L15 12l-3 3-3-3z"/></svg>'
-        + (isNpc ? '' : '<span class="enemy-card-badge ' + badgeCls + '">' + badgeText + '</span>')
+        + '<span class="enemy-card-badge ' + badgeCls + '">' + badgeText + '</span>'
       + '</div>'
       + '<div class="enemy-card-info">'
         + '<div class="enemy-card-name" title="' + enemy.name + '">' + enemy.name + '</div>'
@@ -4256,6 +4301,12 @@
       });
     }
     setupTabs('page-characters', 'tab', 'tab-');
+    // 角色资料：标签切换时重新渲染（处理阵营筛选显示/隐藏）
+    document.querySelectorAll('#page-characters .tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        renderCharactersTab();
+      });
+    });
     setupTabs('page-bestiary', 'btab', 'btab-');
     // 敌人图鉴：标签切换时应用当前阵营筛选重新渲染
     document.querySelectorAll('#page-bestiary .tab-btn').forEach(btn => {
@@ -4495,9 +4546,7 @@
   // 渲染全部
   // ============================
   function renderAll() {
-    renderClasses();
-    renderNPCs();
-    renderMerchants();
+    renderCharactersTab();
     renderFactionFilter();
     renderAllEnemies();
     renderBosses();

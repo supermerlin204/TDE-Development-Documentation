@@ -12,6 +12,16 @@ TDE_DATA.bosses = [
     "drops": [],
     "race": "race-void-construct",
     "related": []
+  },
+  {
+    "id": "new_boss_1785305957399",
+    "name": "咒贤-贝杜阿汗",
+    "faction": "灾厄军团",
+    "phases": 2,
+    "desc": "维利人三贤之一，因其在咒言上的高超造诣而得名。",
+    "lore": "# 翠绿面具首徒 灰岩堡垒之主\n\n贝杜阿汗不仅拥有极高位阶的厄法，其对咒言也颇有造诣，尤其擅长使用死灵魔法御敌",
+    "drops": [],
+    "race": "race-willie"
   }
 ];
 

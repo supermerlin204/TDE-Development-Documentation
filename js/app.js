@@ -889,7 +889,7 @@
       arr.push(clone);
       saveData();
       renderAll();
-      openEditPanel(path + "." + (arr.length - 1));
+      openEditPanel(path + "." + arr.indexOf(clone));
       showSaved();
     } else if (path.indexOf(".") !== -1) {
       arr.push("XXXXX");

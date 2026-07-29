@@ -45,6 +45,34 @@ TDE_DATA.glossary = [
     "related": []
   },
   {
+    "id": "new_glossary_1785306845003",
+    "name": "祷告",
+    "category": "concept",
+    "desc": "通过特定的行为或文字来催动心中的信仰，从而与使用者所信仰的先驱达成联系，进而借用先驱的力量。",
+    "related": []
+  },
+  {
+    "id": "new_glossary_1785306525171",
+    "name": "厄法",
+    "category": "concept",
+    "desc": "魔法的三大学派之一，维利人通过催动体内被驯化的厄咒来施展魔法。",
+    "related": []
+  },
+  {
+    "id": "new_glossary_1785306484407",
+    "name": "炼金",
+    "category": "concept",
+    "desc": "魔法的三大学派之一，通过特定物质间的调配，使得物品或药水自发的施展魔法。",
+    "related": []
+  },
+  {
+    "id": "new_glossary_1785306320701",
+    "name": "受赐厄法",
+    "category": "concept",
+    "desc": "激活维利人体内厄咒的仪式，能让维利人的肉体与厄法更加亲和，受赐厄法者皮肤会变为死灰色。",
+    "related": []
+  },
+  {
     "id": "concept-precursor",
     "name": "先驱",
     "category": "concept",
@@ -84,6 +112,13 @@ TDE_DATA.glossary = [
     "name": "灾祸-虚空",
     "category": "concept",
     "desc": "深渊之下向外涌出黑色泥水占据着一切人类的骸骨，并借由骸骨不断猎杀人类。\n律法之王在深渊之上建起金律，金律的光辉不断压制着虚空，使其无法再向外蔓延。",
+    "related": []
+  },
+  {
+    "id": "new_glossary_1785306511222",
+    "name": "咒言",
+    "category": "concept",
+    "desc": "魔法的三大学派之一，通过咏唱或书写咒文来施展魔法。",
     "related": []
   },
   {

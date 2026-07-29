@@ -1531,6 +1531,15 @@
     return '<span class="faction-badge" onclick="event.stopPropagation();window._goGlossary(\'faction\')" title="查看阵营：' + faction.name + '">' + faction.name + '</span>';
   }
 
+  function _glossNameById(id) {
+    if (!id) return '';
+    var glossary = TDE_DATA.glossary || [];
+    for (var i = 0; i < glossary.length; i++) {
+      if (glossary[i].id === id) return glossary[i].name;
+    }
+    return '';
+  }
+
   function _filterByFaction(list) {
     if (!bestiaryFactionFilter) return list;
     return list.filter(function(e) { return e.faction === bestiaryFactionFilter; });
@@ -1549,6 +1558,11 @@
 	    exts.forEach(function(ext) { imgCandidates.push('img/enemies/' + enemy.id + ext); });
 	    var imgSrc = imgCandidates[0];
 	    var imgFallback = JSON.stringify(imgCandidates.slice(1));
+    var raceName = _glossNameById(enemy.race);
+    var firstRelated = '';
+    if (enemy.related && enemy.related.length > 0) {
+      firstRelated = _glossNameById(enemy.related[0]);
+    }
     return '<div class="enemy-card" ' + editCard(dataKey + '.' + origIdx) +' onclick="if(!document.body.classList.contains(\'edit-mode\'))window.location.hash=\'' + hash + '\'">'
       + renderCardDelete(dataKey + '.' + origIdx)
       + '<div class="enemy-card-img">'
@@ -1560,6 +1574,8 @@
         + '<div class="enemy-card-name" title="' + enemy.name + '">' + enemy.name + '</div>'
         + '<div class="enemy-card-meta">'
           + _factionBadge(enemy.faction)
+          + (raceName ? '<span class="card-tag card-tag-race">' + raceName + '</span>' : '')
+          + (firstRelated ? '<span class="card-tag">' + firstRelated + '</span>' : '')
         + '</div>'
       + '</div>'
     + '</div>';

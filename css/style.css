@@ -930,6 +930,23 @@ body.edit-mode .project-intro-text {
   border-color: var(--cyan);
 }
 
+/* Card meta tags (race, related terms) */
+.card-tag {
+  font-size: 0.56rem;
+  color: var(--text-muted);
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.card-tag-race {
+  color: #b0a890;
+  border-color: rgba(176,168,144,0.2);
+  background: rgba(176,168,144,0.05);
+}
+
 /* Keep gloss-link for detail page stats */
 .gloss-link {
   color: var(--cyan);

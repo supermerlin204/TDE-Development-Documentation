@@ -38,7 +38,7 @@ TDE_DATA.glossary = [
     "related": []
   },
   {
-    "id": "race-void-construct_new_new_new_new",
+    "id": "concept-sleepless",
     "name": "不眠者",
     "category": "concept",
     "desc": "天生无法入睡的人类的统称，不眠者的成因各不相同。",
@@ -52,35 +52,35 @@ TDE_DATA.glossary = [
     "related": []
   },
   {
-    "id": "race-void-construct_new_new",
+    "id": "concept-calamity-north-wind",
     "name": "灾祸-北风",
     "category": "concept",
     "desc": "从北方逃难而来的原住民带来了令人绝望的信息，极北之地不断向外刮来凌冽的寒风，这寒风不断向北蔓延，冻结所过的一切。\n最后一次远征彻底终结了北风，可是最后一次远征的唯一幸存者德雷克拒绝向任何人提及在极北的所见所为。",
     "related": []
   },
   {
-    "id": "race-void-construct",
+    "id": "concept-calamity-curse",
     "name": "灾祸-厄咒",
     "category": "concept",
     "desc": "从第一位扭曲婴孩的哭嚎开始，新出生的婴儿皆化为不可名状的扭曲造物。\n\n厄咒天生便会服从于对厄咒掌控更深的存在，翠绿面具凭借自己在厄咒上绝对的造诣，换来了整个厄咒的臣服，其将厄咒加以控制与改良，将其驯化为了独属于维利人的力量——厄法。",
     "related": []
   },
   {
-    "id": "race-plant-life",
+    "id": "concept-calamity-arborify",
     "name": "灾祸-树化",
     "category": "concept",
     "desc": "自涡流岛向外蔓延的奇异现象，生物的体内会不自主的长出根须与枝叶，最终逐渐化为一株诡异的植物。\n树化的消失毫无征兆，其的蔓延也止步于最靠近涡流岛的海岸。",
     "related": []
   },
   {
-    "id": "race-void-construct_new",
+    "id": "concept-calamity-sleepless",
     "name": "灾祸-无眠",
     "category": "concept",
     "desc": "令所有人类无法入睡的灾难，受害者会逐渐丧失理智，最终异变为无意识的\"空壳\"。",
     "related": []
   },
   {
-    "id": "race-void-construct_new_new",
+    "id": "concept-calamity-void",
     "name": "灾祸-虚空",
     "category": "concept",
     "desc": "深渊之下向外涌出黑色泥水占据着一切人类的骸骨，并借由骸骨不断猎杀人类。\n律法之王在深渊之上建起金律，金律的光辉不断压制着虚空，使其无法再向外蔓延。",
@@ -108,14 +108,14 @@ TDE_DATA.glossary = [
     "related": []
   },
   {
-    "id": "race-void-construct_new_new",
+    "id": "race-void-construct",
     "name": "虚空构造体",
     "category": "race",
     "desc": "虚空能量侵占人类遗骸后产生的无机造物。",
     "related": []
   },
   {
-    "id": "race-void-construct_new_new_new",
+    "id": "event-calamity-prophecy",
     "name": "灾祸预言",
     "category": "event",
     "desc": "被囚禁的先驱对人类降下的预言\n\n来自根须的恨意会穿透生灵的皮肉\n天生弱者的贪婪会换来扭曲的恩赐\n遥远北方的哭嚎会冻结每一分土地\n深渊之下的迷茫会以骸骨抚平渴望\n那不眠者的愤怒会带来永恒的痛苦",

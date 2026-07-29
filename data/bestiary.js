@@ -1,7 +1,19 @@
 // 无眠纪 — 敌人图鉴数据
 // Part of TDE_DATA. Edit directly or use the web UI.
 
-TDE_DATA.bosses = [];
+TDE_DATA.bosses = [
+  {
+    "id": "new_boss_1785300220562",
+    "name": "奎尔-虚空侵蚀",
+    "faction": "虚空",
+    "phases": 1,
+    "desc": "被虚空侵占的奎尔骸骨，它会在战斗中会不断尝试模仿奎尔生前的战斗技艺。",
+    "lore": "虚空自然不会放过奎尔这具强大的躯体，通过读取遗骸残留的记忆，得以在一定程度上复刻其生前招式。尽管因缺少一柄骨刃而无法完整还原，却依旧具备极强的威胁。",
+    "drops": [],
+    "race": "race-void-construct",
+    "related": []
+  }
+];
 
 TDE_DATA.elites = [
   {
@@ -19,6 +31,13 @@ TDE_DATA.elites = [
     "desc": "由咒贤直接支配的高阶厄兽，负责打通后勤隧道，并为咒贤四处掠夺尸体以供研究。",
     "lore": "作为位阶极高的厄兽，掘进者本身便具备召唤低阶厄兽仆从的能力，并能自如使用厄法。它以巨嘴吞食土石，在地下掘进隧道。然而，隧道空间狭小，不适宜军队通行，且掘进时声响巨大，难以用于战场奇袭。不过，若在打通后的隧道中铺设轨道，便可极大便利后勤运输。\n\n咒贤常派遣掘进者前往偏远之地，掠夺无主尸体，以供研究之用。",
     "race": "race-brute"
+  },
+  {
+    "id": "new_elite_1785300314547",
+    "name": "窃魂者精锐骷髅",
+    "faction": "虚空",
+    "desc": "被虚空占据的窃魂者精锐骸骨。",
+    "race": "race-void-construct"
   }
 ];
 
@@ -29,5 +48,20 @@ TDE_DATA.common = [
     "faction": "灾厄军团",
     "desc": "灾厄军团的常规单位，配备有制式化的的装备。",
     "race": "race-willie"
+  },
+  {
+    "id": "new_common_1785300361850",
+    "name": "窃魂者骷髅",
+    "faction": "虚空",
+    "desc": "被虚空占据的普通窃魂者骸骨。",
+    "lore": "无眠纪后，突破金律压制的虚空迅速占领了北风前哨站，站内的窃魂者骸骨随之沦为虚空的容器。",
+    "race": "race-void-construct"
+  },
+  {
+    "id": "new_common_1785300429829",
+    "name": "矿工骷髅",
+    "faction": "虚空",
+    "desc": "被虚空侵占的矿工遗骸。",
+    "race": "race-void-construct"
   }
 ];

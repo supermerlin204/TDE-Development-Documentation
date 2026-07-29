@@ -1659,8 +1659,14 @@
     var galleryEl = document.getElementById('bdImageGallery');
     var panelEl = document.getElementById('bdImagePanel');
 
-    panelEl.style.display = 'none';
     galleryEl.innerHTML = '';
+    panelEl.style.display = '';
+
+    // 与图片等大的加载指示器
+    var loadingEl = document.createElement('div');
+    loadingEl.className = 'bd-gallery-item bd-loading';
+    loadingEl.innerHTML = '<svg viewBox="0 0 24 24" style="width:40px;height:40px;fill:none;stroke:rgba(0,191,165,0.5);stroke-width:2;animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke-dasharray="50" stroke-dashoffset="10"/></svg><span>加载中...</span>';
+    galleryEl.appendChild(loadingEl);
 
     // 代际标记，防止旧回调污染
     var genId = Date.now();
@@ -1686,6 +1692,7 @@
 
     function revealAll() {
       if (isStale()) return;
+      if (loadingEl) { loadingEl.remove(); loadingEl = null; }
       for (var i = items.length - 1; i >= 0; i--) {
         if (!items[i].ok) { items[i].div.remove(); items.splice(i, 1); }
       }

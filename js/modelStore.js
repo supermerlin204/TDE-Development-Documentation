@@ -25,10 +25,11 @@
   }
 
   async function saveModel(regionId, buffer, filename) {
+    var stamp = (typeof TDE_DATA !== 'undefined' && TDE_DATA._modelStamp) ? TDE_DATA._modelStamp : 0;
     const db = await openDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readwrite');
-      tx.objectStore(STORE_NAME).put({ buffer, filename, ts: Date.now() }, regionId);
+      tx.objectStore(STORE_NAME).put({ buffer, filename, ts: Date.now(), stamp }, regionId);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
@@ -39,7 +40,17 @@
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readonly');
       const req = tx.objectStore(STORE_NAME).get(regionId);
-      req.onsuccess = () => resolve(req.result || null);
+      req.onsuccess = () => {
+        var data = req.result || null;
+        if (data && data.buffer) {
+          var currentStamp = (typeof TDE_DATA !== 'undefined' && TDE_DATA._modelStamp) ? TDE_DATA._modelStamp : 0;
+          if (data.stamp !== currentStamp) {
+            console.log('[modelStore] stamp mismatch for', regionId, '(cached:', data.stamp, 'current:', currentStamp, ')—invalidating cache');
+            return resolve(null);
+          }
+        }
+        resolve(data);
+      };
       req.onerror = () => reject(req.error);
     });
   }

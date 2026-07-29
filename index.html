@@ -256,7 +256,10 @@
           <button class="tab-btn" data-tab="merchants">商人</button>
         </div>
         <div class="tab-content active" id="tab-classes"></div>
-        <div class="tab-content" id="tab-npcs"></div>
+        <div class="tab-content" id="tab-npcs">
+          <div class="faction-filter" id="npcFactionFilter"></div>
+          <div id="npcGrid"></div>
+        </div>
         <div class="tab-content" id="tab-merchants"></div>
       </section>
 
@@ -318,6 +321,44 @@
         </div>
       </section>
 
+
+      <!-- NPC详情页 -->
+      <section id="page-npc-detail" class="page">
+        <header class="page-header bd-header">
+          <a class="bd-back-link" href="#characters">&larr; 返回角色资料</a>
+          <h2 class="page-title" id="ndName"></h2>
+          <span class="bd-badge" id="ndBadge" style="display:none"></span>
+        </header>
+        <div class="bd-hero">
+          <div class="bd-image-panel" id="ndImagePanel" style="display:none">
+            <div class="bd-image-gallery" id="ndImageGallery"></div>
+          </div>
+          <div class="bd-content-panel">
+            <div class="bd-tabs" id="ndTabs">
+              <button class="bd-tab-btn active" data-ndtab="intro">介绍</button>
+              <button class="bd-tab-btn" data-ndtab="lore" id="ndTabLore" style="display:none">背景故事</button>
+            </div>
+            <div class="bd-tab-content active" id="ndtab-intro">
+              <div class="bd-md-view" id="ndMdView"></div>
+              <div class="bd-md-edit" id="ndMdEdit">
+                <textarea class="bd-md-textarea" id="ndMdTextarea" placeholder="使用 Markdown 语法编写NPC介绍..."></textarea>
+                <div class="bd-md-preview" id="ndMdPreview"></div>
+              </div>
+            </div>
+            <div class="bd-tab-content" id="ndtab-lore">
+              <div class="bd-md-view" id="ndLoreView"></div>
+              <div class="bd-md-edit" id="ndLoreEdit">
+                <textarea class="bd-md-textarea" id="ndLoreTextarea" placeholder="使用 Markdown 语法编写背景故事..."></textarea>
+                <div class="bd-md-preview" id="ndLorePreview"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bd-stats-section">
+          <h3 class="bd-stats-title">相关信息</h3>
+          <div class="bd-stats-grid" id="ndStatsGrid"></div>
+        </div>
+      </section>
 
       <!-- 装备道具 -->
       <section id="page-equipment" class="page">
@@ -411,19 +452,19 @@
 
   <!-- 数据文件（_init.js 必须在最前，其余顺序无关） -->
   <script src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js"></script>
-  <script src="data/_init.js?v=7"></script>
-  <script src="data/dashboard.js?v=7"></script>
-  <script src="data/classes.js?v=7"></script>
-  <script src="data/npcs.js?v=7"></script>
-  <script src="data/bestiary.js?v=7"></script>
-  <script src="data/regions.js?v=7"></script>
-  <script src="data/equipment.js?v=7"></script>
-  <script src="data/mechanics.js?v=7"></script>
-  <script src="data/quests.js?v=7"></script>
-  <script src="data/glossary.js?v=7"></script>
-  <script src="data/changelog.js?v=7"></script>
+  <script src="data/_init.js?v=8"></script>
+  <script src="data/dashboard.js?v=8"></script>
+  <script src="data/classes.js?v=8"></script>
+  <script src="data/npcs.js?v=8"></script>
+  <script src="data/bestiary.js?v=8"></script>
+  <script src="data/regions.js?v=8"></script>
+  <script src="data/equipment.js?v=8"></script>
+  <script src="data/mechanics.js?v=8"></script>
+  <script src="data/quests.js?v=8"></script>
+  <script src="data/glossary.js?v=8"></script>
+  <script src="data/changelog.js?v=8"></script>
   <script src="js/modelStore.js?v=31"></script>
-  <script src="js/app.js?v=74"></script>
+  <script src="js/app.js?v=75"></script>
   <script type="module" src="js/map3d.js?v=60"></script>
 </body>
 </html>

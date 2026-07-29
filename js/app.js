@@ -12,6 +12,7 @@
   let editMode = false;
   let editPanelPath = null; // 当前编辑面板对应的数据路径
   let bestiaryFactionFilter = ''; // 敌人图鉴阵营筛选（空=全部）
+  let npcFactionFilter = ''; // NPC阵营筛选（空=全部）
   // 数据持久化：所有数据存储在 data/*.js 仓库文件中。
   // 网页编辑后通过「下载源文件」导出更改，手动放入仓库并提交。
   const _defaultData = JSON.parse(JSON.stringify(TDE_DATA)); // 深拷贝默认数据，用于检测未保存的更改
@@ -86,6 +87,7 @@
     currentLandmark: null,
     currentBestiaryType: null,
     currentBestiaryId: null,
+    currentNpcId: null,
     init() {
       const hash = window.location.hash.slice(1) || 'dashboard';
       this.navigate(hash);
@@ -126,10 +128,19 @@
       this.currentBestiaryType = (basePage === 'bestiary-detail') ? bestiaryType : null;
       this.currentBestiaryId = (basePage === 'bestiary-detail') ? bestiaryId : null;
 
+      // 解析：npc/{id}
+      var npcId = null;
+      if (basePage === 'npc' && sub) {
+        npcId = decodeURIComponent(sub);
+        basePage = 'npc-detail';
+      }
+      this.currentNpcId = (basePage === 'npc-detail') ? npcId : null;
+
       // 高亮导航：区域详情页或敌人详情页时高亮对应父页面
       var navMatch = basePage;
       if (basePage === 'region-detail') navMatch = 'world';
       if (basePage === 'bestiary-detail') navMatch = 'bestiary';
+      if (basePage === 'npc-detail') navMatch = 'characters';
       document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page === navMatch));
 
       // 显示/隐藏页面
@@ -157,6 +168,11 @@
       // 敌人详情页渲染
       if (basePage === 'bestiary-detail' && bestiaryType && bestiaryId) {
         renderBestiaryDetail(bestiaryType, bestiaryId);
+      }
+
+      // NPC详情页渲染
+      if (basePage === 'npc-detail' && npcId) {
+        renderNPCDetail(npcId);
       }
 
       // 进入敌人图鉴列表页时刷新阵营筛选
@@ -444,6 +460,10 @@
     // 若当前在敌人详情页，刷新之
     if (Router.currentPage.startsWith('bestiary/')) {
       renderBestiaryDetail(Router.currentBestiaryType, Router.currentBestiaryId);
+    }
+    // 若当前在NPC详情页，刷新之
+    if (Router.currentPage.startsWith('npc/')) {
+      renderNPCDetail(Router.currentNpcId);
     }
   }
 
@@ -866,7 +886,7 @@
       armor: { id:"new_armor", name:"XXXXX", type:"轻甲", weight:"轻", defense:"", desc:"XXXXX" },
       talismans: { id:"new_talisman", name:"XXXXX", desc:"XXXXX", rarity:"common" },
       consumables: { id:"new_consumable", name:"XXXXX", desc:"XXXXX", rarity:"common" },
-      npcs: { id:"new_npc", name:"XXXXX", title:"XXXXX", desc:"XXXXX", location:"低语避难所", role:"XXXXX", services:[] },
+      npcs: { id:"new_npc", name:"XXXXX", faction:"", desc:"XXXXX", lore:"", race:"", related:[] },
       merchants: { id:"new_merchant", name:"XXXXX", items:[], restock:"" },
       quests: { id:"new_quest", name:"XXXXX", type:"side", npc:"", desc:"XXXXX", rewards:[], stages:[] },
       classes: { id:"new_class", name:"XXXXX", title:"XXXXX", desc:"XXXXX", stats:{生命:10,耐力:10,力量:10,敏捷:10,智力:10,信仰:10}, weapon:"", armor:"", skill:"" },
@@ -1417,29 +1437,48 @@
     ` + renderArrayControls('classes');
   }
 
-  function renderNPCs() {
-    TDE_DATA.npcs.sort(function(a,b) { var l = (a.location||"").localeCompare(b.location||"","zh"); if (l !== 0) return l; return (a.name||"").localeCompare(b.name||"","zh"); });
+  function renderNPCFactionFilter() {
+    var factions = (TDE_DATA.glossary || []).filter(function(g) { return g.category === 'faction'; });
+    var allNpcs = TDE_DATA.npcs || [];
+    var chipsHTML = '<span class="faction-filter-label">阵营</span>';
+    var totalCount = allNpcs.length;
+    chipsHTML += '<button class="faction-chip' + (npcFactionFilter === '' ? ' active' : '') + '" data-faction="">全部<span class="count">' + totalCount + '</span></button>';
+    factions.forEach(function(f) {
+      var count = allNpcs.filter(function(n) { return n.faction === f.name; }).length;
+      if (count > 0) {
+        chipsHTML += '<button class="faction-chip' + (npcFactionFilter === f.name ? ' active' : '') + '" data-faction="' + f.name + '">' + f.name + '<span class="count">' + count + '</span></button>';
+      }
+    });
+    document.getElementById('npcFactionFilter').innerHTML = chipsHTML;
 
-    document.getElementById('tab-npcs').innerHTML = `
-      <div class="char-grid">${TDE_DATA.npcs.map((n, i) => `
-        <div class="char-card" ${editCard(`npcs.${i}`)}>
-          ${renderCardDelete(`npcs.${i}`)}
-          <div class="char-card-header">
-            <div>
-              <div class="char-name" ${edit(`npcs.${i}.name`)}>${n.name}</div>
-              <div class="char-title-label" ${edit(`npcs.${i}.title`)}>${n.title}</div>
-            </div>
-            <div class="char-avatar">
-              <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            </div>
-          </div>
-          <div class="char-desc" ${edit(`npcs.${i}.desc`)}>${n.desc}</div>
-          <div style="margin-top:8px;font-size:0.72rem;color:var(--text-muted);">位置：<span ${edit(`npcs.${i}.location`)}>${n.location}</span></div>
-          <div style="font-size:0.72rem;color:var(--cyan);">角色：<span ${edit(`npcs.${i}.role`)}>${n.role}</span></div>
-          <div style="font-size:0.72rem;color:var(--text-secondary);" ${edit(`npcs.${i}.services`)}>${n.services}</div>
-        </div>
-      `).join('')}</div>
-    ` + renderArrayControls('npcs');
+    document.querySelectorAll('#npcFactionFilter .faction-chip').forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        npcFactionFilter = this.dataset.faction;
+        renderNPCs();
+      });
+    });
+  }
+
+  function _npcFilterByFaction(list) {
+    if (!npcFactionFilter) return list;
+    return list.filter(function(n) { return n.faction === npcFactionFilter; });
+  }
+
+  function renderNPCs() {
+    TDE_DATA.npcs.sort(function(a,b) { return (a.name||"").localeCompare(b.name||"","zh"); });
+    renderNPCFactionFilter();
+
+    var filtered = _npcFilterByFaction(TDE_DATA.npcs);
+    if (!filtered.length) {
+      document.getElementById('npcGrid').innerHTML = '<div class="empty-hint">该阵营暂无NPC</div>' + renderArrayControls('npcs');
+      return;
+    }
+    var html = '<div class="enemy-grid">';
+    for (var i = 0; i < filtered.length; i++) {
+      html += _renderEnemyCard(filtered[i], 'npcs', TDE_DATA.npcs.indexOf(filtered[i]));
+    }
+    html += '</div>' + renderArrayControls('npcs');
+    document.getElementById('npcGrid').innerHTML = html;
   }
 
   function renderMerchants() {
@@ -1547,15 +1586,17 @@
 
   // 统一的图片中心卡片渲染
   function _renderEnemyCard(enemy, type, origIdx) {
-    var dataKey = type === 'bosses' ? 'bosses' : (type === 'elites' ? 'elites' : 'common');
-    var hash = 'bestiary/' + dataKey + '/' + enemy.id;
-    var badgeText = type === 'bosses' ? 'BOSS' : (type === 'elites' ? '精英' : '普通');
-    var badgeCls = type === 'bosses' ? 'boss-badge' : (type === 'elites' ? 'elite-badge' : 'common-badge');
+    var isNpc = type === 'npcs';
+    var dataKey = isNpc ? 'npcs' : (type === 'bosses' ? 'bosses' : (type === 'elites' ? 'elites' : 'common'));
+    var hash = isNpc ? ('npc/' + enemy.id) : ('bestiary/' + dataKey + '/' + enemy.id);
+    var badgeText = isNpc ? '' : (type === 'bosses' ? 'BOSS' : (type === 'elites' ? '精英' : '普通'));
+    var badgeCls = isNpc ? '' : (type === 'bosses' ? 'boss-badge' : (type === 'elites' ? 'elite-badge' : 'common-badge'));
     var exts = ['.gif', '.png', '.webp', '.jpg'];
+	    var imgDir = isNpc ? 'img/npcs/' : 'img/enemies/';
 	    var imgCandidates = [];
 	    if (enemy.image) imgCandidates.push(enemy.image);
-	    exts.forEach(function(ext) { imgCandidates.push('img/enemies/' + encodeURIComponent(enemy.name) + ext); });
-	    exts.forEach(function(ext) { imgCandidates.push('img/enemies/' + enemy.id + ext); });
+	    exts.forEach(function(ext) { imgCandidates.push(imgDir + encodeURIComponent(enemy.name) + ext); });
+	    exts.forEach(function(ext) { imgCandidates.push(imgDir + enemy.id + ext); });
 	    var imgSrc = imgCandidates[0];
 	    var imgFallback = JSON.stringify(imgCandidates.slice(1));
     var raceName = _glossNameById(enemy.race);
@@ -1568,7 +1609,7 @@
       + '<div class="enemy-card-img">'
         + '<img src="' + imgSrc + '" alt="" data-fallback=\'' + imgFallback + '\' onerror="var f=JSON.parse(this.getAttribute(\'data-fallback\'));if(f.length){this.setAttribute(\'data-fallback\',JSON.stringify(f.slice(1)));this.src=f[0]}else{this.style.display=\'none\';this.nextElementSibling.style.display=\'\'}">'
         + '<svg class="img-placeholder" viewBox="0 0 24 24" style="display:none"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-2-6.5l-1.5 1.5L12 18l4.5-4.5L15 12l-3 3-3-3z"/></svg>'
-        + '<span class="enemy-card-badge ' + badgeCls + '">' + badgeText + '</span>'
+        + (isNpc ? '' : '<span class="enemy-card-badge ' + badgeCls + '">' + badgeText + '</span>')
       + '</div>'
       + '<div class="enemy-card-info">'
         + '<div class="enemy-card-name" title="' + enemy.name + '">' + enemy.name + '</div>'
@@ -1976,6 +2017,279 @@
     var enemy = getDataByPath(basePath);
     if (!enemy || !enemy.related) return;
     enemy.related.splice(idx, 1);
+    saveData();
+    renderAll();
+    showSaved();
+  };
+
+  // --- NPC 详情页 ---
+  function renderNPCDetail(id) {
+    var npc = (TDE_DATA.npcs || []).find(function(x) { return x.id === id; });
+    if (!npc) {
+      document.getElementById('ndName').textContent = 'NPC未找到';
+      return;
+    }
+
+    var idx = TDE_DATA.npcs.indexOf(npc);
+    var basePath = 'npcs.' + idx;
+
+    // 页面头部
+    var nameEl = document.getElementById('ndName');
+    nameEl.textContent = npc.name;
+    nameEl.contentEditable = editMode ? 'true' : 'false';
+    nameEl.onblur = editMode ? function() { npc.name = nameEl.textContent.trim(); saveData(); } : null;
+
+    // 图片加载
+    var exts = ['.gif', '.png', '.webp', '.jpg'];
+    var galleryEl = document.getElementById('ndImageGallery');
+    var panelEl = document.getElementById('ndImagePanel');
+    galleryEl.innerHTML = '';
+    panelEl.style.display = '';
+
+    var loadingEl = document.createElement('div');
+    loadingEl.className = 'bd-gallery-item bd-loading';
+    loadingEl.innerHTML = '<svg viewBox="0 0 24 24" style="width:40px;height:40px;fill:none;stroke:rgba(0,191,165,0.5);stroke-width:2;animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke-dasharray="50" stroke-dashoffset="10"/></svg><span>加载中...</span>';
+    galleryEl.appendChild(loadingEl);
+
+    var genId = Date.now();
+    window._ndImgGenId = genId;
+    function isStale() { return genId !== window._ndImgGenId; }
+
+    function buildCandidates(suffix) {
+      var c = [];
+      exts.forEach(function(ext) { c.push('img/npcs/' + encodeURIComponent(npc.name) + suffix + ext); });
+      exts.forEach(function(ext) { c.push('img/npcs/' + npc.id + suffix + ext); });
+      return c;
+    }
+    var primaryCandidates = [];
+    if (npc.image) primaryCandidates.push(npc.image);
+    primaryCandidates = primaryCandidates.concat(buildCandidates(''));
+
+    var allVariants = [primaryCandidates];
+    for (var v = 1; v <= 5; v++) { allVariants.push(buildCandidates('_' + v)); }
+
+    var items = [];
+    var currentV = 0;
+
+    function revealAll() {
+      if (isStale()) return;
+      if (loadingEl) { loadingEl.remove(); loadingEl = null; }
+      for (var i = items.length - 1; i >= 0; i--) {
+        if (!items[i].ok) { items[i].div.remove(); items.splice(i, 1); }
+      }
+      if (items.length === 0) {
+        panelEl.style.display = 'none';
+        return;
+      }
+      for (var k = 0; k < items.length; k++) {
+        items[k].div.style.display = '';
+      }
+      panelEl.style.display = '';
+    }
+
+    function tryNext() {
+      if (isStale()) return;
+      if (currentV >= allVariants.length) { revealAll(); return; }
+      var candidates = allVariants[currentV];
+      var cIdx = 0;
+      var itemDiv = document.createElement('div');
+      itemDiv.className = 'bd-gallery-item';
+      itemDiv.style.display = 'none';
+      var img = document.createElement('img');
+      img.alt = '';
+
+      var entry = { div: itemDiv, ok: false };
+      items.push(entry);
+
+      img.onload = function() {
+        if (isStale()) return;
+        entry.ok = true;
+        currentV++;
+        tryNext();
+      };
+      img.onerror = function() {
+        if (isStale()) return;
+        cIdx++;
+        if (cIdx < candidates.length) {
+          img.src = candidates[cIdx];
+        } else {
+          itemDiv.remove();
+          var entryIdx = items.indexOf(entry);
+          if (entryIdx >= 0) items.splice(entryIdx, 1);
+          revealAll();
+        }
+      };
+      img.src = candidates[0];
+      itemDiv.appendChild(img);
+      galleryEl.appendChild(itemDiv);
+    }
+    tryNext();
+
+    // Markdown 介绍
+    var descText = npc.desc || '';
+    document.getElementById('ndMdView').innerHTML = descText ? renderMarkdown(descText) : '<div class="bd-md-empty">暂无介绍，开启编辑模式编写</div>';
+    document.getElementById('ndMdTextarea').value = descText;
+
+    var loreText = npc.lore || '';
+    var hasLore = !!loreText || editMode;
+    document.getElementById('ndTabLore').style.display = hasLore ? '' : 'none';
+    if (hasLore) {
+      document.getElementById('ndLoreView').innerHTML = loreText ? renderMarkdown(loreText) : '<div class="bd-md-empty">暂无背景故事，开启编辑模式编写</div>';
+      document.getElementById('ndLoreTextarea').value = loreText;
+    }
+
+    var mdTextarea = document.getElementById('ndMdTextarea');
+    var mdPreview = document.getElementById('ndMdPreview');
+    mdTextarea.oninput = function() {
+      npc.desc = mdTextarea.value;
+      mdPreview.innerHTML = renderMarkdown(mdTextarea.value);
+      saveData();
+    };
+    var loreTextarea = document.getElementById('ndLoreTextarea');
+    var lorePreview = document.getElementById('ndLorePreview');
+    if (hasLore) {
+      loreTextarea.oninput = function() {
+        npc.lore = loreTextarea.value;
+        lorePreview.innerHTML = renderMarkdown(loreTextarea.value);
+        saveData();
+      };
+    }
+
+    // 标签页切换
+    document.querySelectorAll('#ndTabs .bd-tab-btn').forEach(function(btn) {
+      btn.onclick = function() {
+        var tab = btn.dataset.ndtab;
+        document.querySelectorAll('#ndTabs .bd-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        document.querySelectorAll('#page-npc-detail .bd-tab-content').forEach(function(c) { c.classList.remove('active'); });
+        document.getElementById('ndtab-' + tab).classList.add('active');
+      };
+    });
+
+    if (editMode) {
+      mdPreview.innerHTML = renderMarkdown(mdTextarea.value);
+      if (hasLore) lorePreview.innerHTML = renderMarkdown(loreTextarea.value);
+    }
+
+    // 阵营
+    var factionName = '';
+    var factionDesc = '';
+    if (npc.faction) {
+      var factionEntry = (TDE_DATA.glossary || []).find(function(g) { return g.name === npc.faction && g.category === 'faction'; });
+      if (factionEntry) {
+        factionName = factionEntry.name;
+        factionDesc = factionEntry.desc || '';
+      } else {
+        factionName = npc.faction;
+      }
+    }
+    var factionEntries = (TDE_DATA.glossary || []).filter(function(g) { return g.category === 'faction'; });
+
+    // 种族
+    var raceName = '';
+    var raceEntry = null;
+    if (npc.race) {
+      raceEntry = (TDE_DATA.glossary || []).find(function(g) { return g.id === npc.race && g.category === 'race'; });
+      raceName = raceEntry ? raceEntry.name : npc.race;
+    }
+    var raceEntries = (TDE_DATA.glossary || []).filter(function(g) { return g.category === 'race'; });
+
+    // 相关词条
+    var relatedIds = npc.related || [];
+    var nonFactionRace = (TDE_DATA.glossary || []).filter(function(g) { return g.category !== 'faction' && g.category !== 'race'; });
+
+    var infoHTML = '';
+
+    if (factionName) {
+      infoHTML += '<div class="bd-info-line"><span class="bd-info-label">阵营</span><span class="bd-faction-badge">' + _factionBadge(npc.faction) + factionName + '</span></div>';
+    }
+
+    infoHTML += '<div class="bd-info-line"><span class="bd-info-label">种族</span>';
+    if (editMode) {
+      infoHTML += '<div class="ss-wrap" data-ss-basepath="' + basePath + '" data-ss-field="race" data-ss-onchange="_ndSsChange">';
+      infoHTML += '<input type="text" class="ss-input" placeholder="选择种族..." value="' + escAttr(raceName) + '" onfocus="window._ssOpen(this)" oninput="window._ssFilter(this)" onkeydown="window._ssKey(this,event)" onblur="setTimeout(window._ssCloseAll,200)" autocomplete="off">';
+      infoHTML += '<input type="hidden" class="ss-hidden" value="' + escAttr(npc.race || '') + '">';
+      infoHTML += '<div class="ss-dropdown">';
+      raceEntries.forEach(function(re) {
+        infoHTML += '<div class="ss-option" data-val="' + escAttr(re.id) + '" data-label="' + escAttr(re.name) + '" data-search="' + escAttr(re.name) + '" onclick="window._ssSelect(this)">' + esc(re.name) + '</div>';
+      });
+      infoHTML += '</div></div>';
+    } else {
+      infoHTML += '<span style="color:var(--text-secondary);font-size:0.82rem;">' + (raceName || '未设置') + '</span>';
+    }
+    infoHTML += '</div>';
+
+    infoHTML += '<div class="bd-info-line" style="margin-top:10px;"><span class="bd-info-label">相关词条</span>';
+    if (relatedIds.length > 0) {
+      infoHTML += '<span class="bd-related-chips">';
+      for (var ri = 0; ri < relatedIds.length; ri++) {
+        var rEntry = (TDE_DATA.glossary || []).find(function(g) { return g.id === relatedIds[ri]; });
+        var rName = rEntry ? rEntry.name : relatedIds[ri];
+        infoHTML += '<span class="bd-related-chip">' + glossLink(rName) + (editMode ? '<button class="bd-chip-del" onclick="window._ndDelRelated(\'' + basePath + '\',' + ri + ')" title="移除">&times;</button>' : '') + '</span>';
+      }
+      infoHTML += '</span>';
+    } else {
+      infoHTML += '<span style="color:var(--text-muted);font-size:0.82rem;">未设置</span>';
+    }
+    infoHTML += '</div>';
+    if (editMode) {
+      infoHTML += '<div style="margin:4px 0 0 0;display:flex;gap:6px;">';
+      infoHTML += '<div class="ss-wrap" data-ss-basepath="' + basePath + '" data-ss-field="related" data-ss-onchange="_ndRelatedSsChange" style="flex:1;">';
+      infoHTML += '<input type="text" class="ss-input" placeholder="搜索并添加词条..." value="" onfocus="window._ssOpen(this)" oninput="window._ssFilter(this)" onkeydown="window._ssKey(this,event)" onblur="setTimeout(window._ssCloseAll,200)" autocomplete="off">';
+      infoHTML += '<input type="hidden" class="ss-hidden" value="">';
+      infoHTML += '<div class="ss-dropdown">';
+      nonFactionRace.forEach(function(g) {
+        var isSel = relatedIds.indexOf(g.id) >= 0;
+        infoHTML += '<div class="ss-option" data-val="' + escAttr(g.id) + '" data-label="' + escAttr(g.name) + '" data-search="' + escAttr(g.name) + ' ' + escAttr(g.category) + '" onclick="window._ssSelect(this)" style="' + (isSel ? 'display:none' : '') + '">' + esc(g.name) + ' <span class="ss-cat">[' + esc(g.category) + ']</span></div>';
+      });
+      infoHTML += '</div></div>';
+      infoHTML += '</div>';
+    }
+
+    document.getElementById('ndStatsGrid').innerHTML = infoHTML;
+    // 隐藏bd-drops-section if it exists (reuse bd-stats-section style)
+    var dropsSection = document.querySelector('#page-npc-detail .bd-drops-section');
+    if (dropsSection) dropsSection.style.display = 'none';
+  }
+
+  // NPC 详情页搜索选择器回调
+  window._ndSsChange = function(wrap) {
+    var hidden = wrap.querySelector('.ss-hidden');
+    var basePath = wrap.dataset.ssBasepath;
+    var field = wrap.dataset.ssField;
+    if (hidden && basePath && field) {
+      setDataByPath(basePath + '.' + field, hidden.value);
+      saveData();
+    }
+    renderAll();
+  };
+
+  window._ndRelatedSsChange = function(wrap) {
+    var hidden = wrap.querySelector('.ss-hidden');
+    var basePath = wrap.dataset.ssBasepath;
+    if (hidden && basePath && hidden.value) {
+      window._ndAddRelated(basePath, hidden.value);
+      hidden.value = '';
+      var input = wrap.querySelector('.ss-input');
+      if (input) input.value = '';
+    }
+  };
+
+  window._ndAddRelated = function(basePath, termId) {
+    var npc = getDataByPath(basePath);
+    if (!npc) return;
+    if (!npc.related) npc.related = [];
+    if (npc.related.indexOf(termId) >= 0) return;
+    npc.related.push(termId);
+    saveData();
+    renderAll();
+    showSaved();
+  };
+
+  window._ndDelRelated = function(basePath, idx) {
+    var npc = getDataByPath(basePath);
+    if (!npc || !npc.related) return;
+    npc.related.splice(idx, 1);
     saveData();
     renderAll();
     showSaved();
@@ -4196,6 +4510,9 @@
     }
     if (Router.currentPage.startsWith('bestiary/')) {
       renderBestiaryDetail(Router.currentBestiaryType, Router.currentBestiaryId);
+    }
+    if (Router.currentPage.startsWith('npc/')) {
+      renderNPCDetail(Router.currentNpcId);
     }
     renderWeapons();
     renderArmor();

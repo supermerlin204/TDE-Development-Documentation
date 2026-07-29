@@ -27,7 +27,7 @@ TDE_DATA.glossary = [
     "id": "faction-calamity",
     "name": "灾厄军团",
     "category": "faction",
-    "desc": "由咒贤统领的维利人战争军团。",
+    "desc": "维利人的战争军团，由三位首领共同统帅。\n\n命名约定：采用土耳其语词源组词法。",
     "related": []
   },
   {

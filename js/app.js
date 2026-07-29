@@ -31,6 +31,7 @@
       this.animate();
     },
     resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; },
+    isLight() { return document.documentElement.dataset.theme === 'light'; },
     createParticle(randomY) {
       return {
         x: Math.random() * window.innerWidth,
@@ -45,19 +46,22 @@
       };
     },
     animate() {
+      var light = this.isLight();
+      var sat = light ? '40%' : '70%';
+      var lit = light ? '35%' : '60%';
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       for (let i = 0; i < this.particles.length; i++) {
         const p = this.particles[i];
         p.y += p.speedY; p.x += p.speedX; p.pulse += p.pulseSpeed;
-        const alpha = p.opacity + Math.sin(p.pulse) * 0.2;
+        const alpha = (p.opacity + Math.sin(p.pulse) * 0.2) * (light ? 0.6 : 1);
         this.ctx.beginPath();
         this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        this.ctx.fillStyle = `hsla(${p.hue}, 70%, 60%, ${alpha})`;
+        this.ctx.fillStyle = `hsla(${p.hue}, ${sat}, ${lit}, ${alpha})`;
         this.ctx.fill();
         if (p.size > 1.4) {
           this.ctx.beginPath();
           this.ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
-          this.ctx.fillStyle = `hsla(${p.hue}, 70%, 60%, ${alpha * 0.12})`;
+          this.ctx.fillStyle = `hsla(${p.hue}, ${sat}, ${lit}, ${alpha * 0.12})`;
           this.ctx.fill();
         }
         for (let j = i + 1; j < this.particles.length; j++) {
@@ -65,7 +69,7 @@
           const dx = p.x - p2.x, dy = p.y - p2.y, dist = Math.sqrt(dx*dx + dy*dy);
           if (dist < 120) {
             this.ctx.beginPath(); this.ctx.moveTo(p.x, p.y); this.ctx.lineTo(p2.x, p2.y);
-            this.ctx.strokeStyle = `hsla(${p.hue}, 70%, 60%, ${0.04 * (1 - dist/120)})`;
+            this.ctx.strokeStyle = `hsla(${p.hue}, ${sat}, ${lit}, ${0.03 * (1 - dist/120)})`;
             this.ctx.lineWidth = 0.5; this.ctx.stroke();
           }
         }
@@ -4577,6 +4581,11 @@
   // 启动
   // ============================
   function boot() {
+    // 主题恢复（默认夜间模式）
+    if (localStorage.theme === 'light') {
+      document.documentElement.dataset.theme = 'light';
+    }
+
     ParticleSystem.init();
     Router.init();
     Modal.init();
@@ -4657,5 +4666,17 @@
   } else {
     boot();
   }
+
+  // 日/夜间模式切换
+  window._toggleTheme = function() {
+    var el = document.documentElement;
+    if (el.dataset.theme === 'light') {
+      delete el.dataset.theme;
+      localStorage.removeItem('theme');
+    } else {
+      el.dataset.theme = 'light';
+      localStorage.theme = 'light';
+    }
+  };
 
 })();

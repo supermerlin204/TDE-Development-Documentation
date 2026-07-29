@@ -55,6 +55,35 @@
   --transition-slow: 500ms ease;
 }
 
+/* --- 白日模式 --- */
+[data-theme="light"] {
+  --bg-deepest: #e8ecec;
+  --bg-deep: #eef2f2;
+  --bg-base: #f4f7f7;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f0f5f5;
+  --bg-sidebar: #eef2f2;
+
+  --cyan-bright: #00897b;
+  --cyan: #00bfa5;
+  --cyan-dark: #80cbc4;
+  --cyan-deep: #b2dfdb;
+  --cyan-glow: rgba(0, 191, 165, 0.25);
+
+  --text-primary: #1a2424;
+  --text-secondary: #4a5858;
+  --text-muted: #7a8888;
+  --text-cyan: #00897b;
+
+  --border-subtle: rgba(0, 137, 123, 0.12);
+  --border-card: rgba(0, 137, 123, 0.18);
+  --border-glow: rgba(0, 137, 123, 0.25);
+
+  --shadow-card: 0 4px 24px rgba(0,0,0,0.08);
+  --shadow-glow: 0 0 20px rgba(0,191,165,0.1);
+  --shadow-glow-strong: 0 0 30px rgba(0,191,165,0.18);
+}
+
 /* --- Reset & Base --- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -2060,6 +2089,32 @@ body.dragging-map-node * { cursor: grabbing !important; }
   box-shadow: 0 0 10px var(--cyan-glow);
 }
 .edit-toggle-icon {
+  width: 16px; height: 16px;
+  flex-shrink: 0;
+  fill: currentColor;
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  transition: all var(--transition-fast);
+}
+.theme-toggle:hover {
+  border-color: var(--border-glow);
+  color: var(--text-primary);
+}
+.theme-toggle-icon {
   width: 16px; height: 16px;
   flex-shrink: 0;
   fill: currentColor;

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script>if(!sessionStorage.getItem('_ld')){sessionStorage.setItem('_ld','1');location.reload()}</script>
   <title>无眠纪 The Dreamless Era — 开发文档</title>
-  <link rel="stylesheet" href="css/style.css?v=71">
+  <link rel="stylesheet" href="css/style.css?v=72">
   <script type="importmap">
   {
     "imports": {
@@ -111,6 +111,9 @@
           <button class="edit-toggle" id="editToggle" title="切换编辑模式 (Ctrl+E)">
             <svg viewBox="0 0 24 24" class="edit-toggle-icon"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
             <span class="edit-toggle-label">编辑模式</span>
+          </button>
+          <button class="theme-toggle" id="themeToggle" title="切换日/夜间模式" onclick="window._toggleTheme()">
+            <svg viewBox="0 0 24 24" class="theme-toggle-icon"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
           </button>
         </div>
       </div>
@@ -468,7 +471,7 @@
   <script src="data/glossary.js?v=12"></script>
   <script src="data/changelog.js?v=12"></script>
   <script src="js/modelStore.js?v=31"></script>
-  <script src="js/app.js?v=78"></script>
+  <script src="js/app.js?v=79"></script>
   <script type="module" src="js/map3d.js?v=60"></script>
 </body>
 </html>

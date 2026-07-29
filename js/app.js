@@ -1660,7 +1660,6 @@
     var galleryEl = document.getElementById('bdImageGallery');
 
     document.getElementById('bdImagePanel').style.display = '';
-    document.getElementById('bdImageWrapper').style.display = 'none';
     galleryEl.innerHTML = '';
     // 显示加载中
     placeholderEl.innerHTML = '<svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:none;stroke:rgba(0,191,165,0.5);stroke-width:2;animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke-dasharray="50" stroke-dashoffset="10"/></svg><span style="font-size:0.78rem;">加载中...</span>';
@@ -1702,7 +1701,6 @@
         items[k].div.style.display = '';
       }
       document.getElementById('bdImagePanel').style.display = '';
-      document.getElementById('bdImageWrapper').style.display = '';
       placeholderEl.style.display = 'none';
     }
 

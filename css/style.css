@@ -3015,58 +3015,6 @@ body.edit-mode .glossary-card:hover {
   width: 100%;
 }
 
-.bd-image-wrapper {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  background: var(--bg-card);
-  border: 1px solid var(--border-card);
-  cursor: default;
-  transition: all var(--transition-normal);
-}
-body.edit-mode .bd-image-wrapper {
-  cursor: pointer;
-  border-style: dashed;
-}
-body.edit-mode .bd-image-wrapper:hover {
-  border-color: var(--cyan);
-  box-shadow: 0 0 20px rgba(0,191,165,0.15);
-}
-
-.bd-image-wrapper img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.bd-image-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  color: var(--text-muted);
-  padding: 60px 20px;
-  border-radius: var(--radius-lg);
-  background: var(--bg-card);
-  border: 1px solid var(--border-card);
-}
-.bd-image-placeholder svg {
-  width: 56px;
-  height: 56px;
-  fill: rgba(0,191,165,0.15);
-  transition: fill var(--transition-fast);
-}
-body.edit-mode .bd-image-wrapper:hover .bd-image-placeholder svg {
-  fill: rgba(0,191,165,0.35);
-}
-.bd-image-placeholder span {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
 /* Image Gallery */
 .bd-image-gallery {
   display: flex;

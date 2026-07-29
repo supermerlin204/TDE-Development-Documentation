@@ -1656,14 +1656,11 @@
 
     // 图片 — 逐个加载，全部就绪后同步显示
     var exts = ['.gif', '.png', '.webp', '.jpg'];
-    var placeholderEl = document.getElementById('bdImagePlaceholder');
     var galleryEl = document.getElementById('bdImageGallery');
+    var panelEl = document.getElementById('bdImagePanel');
 
-    document.getElementById('bdImagePanel').style.display = '';
+    panelEl.style.display = 'none';
     galleryEl.innerHTML = '';
-    // 显示加载中
-    placeholderEl.innerHTML = '<svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:none;stroke:rgba(0,191,165,0.5);stroke-width:2;animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke-dasharray="50" stroke-dashoffset="10"/></svg><span style="font-size:0.78rem;">加载中...</span>';
-    placeholderEl.style.display = '';
 
     // 代际标记，防止旧回调污染
     var genId = Date.now();
@@ -1693,15 +1690,14 @@
         if (!items[i].ok) { items[i].div.remove(); items.splice(i, 1); }
       }
       if (items.length === 0) {
-        document.getElementById('bdImagePanel').style.display = 'none';
+        panelEl.style.display = 'none';
         return;
       }
       // 直接显示所有已加载的图片（GIF在display:none期间不会播放，显示时自然同步）
       for (var k = 0; k < items.length; k++) {
         items[k].div.style.display = '';
       }
-      document.getElementById('bdImagePanel').style.display = '';
-      placeholderEl.style.display = 'none';
+      panelEl.style.display = '';
     }
 
     function tryNext() {

@@ -474,7 +474,7 @@
     if (typeof value === 'number') return 'number';
     if (Array.isArray(value)) return 'array';
     if (typeof value === 'object' && value !== null) return 'object';
-    if (['rarity','difficulty','status','type','priority','icon','category','priority'].includes(key)) return 'enum';
+    if (['rarity','status','type','priority','icon','category','priority'].includes(key)) return 'enum';
     if (['desc','lore','changes','effect','services','text'].includes(key)) return 'textarea';
     return 'text';
   }
@@ -482,7 +482,7 @@
   function getEnumOptions(key, currentValue) {
     const maps = {
       rarity: ['legendary','epic','rare','common'],
-      difficulty: ['legendary','hard','medium','easy'],
+
       status: currentValue === 'wip' || currentValue === 'todo' || currentValue === 'done' ? ['wip','todo','done'] : ['done','active','pending'],
       type: currentValue === 'main' || currentValue === 'side' ? ['main','side'] : [],
       priority: ['high','medium','low'],
@@ -859,7 +859,7 @@
     // 始终根据数组名生成默认模板
     var _tpl = {
       regions: { name:"XXXXX", level:"1-10", desc:"XXXXX", tags:[], landmarks:[], bosses:["无"], route:{nodes:[],edges:[]}, connections:[] },
-      bosses: { id:"new_boss", name:"XXXXX", faction:"", difficulty:"中等", phases:1, desc:"XXXXX", lore:"", drops:[] },
+      bosses: { id:"new_boss", name:"XXXXX", faction:"", phases:1, desc:"XXXXX", lore:"", drops:[] },
       elites: { id:"new_elite", name:"XXXXX", faction:"", desc:"XXXXX" },
       common: { id:"new_common", name:"XXXXX", faction:"", desc:"XXXXX" },
       weapons: { id:"new_weapon", name:"XXXXX", type:"直剑", rarity:"common", dmg:{}, scaling:{}, skill:"XXXXX", desc:"XXXXX" },

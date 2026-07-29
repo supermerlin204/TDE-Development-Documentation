@@ -1659,6 +1659,7 @@
     var placeholderEl = document.getElementById('bdImagePlaceholder');
     var galleryEl = document.getElementById('bdImageGallery');
 
+    document.getElementById('bdImagePanel').style.display = '';
     document.getElementById('bdImageWrapper').style.display = 'none';
     galleryEl.innerHTML = '';
     // 显示加载中
@@ -1693,13 +1694,14 @@
         if (!items[i].ok) { items[i].div.remove(); items.splice(i, 1); }
       }
       if (items.length === 0) {
-        placeholderEl.style.display = 'none';
+        document.getElementById('bdImagePanel').style.display = 'none';
         return;
       }
       // 直接显示所有已加载的图片（GIF在display:none期间不会播放，显示时自然同步）
       for (var k = 0; k < items.length; k++) {
         items[k].div.style.display = '';
       }
+      document.getElementById('bdImagePanel').style.display = '';
       document.getElementById('bdImageWrapper').style.display = '';
       placeholderEl.style.display = 'none';
     }

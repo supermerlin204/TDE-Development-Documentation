@@ -232,12 +232,11 @@ function parseFromBuffer(buffer) {
 
 // 从 URL 下载 GLB 并缓存到 IndexedDB
 async function fetchAndCache(url, regionId) {
-  const encoded = encodeURI(url);
-  console.log('[map3d] downloading:', encoded);
+  console.log('[map3d] downloading:', url);
   const t0 = performance.now();
   let response;
   try {
-    response = await fetch(encoded);
+    response = await fetch(url);
     if (!response.ok) throw new Error('HTTP ' + response.status);
   } catch (e) {
     console.warn('[map3d] fetch failed:', e);

@@ -1595,7 +1595,7 @@
 	    var imgDir = 'img/entities/';
 	    var imgCandidates = [];
 	    if (enemy.image) imgCandidates.push(enemy.image);
-	    exts.forEach(function(ext) { imgCandidates.push(imgDir + encodeURIComponent(enemy.name) + ext); });
+	    exts.forEach(function(ext) { imgCandidates.push(imgDir + enemy.name + ext); });
 	    exts.forEach(function(ext) { imgCandidates.push(imgDir + enemy.id + ext); });
 	    var imgSrc = imgCandidates[0];
 	    var imgFallback = JSON.stringify(imgCandidates.slice(1));
@@ -1732,7 +1732,7 @@
 
     function buildCandidates(suffix) {
       var c = [];
-      exts.forEach(function(ext) { c.push('img/entities/' + encodeURIComponent(enemy.name) + suffix + ext); });
+      exts.forEach(function(ext) { c.push('img/entities/' + enemy.name + suffix + ext); });
       exts.forEach(function(ext) { c.push('img/entities/' + enemy.id + suffix + ext); });
       return c;
     }
@@ -2057,7 +2057,7 @@
 
     function buildCandidates(suffix) {
       var c = [];
-      exts.forEach(function(ext) { c.push('img/entities/' + encodeURIComponent(npc.name) + suffix + ext); });
+      exts.forEach(function(ext) { c.push('img/entities/' + npc.name + suffix + ext); });
       exts.forEach(function(ext) { c.push('img/entities/' + npc.id + suffix + ext); });
       return c;
     }

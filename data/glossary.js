@@ -157,6 +157,13 @@ TDE_DATA.glossary = [
     "related": []
   },
   {
+    "id": "new_glossary_1785317193876",
+    "name": "猪灵",
+    "category": "race",
+    "desc": "同时拥有猪与人类外观的生命，凶猛好战且拥有智慧，对黄金有着无法遏制的贪恋，自称神明的后裔。",
+    "related": []
+  },
+  {
     "id": "event-calamity-prophecy",
     "name": "灾祸预言",
     "category": "event",

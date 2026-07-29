@@ -44,6 +44,22 @@ TDE_DATA.regions = [
     "id": "北风前哨站"
   },
   {
+    "name": "苍白之城",
+    "level": "1-10",
+    "desc": "符文之王时代所建立的白色都市，是王国现在的首都。",
+    "tags": [],
+    "landmarks": [],
+    "bosses": [
+      "无"
+    ],
+    "route": {
+      "nodes": "",
+      "edges": ""
+    },
+    "connections": [],
+    "id": "XXXXX_1785313986736"
+  },
+  {
     "name": "海潮镇",
     "level": "1-10",
     "desc": "王国边陲的港口城市，无眠纪到来后镇民选择接受深海中先驱的赐福，成为鱼群的一部分。",
@@ -81,7 +97,87 @@ TDE_DATA.regions = [
     "id": "海潮镇"
   },
   {
-    "name": "熔岩遗迹",
+    "name": "黄金之城",
+    "level": "1-10",
+    "desc": "猪灵在沙漠中建起的金色都市。猪灵用沙暴将其隐藏在沙漠之中，从而谢绝所有贪图黄金的外人。",
+    "tags": [],
+    "landmarks": [],
+    "bosses": [
+      "无"
+    ],
+    "route": {
+      "nodes": "",
+      "edges": ""
+    },
+    "connections": [],
+    "id": "XXXXX_1785313435121"
+  },
+  {
+    "name": "黄沙堡垒",
+    "level": "1-10",
+    "desc": "王国在沙漠绿洲中建立的堡垒，是人类与猪灵互通往来的商业都市。",
+    "tags": [],
+    "landmarks": [],
+    "bosses": [
+      "无"
+    ],
+    "route": {
+      "nodes": "",
+      "edges": ""
+    },
+    "connections": [],
+    "id": "XXXXX_1785314610571"
+  },
+  {
+    "name": "灰岩堡垒",
+    "level": "1-10",
+    "desc": "咒贤所统领的战争堡垒，是灾厄军团的核心驻扎地。",
+    "tags": [],
+    "landmarks": [],
+    "bosses": [
+      "无"
+    ],
+    "route": {
+      "nodes": "",
+      "edges": ""
+    },
+    "connections": [],
+    "id": "XXXXX_1785313323270"
+  },
+  {
+    "name": "金律",
+    "level": "1-10",
+    "desc": "律法之王时代建立在深渊之上的法术设施，用以镇压深渊之下的虚空，同时也是王国的审判与法律中枢。",
+    "tags": [],
+    "landmarks": [],
+    "bosses": [
+      "无"
+    ],
+    "route": {
+      "nodes": "",
+      "edges": ""
+    },
+    "connections": [],
+    "id": "XXXXX_1785315801602"
+  },
+  {
+    "name": "旧都",
+    "level": "1-10",
+    "desc": "人类最初的首都。在贵族战争中被符文之王所驱动的风暴毁灭。",
+    "tags": [],
+    "landmarks": [],
+    "bosses": [
+      "无"
+    ],
+    "route": {
+      "nodes": "",
+      "edges": ""
+    },
+    "connections": [],
+    "id": "XXXXX_1785313337151"
+  },
+  {
+    "name": "凛风城",
     "level": "1-10",
     "desc": "XXXXX",
     "tags": [],
@@ -90,27 +186,171 @@ TDE_DATA.regions = [
       "无"
     ],
     "route": {
-      "nodes": [],
-      "edges": []
+      "nodes": "",
+      "edges": ""
+    },
+    "connections": [],
+    "id": "XXXXX_1785315055664"
+  },
+  {
+    "name": "染血堡",
+    "level": "1-10",
+    "desc": "剥皮大公的城堡，也是他钻研血肉魔法的研究院。",
+    "tags": [],
+    "landmarks": [],
+    "bosses": [
+      "无"
+    ],
+    "route": {
+      "nodes": "",
+      "edges": ""
+    },
+    "connections": [],
+    "id": "XXXXX_1785316025508"
+  },
+  {
+    "name": "熔岩遗迹",
+    "level": "1-10",
+    "desc": "由信仰先驱的古人所建立的都市，北风到来后便被废弃。",
+    "tags": [],
+    "landmarks": [],
+    "bosses": [
+      "无"
+    ],
+    "route": {
+      "nodes": "",
+      "edges": ""
     },
     "connections": [],
     "id": "XXXXX_1785248577576"
   },
   {
-    "name": "朽木沼泽",
+    "name": "深渊",
     "level": "1-10",
-    "desc": "XXXXX",
+    "desc": "虚空的源头，撕裂大地的巨大裂谷。",
     "tags": [],
     "landmarks": [],
     "bosses": [
       "无"
     ],
     "route": {
-      "nodes": [],
-      "edges": []
+      "nodes": "",
+      "edges": ""
+    },
+    "connections": [],
+    "id": "XXXXX_1785315885097"
+  },
+  {
+    "name": "世界尽头",
+    "level": "1-10",
+    "desc": "大陆与海洋的尽头，被驱逐的原生生命们在此苟延残喘。",
+    "tags": [],
+    "landmarks": [],
+    "bosses": [
+      "无"
+    ],
+    "route": {
+      "nodes": "",
+      "edges": ""
+    },
+    "connections": [],
+    "id": "XXXXX_1785314459550"
+  },
+  {
+    "name": "双河之都",
+    "level": "1-10",
+    "desc": "建立在两条河流交汇点的都市，坐落于黄金原野上的它，曾是所有维利人的故乡。",
+    "tags": [],
+    "landmarks": [],
+    "bosses": [
+      "无"
+    ],
+    "route": {
+      "nodes": "",
+      "edges": ""
+    },
+    "connections": [],
+    "id": "XXXXX_1785314744571"
+  },
+  {
+    "name": "特里尔魔法学院",
+    "level": "1-10",
+    "desc": "王国最大的魔法学院，内设三大分院对应魔法的三大学派。",
+    "tags": [],
+    "landmarks": [],
+    "bosses": [
+      "无"
+    ],
+    "route": {
+      "nodes": "",
+      "edges": ""
+    },
+    "connections": [],
+    "id": "XXXXX_1785316331386"
+  },
+  {
+    "name": "铁群岛",
+    "level": "1-10",
+    "desc": "由阿里尔锻族统领的6个小岛组成，曾是王国探索世界尽头的先锋基地。",
+    "tags": [],
+    "landmarks": [],
+    "bosses": [
+      "无"
+    ],
+    "route": {
+      "nodes": "",
+      "edges": ""
+    },
+    "connections": [],
+    "id": "XXXXX_1785313465944"
+  },
+  {
+    "name": "涡流岛",
+    "level": "1-10",
+    "desc": "大海中央被呈涡流状的巨大岛屿，是整个大陆的中心。",
+    "tags": [],
+    "landmarks": [],
+    "bosses": [
+      "无"
+    ],
+    "route": {
+      "nodes": "",
+      "edges": ""
+    },
+    "connections": [],
+    "id": "XXXXX_1785314902618"
+  },
+  {
+    "name": "朽木沼泽",
+    "level": "1-10",
+    "desc": "由药贤直接管理的沼泽城镇。",
+    "tags": [],
+    "landmarks": [],
+    "bosses": [
+      "无"
+    ],
+    "route": {
+      "nodes": "",
+      "edges": ""
     },
     "connections": [],
     "id": "XXXXX_1785248567069"
+  },
+  {
+    "name": "预言之谷",
+    "level": "1-10",
+    "desc": "剑王在两崖之间建起高塔用于囚禁先驱，先驱的眷族则在谷内栖息。",
+    "tags": [],
+    "landmarks": [],
+    "bosses": [
+      "无"
+    ],
+    "route": {
+      "nodes": "",
+      "edges": ""
+    },
+    "connections": [],
+    "id": "XXXXX_1785315125383"
   }
 ];
 
@@ -124,15 +364,15 @@ TDE_DATA.worldMap = {
       "style": "default"
     },
     "海潮镇": {
-      "x": 500,
-      "y": 440,
+      "x": 620,
+      "y": 360,
       "color": "#00f0ff",
       "size": "medium",
       "style": "default"
     },
     "朽木沼泽": {
-      "x": 560,
-      "y": 240,
+      "x": 620,
+      "y": 120,
       "color": "#ff6b35",
       "size": "medium",
       "style": "default"
@@ -142,7 +382,112 @@ TDE_DATA.worldMap = {
       "y": 100,
       "color": "#ff6b35",
       "size": "medium",
+      "style": "subtle"
+    },
+    "灰岩堡垒": {
+      "x": 580,
+      "y": 180,
+      "color": "#00bfa5",
+      "size": "medium",
+      "style": "default"
+    },
+    "旧都": {
+      "x": 520,
+      "y": 300,
+      "color": "#b388ff",
+      "size": "xlarge",
       "style": "dashed"
+    },
+    "黄金之城": {
+      "x": 240,
+      "y": 440,
+      "color": "#ffd54f",
+      "size": "large",
+      "style": "subtle"
+    },
+    "铁群岛": {
+      "x": 120,
+      "y": 260,
+      "color": "#ff5252",
+      "size": "medium",
+      "style": "default"
+    },
+    "苍白之城": {
+      "x": 380,
+      "y": 120,
+      "color": "#e0e0e0",
+      "size": "xlarge",
+      "style": "default"
+    },
+    "世界尽头": {
+      "x": 20,
+      "y": 260,
+      "color": "#e040fb",
+      "size": "medium",
+      "style": "default"
+    },
+    "黄沙堡垒": {
+      "x": 240,
+      "y": 380,
+      "color": "#ffd54f",
+      "size": "medium",
+      "style": "default"
+    },
+    "双河之都": {
+      "x": 480,
+      "y": 180,
+      "color": "#00f0ff",
+      "size": "large",
+      "style": "default"
+    },
+    "涡流岛": {
+      "x": 340,
+      "y": 260,
+      "color": "#00f0ff",
+      "size": "medium",
+      "style": "subtle"
+    },
+    "凛风城": {
+      "x": 100,
+      "y": 40,
+      "color": "#00f0ff",
+      "size": "medium",
+      "style": "default"
+    },
+    "预言之谷": {
+      "x": 140,
+      "y": 160,
+      "color": "#69f0ae",
+      "size": "medium",
+      "style": "default"
+    },
+    "金律": {
+      "x": 240,
+      "y": 80,
+      "color": "#ffd54f",
+      "size": "large",
+      "style": "default"
+    },
+    "深渊": {
+      "x": 240,
+      "y": 140,
+      "color": "#e0e0e0",
+      "size": "medium",
+      "style": "subtle"
+    },
+    "染血堡": {
+      "x": 140,
+      "y": 360,
+      "color": "#ff5252",
+      "size": "medium",
+      "style": "default"
+    },
+    "特里尔魔法学院": {
+      "x": 620,
+      "y": 240,
+      "color": "#ff5252",
+      "size": "medium",
+      "style": "default"
     }
   }
 };

@@ -3347,6 +3347,49 @@ body.edit-mode .glossary-card:hover {
 }
 .md-shop-add-btn:hover { background: rgba(0,191,165,0.15); color: var(--cyan-bright); border-style: solid; }
 
+/* 商人商店 — 列表标签页 */
+.md-shop-tabs {
+  display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+  margin-bottom: 14px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.md-shop-tab-wrap {
+  display: flex; align-items: center; gap: 2px;
+}
+.md-shop-tab-wrap.active .md-shop-tab {
+  background: rgba(0,191,165,0.12); color: var(--cyan-bright);
+  border-color: rgba(0,191,165,0.3);
+}
+.md-shop-tab {
+  background: transparent; color: var(--text-muted);
+  border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);
+  padding: 5px 12px; font-size: 0.78rem; cursor: pointer;
+  font-family: var(--font-sans); transition: all var(--transition-fast);
+}
+.md-shop-tab:hover { color: var(--text-primary); border-color: var(--border-glow); }
+.md-shop-tab-add {
+  font-size: 1rem; padding: 4px 10px; color: var(--cyan);
+}
+.md-shop-tab-rename, .md-shop-tab-del {
+  background: none; border: none; cursor: pointer; padding: 2px 4px;
+  font-size: 0.65rem; color: var(--text-muted); border-radius: 3px;
+  transition: all var(--transition-fast);
+}
+.md-shop-tab-rename:hover { color: var(--cyan); background: rgba(0,191,165,0.1); }
+.md-shop-tab-del:hover { color: var(--red); background: rgba(255,82,82,0.1); }
+
+/* 装备选择器 */
+.eq-picker-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  border-radius: 6px; cursor: pointer; transition: all var(--transition-fast);
+  border: 1px solid transparent;
+}
+.eq-picker-item:hover { background: rgba(0,191,165,0.06); }
+.eq-picker-item.selected {
+  background: rgba(0,191,165,0.12); border-color: rgba(0,191,165,0.3);
+}
+.eq-picker-name { font-size: 0.82rem; color: var(--text-primary); flex: 1; }
+
 .bd-drops-section {
   margin-top: 16px;
 }

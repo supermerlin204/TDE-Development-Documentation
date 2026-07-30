@@ -37,10 +37,15 @@ TDE_DATA.merchants = [
     "location": "海潮镇",
     "restock": "每3天刷新",
     "related": ["tde_i2x8m4c7o5", "tde_d8n1l5w0s7"],
-    "items": [
-      { "name": "诅咒护符", "price": "500魂", "type": "talisman", "desc": "蕴含微弱厄咒的护符，佩戴者可感知周围的厄法波动。维利人流浪商人从灰岩堡垒的废弃祭坛中回收并重新附魔。" },
-      { "name": "死灰药剂", "price": "200魂", "type": "consumable", "desc": "维利人炼金术士调制的灰色药水，可暂时抑制体内的厄咒反噬。流浪商人自称配方来自他已故的母亲。" },
-      { "name": "受赐者匕首", "price": "800魂", "type": "weapon", "desc": "经过受赐厄法仪式淬炼的短匕，刀刃呈死灰色，对厄兽有额外伤害。每一把都由流浪商人亲手淬炼。" }
-    ]
+    "shopLists": {
+      "tde_shop_a1b2c3d4e5": {
+        "name": "杂货",
+        "items": [
+          { "equipmentId": "tde_tls_q2w8e4r6y1", "price": "500魂" },
+          { "equipmentId": "tde_cns_b5n1t7m3d9", "price": "200魂" },
+          { "equipmentId": "tde_wpn_v9k3m7n1x5", "price": "800魂" }
+        ]
+      }
+    }
   }
 ];

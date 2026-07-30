@@ -17,6 +17,13 @@ TDE_DATA.glossary = [
     "related": []
   },
   {
+    "name": "深潮教会",
+    "category": "faction",
+    "desc": "信仰深海中先驱的教会。无眠纪到来后，所有教徒均选择接受先驱的赐福。",
+    "related": [],
+    "id": "tde_q25z24btcd"
+  },
+  {
     "id": "tde_c7j1d4g8y3",
     "name": "虚空",
     "category": "faction",
@@ -43,6 +50,13 @@ TDE_DATA.glossary = [
     "category": "concept",
     "desc": "天生无法入睡的人类的统称，不眠者的成因各不相同。",
     "related": []
+  },
+  {
+    "name": "赐福",
+    "category": "concept",
+    "desc": "先驱可将自身的力量强制赐予眷族以外的生命，从而使其成为眷族的一部分。",
+    "related": [],
+    "id": "tde_c7wx5npxxa"
   },
   {
     "id": "tde_p4d8g3j7r2",

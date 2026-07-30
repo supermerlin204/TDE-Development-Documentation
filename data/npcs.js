@@ -30,8 +30,8 @@ TDE_DATA.merchants = [
   {
     "id": "tde_h6j1d5v8c3",
     "name": "维利人流浪商人",
-    "faction": "灾厄军团",
-    "race": "tde_s9a3j7g1d6",
+    "faction": "",
+    "race": "",
     "desc": "",
     "lore": "",
     "location": "",

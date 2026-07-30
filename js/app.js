@@ -3291,7 +3291,7 @@
 
   // --- 区域详情页辅助函数 ---
   function saveRegionInline(regionId) {
-    var idx = TDE_DATA.regions.findIndex(function(r) { return r.name === regionId; });
+    var idx = TDE_DATA.regions.findIndex(function(r) { return r.id === regionId || r.name === regionId; });
     if (idx === -1) return;
     var r = TDE_DATA.regions[idx];
 

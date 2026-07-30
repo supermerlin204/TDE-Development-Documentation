@@ -88,5 +88,15 @@ TDE_DATA.common = [
     "faction": "自然",
     "desc": "来历不明的神秘生物，其惊人的力量足以一拳击倒一位正常人类。",
     "race": "tde_y0b6f3k8c1"
+  },
+  {
+    "name": "鱼头渔夫",
+    "faction": "深潮教会",
+    "desc": "得到先驱赐福的海潮镇渔夫。",
+    "id": "tde_8jj8nxpobn",
+    "race": "tde_w6m0y4t8n2",
+    "related": [
+      "tde_c7wx5npxxa"
+    ]
   }
 ];

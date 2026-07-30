@@ -2513,20 +2513,6 @@
     // 售卖物品渲染
     renderMerchantShop(m, basePath);
 
-    // 阵营
-    var factionName = '';
-    var factionDesc = '';
-    if (m.faction) {
-      var factionEntry = (TDE_DATA.glossary || []).find(function(g) { return g.name === m.faction && g.category === 'faction'; });
-      if (factionEntry) {
-        factionName = factionEntry.name;
-        factionDesc = factionEntry.desc || '';
-      } else {
-        factionName = m.faction;
-      }
-    }
-    var factionEntries = (TDE_DATA.glossary || []).filter(function(g) { return g.category === 'faction'; });
-
     // 种族
     var raceName = '';
     if (m.race) {
@@ -2535,15 +2521,7 @@
     }
     var raceEntries = (TDE_DATA.glossary || []).filter(function(g) { return g.category === 'race'; });
 
-    // 相关词条
-    var relatedIds = m.related || [];
-    var nonFactionRace = (TDE_DATA.glossary || []).filter(function(g) { return g.category !== 'faction' && g.category !== 'race'; });
-
     var infoHTML = '';
-
-    if (factionName) {
-      infoHTML += '<div class="bd-info-line"><span class="bd-info-label">阵营</span><span class="bd-faction-badge">' + _factionBadge(m.faction) + factionName + '</span></div>';
-    }
 
     infoHTML += '<div class="bd-info-line"><span class="bd-info-label">种族</span>';
     if (editMode) {
@@ -2557,49 +2535,6 @@
       infoHTML += '</div></div>';
     } else {
       infoHTML += '<span style="color:var(--text-secondary);font-size:0.82rem;">' + (raceName || '未设置') + '</span>';
-    }
-    infoHTML += '</div>';
-
-    // 位置
-    infoHTML += '<div class="bd-info-line"><span class="bd-info-label">出现位置</span>';
-    if (editMode) {
-      infoHTML += '<input type="text" class="ss-input" data-md-field="location" value="' + escAttr(m.location || '') + '" onblur="window._mdFieldChange(this,\'location\')" style="flex:1;max-width:260px;">';
-    } else {
-      infoHTML += '<span style="color:var(--text-secondary);font-size:0.82rem;">' + (m.location || '未设置') + '</span>';
-    }
-    infoHTML += '</div>';
-
-    // 刷新周期
-    infoHTML += '<div class="bd-info-line"><span class="bd-info-label">刷新周期</span>';
-    if (editMode) {
-      infoHTML += '<input type="text" class="ss-input" data-md-field="restock" value="' + escAttr(m.restock || '') + '" onblur="window._mdFieldChange(this,\'restock\')" style="flex:1;max-width:260px;">';
-    } else {
-      infoHTML += '<span style="color:var(--text-secondary);font-size:0.82rem;">' + (m.restock || '未设置') + '</span>';
-    }
-    infoHTML += '</div>';
-
-    infoHTML += '<div class="bd-info-line" style="margin-top:10px;"><span class="bd-info-label">相关词条</span>';
-    if (relatedIds.length > 0) {
-      infoHTML += '<span class="bd-related-chips">';
-      for (var ri = 0; ri < relatedIds.length; ri++) {
-        var term = _glossEntryById(relatedIds[ri]);
-        var termName = term ? term.name : relatedIds[ri];
-        infoHTML += '<span class="bd-related-chip">'
-          + '<a href="#glossary" onclick="if(window._openGlossModal)window._openGlossModal(\'' + escAttr(relatedIds[ri]) + '\')">' + esc(termName) + '</a>';
-        if (editMode) {
-          infoHTML += '<button class="bd-chip-remove" title="移除" onclick="window._mdDelRelated(\'' + basePath + '\',' + ri + ')">&times;</button>';
-        }
-        infoHTML += '</span>';
-      }
-    } else if (!editMode) {
-      infoHTML += '<span style="color:var(--text-muted);font-size:0.78rem;">暂无</span>';
-    }
-    if (editMode) {
-      infoHTML += '<span class="bd-related-add-wrap">'
-        + '<input type="text" class="bd-related-add-input" placeholder="添加词条 (ID或名称)..." onkeydown="if(event.key===\'Enter\')window._mdAddRelated(\'' + basePath + '\',this.value,this)" onblur="setTimeout(function(){window._ssCloseAll()},200)" onfocus="window._ssOpen(this)" oninput="window._ssFilter(this)">'
-        + '<button class="bd-related-add-btn" onclick="var inp=this.previousElementSibling;window._mdAddRelated(\'' + basePath + '\',inp.value,inp)">+</button>'
-        + '<div class="ss-dropdown"></div>'
-        + '</span>';
     }
     infoHTML += '</div>';
 
@@ -2656,23 +2591,6 @@
   }
 
   // 商人编辑辅助函数
-  window._mdFieldChange = function(el, field) {
-    var wrap = el.closest('[data-ss-basepath]') || el.closest('.bd-stats-grid');
-    var path = el.closest('[data-ss-basepath]') ? el.closest('[data-ss-basepath]').getAttribute('data-ss-basepath') : null;
-    if (!path) {
-      // try to find from nearby elements
-      var merchantName = document.getElementById('mdName').textContent;
-      var mIdx = TDE_DATA.merchants.findIndex(function(x) { return x.name === merchantName; });
-      if (mIdx >= 0) path = 'merchants.' + mIdx;
-    }
-    if (!path) return;
-    var m = getDataByPath(path);
-    if (!m) return;
-    m[field] = el.value.trim();
-    saveData();
-    showSaved();
-  };
-
   window._mdEditShopItem = function(basePath, idx) {
     var m = getDataByPath(basePath);
     if (!m || !m.items) return;
@@ -2741,30 +2659,6 @@
     if (!m) return;
     m.race = hidden.value;
     saveData();
-    showSaved();
-  };
-
-  window._mdAddRelated = function(basePath, val, inputEl) {
-    var m = getDataByPath(basePath);
-    if (!m || !val) return;
-    if (!m.related) m.related = [];
-    var terms = TDE_DATA.glossary || [];
-    var found = terms.find(function(g) { return g.id === val.trim() || g.name === val.trim(); });
-    if (!found) return;
-    if (m.related.indexOf(found.id) >= 0) return;
-    m.related.push(found.id);
-    saveData();
-    renderAll();
-    showSaved();
-    if (inputEl) inputEl.value = '';
-  };
-
-  window._mdDelRelated = function(basePath, idx) {
-    var m = getDataByPath(basePath);
-    if (!m || !m.related) return;
-    m.related.splice(idx, 1);
-    saveData();
-    renderAll();
     showSaved();
   };
 

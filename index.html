@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script>if(!sessionStorage.getItem('_ld')){sessionStorage.setItem('_ld','1');location.reload()}</script>
   <title>无眠纪 The Dreamless Era — 开发文档</title>
-  <link rel="stylesheet" href="css/style.css?v=72">
+  <link rel="stylesheet" href="css/style.css?v=73">
   <script type="importmap">
   {
     "imports": {
@@ -367,6 +367,48 @@
         </div>
       </section>
 
+      <!-- 商人详情页 -->
+      <section id="page-merchant-detail" class="page">
+        <header class="page-header bd-header">
+          <a class="bd-back-link" href="#characters">&larr; 返回角色资料</a>
+          <h2 class="page-title" id="mdName"></h2>
+          <span class="bd-badge" id="mdBadge" style="display:none"></span>
+        </header>
+        <div class="bd-hero">
+          <div class="bd-image-panel" id="mdImagePanel" style="display:none">
+            <div class="bd-image-gallery" id="mdImageGallery"></div>
+          </div>
+          <div class="bd-content-panel">
+            <div class="bd-tabs" id="mdTabs">
+              <button class="bd-tab-btn active" data-mdtab="intro">介绍</button>
+              <button class="bd-tab-btn" data-mdtab="lore" id="mdTabLore" style="display:none">背景故事</button>
+              <button class="bd-tab-btn" data-mdtab="shop" id="mdTabShop">售卖物品</button>
+            </div>
+            <div class="bd-tab-content active" id="mdtab-intro">
+              <div class="bd-md-view" id="mdMdView"></div>
+              <div class="bd-md-edit" id="mdMdEdit">
+                <textarea class="bd-md-textarea" id="mdMdTextarea" placeholder="使用 Markdown 语法编写商人介绍..."></textarea>
+                <div class="bd-md-preview" id="mdMdPreview"></div>
+              </div>
+            </div>
+            <div class="bd-tab-content" id="mdtab-lore">
+              <div class="bd-md-view" id="mdLoreView"></div>
+              <div class="bd-md-edit" id="mdLoreEdit">
+                <textarea class="bd-md-textarea" id="mdLoreTextarea" placeholder="使用 Markdown 语法编写背景故事..."></textarea>
+                <div class="bd-md-preview" id="mdLorePreview"></div>
+              </div>
+            </div>
+            <div class="bd-tab-content" id="mdtab-shop">
+              <div id="mdShopList"></div>
+            </div>
+          </div>
+        </div>
+        <div class="bd-stats-section">
+          <h3 class="bd-stats-title">相关信息</h3>
+          <div class="bd-stats-grid" id="mdStatsGrid"></div>
+        </div>
+      </section>
+
       <!-- 装备道具 -->
       <section id="page-equipment" class="page">
         <header class="page-header">
@@ -459,19 +501,19 @@
 
   <!-- 数据文件（_init.js 必须在最前，其余顺序无关） -->
   <script src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js"></script>
-  <script src="data/_init.js?v=16"></script>
-  <script src="data/dashboard.js?v=16"></script>
-  <script src="data/classes.js?v=16"></script>
-  <script src="data/npcs.js?v=16"></script>
-  <script src="data/bestiary.js?v=16"></script>
-  <script src="data/regions.js?v=16"></script>
-  <script src="data/equipment.js?v=16"></script>
-  <script src="data/mechanics.js?v=16"></script>
-  <script src="data/quests.js?v=16"></script>
-  <script src="data/glossary.js?v=16"></script>
-  <script src="data/changelog.js?v=16"></script>
+  <script src="data/_init.js?v=17"></script>
+  <script src="data/dashboard.js?v=17"></script>
+  <script src="data/classes.js?v=17"></script>
+  <script src="data/npcs.js?v=17"></script>
+  <script src="data/bestiary.js?v=17"></script>
+  <script src="data/regions.js?v=17"></script>
+  <script src="data/equipment.js?v=17"></script>
+  <script src="data/mechanics.js?v=17"></script>
+  <script src="data/quests.js?v=17"></script>
+  <script src="data/glossary.js?v=17"></script>
+  <script src="data/changelog.js?v=17"></script>
   <script src="js/modelStore.js?v=32"></script>
-  <script src="js/app.js?v=79"></script>
+  <script src="js/app.js?v=80"></script>
   <script type="module" src="js/map3d.js?v=61"></script>
 </body>
 </html>

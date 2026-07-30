@@ -92,6 +92,7 @@
     currentBestiaryType: null,
     currentBestiaryId: null,
     currentNpcId: null,
+    currentMerchantId: null,
     init() {
       const hash = window.location.hash.slice(1) || 'dashboard';
       this.navigate(hash);
@@ -140,11 +141,20 @@
       }
       this.currentNpcId = (basePage === 'npc-detail') ? npcId : null;
 
+      // 解析：merchant/{id}
+      var merchantId = null;
+      if (basePage === 'merchant' && sub) {
+        merchantId = decodeURIComponent(sub);
+        basePage = 'merchant-detail';
+      }
+      this.currentMerchantId = (basePage === 'merchant-detail') ? merchantId : null;
+
       // 高亮导航：区域详情页或敌人详情页时高亮对应父页面
       var navMatch = basePage;
       if (basePage === 'region-detail') navMatch = 'world';
       if (basePage === 'bestiary-detail') navMatch = 'bestiary';
       if (basePage === 'npc-detail') navMatch = 'characters';
+      if (basePage === 'merchant-detail') navMatch = 'characters';
       document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page === navMatch));
 
       // 显示/隐藏页面
@@ -177,6 +187,11 @@
       // NPC详情页渲染
       if (basePage === 'npc-detail' && npcId) {
         renderNPCDetail(npcId);
+      }
+
+      // 商人详情页渲染
+      if (basePage === 'merchant-detail' && merchantId) {
+        renderMerchantDetail(merchantId);
       }
 
       // 进入敌人图鉴列表页时刷新阵营筛选
@@ -891,7 +906,7 @@
       talismans: { id:"new_talisman", name:"XXXXX", desc:"XXXXX", rarity:"common" },
       consumables: { id:"new_consumable", name:"XXXXX", desc:"XXXXX", rarity:"common" },
       npcs: { id:"new_npc", name:"XXXXX", faction:"", desc:"XXXXX", lore:"", race:"", related:[] },
-      merchants: { id:"new_merchant", name:"XXXXX", items:[], restock:"" },
+      merchants: { id:"new_merchant_", name:"新商人", faction:"", race:"", desc:"", lore:"", location:"", restock:"", related:[], items:[] },
       quests: { id:"new_quest", name:"XXXXX", type:"side", npc:"", desc:"XXXXX", rewards:[], stages:[] },
       classes: { id:"new_class", name:"XXXXX", title:"XXXXX", desc:"XXXXX", stats:{生命:10,耐力:10,力量:10,敏捷:10,智力:10,信仰:10}, weapon:"", armor:"", skill:"" },
       statusEffects: { name:"XXXXX", icon:"", buildup:"", effect:"XXXXX", cure:"" },
@@ -1636,7 +1651,7 @@
     var isMerchant = type === 'merchants';
     var isChar = isNpc || isMerchant;
     var dataKey = isMerchant ? 'merchants' : (isNpc ? 'npcs' : (type === 'bosses' ? 'bosses' : (type === 'elites' ? 'elites' : 'common')));
-    var hash = isNpc ? ('npc/' + enemy.id) : (isMerchant ? '' : ('bestiary/' + dataKey + '/' + enemy.id));
+    var hash = isNpc ? ('npc/' + enemy.id) : (isMerchant ? ('merchant/' + enemy.id) : ('bestiary/' + dataKey + '/' + enemy.id));
     var badgeText = isNpc ? 'NPC' : (isMerchant ? '商人' : (type === 'bosses' ? 'BOSS' : (type === 'elites' ? '精英' : '普通')));
     var badgeCls = isNpc ? 'npc-badge' : (isMerchant ? 'merchant-badge' : (type === 'bosses' ? 'boss-badge' : (type === 'elites' ? 'elite-badge' : 'common-badge')));
     var exts = ['.gif', '.png', '.webp', '.jpg'];
@@ -2339,6 +2354,415 @@
     var npc = getDataByPath(basePath);
     if (!npc || !npc.related) return;
     npc.related.splice(idx, 1);
+    saveData();
+    renderAll();
+    showSaved();
+  };
+
+  // ============================================================
+  // 商人详情页渲染
+  // ============================================================
+  function renderMerchantDetail(id) {
+    var m = (TDE_DATA.merchants || []).find(function(x) { return x.id === id; });
+    if (!m) {
+      document.getElementById('mdName').textContent = '商人未找到';
+      return;
+    }
+
+    var idx = TDE_DATA.merchants.indexOf(m);
+    var basePath = 'merchants.' + idx;
+
+    // 页面头部
+    var nameEl = document.getElementById('mdName');
+    nameEl.textContent = m.name;
+    nameEl.contentEditable = editMode ? 'true' : 'false';
+    nameEl.onblur = editMode ? function() { m.name = nameEl.textContent.trim(); saveData(); } : null;
+
+    // 图片加载
+    var exts = ['.gif', '.png', '.webp', '.jpg'];
+    var galleryEl = document.getElementById('mdImageGallery');
+    var panelEl = document.getElementById('mdImagePanel');
+    galleryEl.innerHTML = '';
+    panelEl.style.display = '';
+
+    var loadingEl = document.createElement('div');
+    loadingEl.className = 'bd-gallery-item bd-loading';
+    loadingEl.innerHTML = '<svg viewBox="0 0 24 24" style="width:40px;height:40px;fill:none;stroke:rgba(0,191,165,0.5);stroke-width:2;animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke-dasharray="50" stroke-dashoffset="10"/></svg><span>加载中...</span>';
+    galleryEl.appendChild(loadingEl);
+
+    var genId = Date.now();
+    window._mdImgGenId = genId;
+    function isStale() { return genId !== window._mdImgGenId; }
+
+    function buildCandidates(suffix) {
+      var c = [];
+      exts.forEach(function(ext) { c.push('img/entities/' + m.name + suffix + ext); });
+      exts.forEach(function(ext) { c.push('img/entities/' + m.id + suffix + ext); });
+      return c;
+    }
+    var primaryCandidates = [];
+    if (m.image) primaryCandidates.push(m.image);
+    primaryCandidates = primaryCandidates.concat(buildCandidates(''));
+
+    var allVariants = [primaryCandidates];
+    for (var v = 1; v <= 5; v++) { allVariants.push(buildCandidates('_' + v)); }
+
+    var items = [];
+    var currentV = 0;
+
+    function revealAll() {
+      if (isStale()) return;
+      if (loadingEl) { loadingEl.remove(); loadingEl = null; }
+      for (var i = items.length - 1; i >= 0; i--) {
+        if (!items[i].ok) { items[i].div.remove(); items.splice(i, 1); }
+      }
+      if (items.length === 0) {
+        panelEl.style.display = 'none';
+        return;
+      }
+      for (var k = 0; k < items.length; k++) {
+        items[k].div.style.display = '';
+      }
+      panelEl.style.display = '';
+    }
+
+    function tryNext() {
+      if (isStale()) return;
+      if (currentV >= allVariants.length) { revealAll(); return; }
+      var candidates = allVariants[currentV];
+      var cIdx = 0;
+      var itemDiv = document.createElement('div');
+      itemDiv.className = 'bd-gallery-item';
+      itemDiv.style.display = 'none';
+      var img = document.createElement('img');
+      img.alt = '';
+
+      var entry = { div: itemDiv, ok: false };
+      items.push(entry);
+
+      img.onload = function() {
+        if (isStale()) return;
+        entry.ok = true;
+        currentV++;
+        tryNext();
+      };
+      img.onerror = function() {
+        if (isStale()) return;
+        cIdx++;
+        if (cIdx < candidates.length) {
+          img.src = candidates[cIdx];
+        } else {
+          itemDiv.remove();
+          var entryIdx = items.indexOf(entry);
+          if (entryIdx >= 0) items.splice(entryIdx, 1);
+          revealAll();
+        }
+      };
+      img.src = candidates[0];
+      itemDiv.appendChild(img);
+      galleryEl.appendChild(itemDiv);
+    }
+    tryNext();
+
+    // Markdown 介绍
+    var descText = m.desc || '';
+    document.getElementById('mdMdView').innerHTML = descText ? renderMarkdown(descText) : '<div class="bd-md-empty">暂无介绍，开启编辑模式编写</div>';
+    document.getElementById('mdMdTextarea').value = descText;
+
+    var loreText = m.lore || '';
+    var hasLore = !!loreText || editMode;
+    document.getElementById('mdTabLore').style.display = hasLore ? '' : 'none';
+    if (hasLore) {
+      document.getElementById('mdLoreView').innerHTML = loreText ? renderMarkdown(loreText) : '<div class="bd-md-empty">暂无背景故事，开启编辑模式编写</div>';
+      document.getElementById('mdLoreTextarea').value = loreText;
+    }
+
+    var mdTextarea = document.getElementById('mdMdTextarea');
+    var mdPreview = document.getElementById('mdMdPreview');
+    mdTextarea.oninput = function() {
+      m.desc = mdTextarea.value;
+      mdPreview.innerHTML = renderMarkdown(mdTextarea.value);
+      saveData();
+    };
+    var loreTextarea = document.getElementById('mdLoreTextarea');
+    var lorePreview = document.getElementById('mdLorePreview');
+    if (hasLore) {
+      loreTextarea.oninput = function() {
+        m.lore = loreTextarea.value;
+        lorePreview.innerHTML = renderMarkdown(loreTextarea.value);
+        saveData();
+      };
+    }
+
+    // 标签页切换
+    document.querySelectorAll('#mdTabs .bd-tab-btn').forEach(function(btn) {
+      btn.onclick = function() {
+        var tab = btn.dataset.mdtab;
+        document.querySelectorAll('#mdTabs .bd-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        document.querySelectorAll('#page-merchant-detail .bd-tab-content').forEach(function(c) { c.classList.remove('active'); });
+        document.getElementById('mdtab-' + tab).classList.add('active');
+      };
+    });
+
+    if (editMode) {
+      mdPreview.innerHTML = renderMarkdown(mdTextarea.value);
+      if (hasLore) lorePreview.innerHTML = renderMarkdown(loreTextarea.value);
+    }
+
+    // 售卖物品渲染
+    renderMerchantShop(m, basePath);
+
+    // 阵营
+    var factionName = '';
+    var factionDesc = '';
+    if (m.faction) {
+      var factionEntry = (TDE_DATA.glossary || []).find(function(g) { return g.name === m.faction && g.category === 'faction'; });
+      if (factionEntry) {
+        factionName = factionEntry.name;
+        factionDesc = factionEntry.desc || '';
+      } else {
+        factionName = m.faction;
+      }
+    }
+    var factionEntries = (TDE_DATA.glossary || []).filter(function(g) { return g.category === 'faction'; });
+
+    // 种族
+    var raceName = '';
+    if (m.race) {
+      var raceEntry = (TDE_DATA.glossary || []).find(function(g) { return g.id === m.race && g.category === 'race'; });
+      raceName = raceEntry ? raceEntry.name : m.race;
+    }
+    var raceEntries = (TDE_DATA.glossary || []).filter(function(g) { return g.category === 'race'; });
+
+    // 相关词条
+    var relatedIds = m.related || [];
+    var nonFactionRace = (TDE_DATA.glossary || []).filter(function(g) { return g.category !== 'faction' && g.category !== 'race'; });
+
+    var infoHTML = '';
+
+    if (factionName) {
+      infoHTML += '<div class="bd-info-line"><span class="bd-info-label">阵营</span><span class="bd-faction-badge">' + _factionBadge(m.faction) + factionName + '</span></div>';
+    }
+
+    infoHTML += '<div class="bd-info-line"><span class="bd-info-label">种族</span>';
+    if (editMode) {
+      infoHTML += '<div class="ss-wrap" data-ss-basepath="' + basePath + '" data-ss-field="race" data-ss-onchange="_mdSsChange">';
+      infoHTML += '<input type="text" class="ss-input" placeholder="选择种族..." value="' + escAttr(raceName) + '" onfocus="window._ssOpen(this)" oninput="window._ssFilter(this)" onkeydown="window._ssKey(this,event)" onblur="setTimeout(window._ssCloseAll,200)" autocomplete="off">';
+      infoHTML += '<input type="hidden" class="ss-hidden" value="' + escAttr(m.race || '') + '">';
+      infoHTML += '<div class="ss-dropdown">';
+      raceEntries.forEach(function(re) {
+        infoHTML += '<div class="ss-option" data-val="' + escAttr(re.id) + '" data-label="' + escAttr(re.name) + '" data-search="' + escAttr(re.name) + '" onclick="window._ssSelect(this)">' + esc(re.name) + '</div>';
+      });
+      infoHTML += '</div></div>';
+    } else {
+      infoHTML += '<span style="color:var(--text-secondary);font-size:0.82rem;">' + (raceName || '未设置') + '</span>';
+    }
+    infoHTML += '</div>';
+
+    // 位置
+    infoHTML += '<div class="bd-info-line"><span class="bd-info-label">出现位置</span>';
+    if (editMode) {
+      infoHTML += '<input type="text" class="ss-input" data-md-field="location" value="' + escAttr(m.location || '') + '" onblur="window._mdFieldChange(this,\'location\')" style="flex:1;max-width:260px;">';
+    } else {
+      infoHTML += '<span style="color:var(--text-secondary);font-size:0.82rem;">' + (m.location || '未设置') + '</span>';
+    }
+    infoHTML += '</div>';
+
+    // 刷新周期
+    infoHTML += '<div class="bd-info-line"><span class="bd-info-label">刷新周期</span>';
+    if (editMode) {
+      infoHTML += '<input type="text" class="ss-input" data-md-field="restock" value="' + escAttr(m.restock || '') + '" onblur="window._mdFieldChange(this,\'restock\')" style="flex:1;max-width:260px;">';
+    } else {
+      infoHTML += '<span style="color:var(--text-secondary);font-size:0.82rem;">' + (m.restock || '未设置') + '</span>';
+    }
+    infoHTML += '</div>';
+
+    infoHTML += '<div class="bd-info-line" style="margin-top:10px;"><span class="bd-info-label">相关词条</span>';
+    if (relatedIds.length > 0) {
+      infoHTML += '<span class="bd-related-chips">';
+      for (var ri = 0; ri < relatedIds.length; ri++) {
+        var term = _glossEntryById(relatedIds[ri]);
+        var termName = term ? term.name : relatedIds[ri];
+        infoHTML += '<span class="bd-related-chip">'
+          + '<a href="#glossary" onclick="if(window._openGlossModal)window._openGlossModal(\'' + escAttr(relatedIds[ri]) + '\')">' + esc(termName) + '</a>';
+        if (editMode) {
+          infoHTML += '<button class="bd-chip-remove" title="移除" onclick="window._mdDelRelated(\'' + basePath + '\',' + ri + ')">&times;</button>';
+        }
+        infoHTML += '</span>';
+      }
+    } else if (!editMode) {
+      infoHTML += '<span style="color:var(--text-muted);font-size:0.78rem;">暂无</span>';
+    }
+    if (editMode) {
+      infoHTML += '<span class="bd-related-add-wrap">'
+        + '<input type="text" class="bd-related-add-input" placeholder="添加词条 (ID或名称)..." onkeydown="if(event.key===\'Enter\')window._mdAddRelated(\'' + basePath + '\',this.value,this)" onblur="setTimeout(function(){window._ssCloseAll()},200)" onfocus="window._ssOpen(this)" oninput="window._ssFilter(this)">'
+        + '<button class="bd-related-add-btn" onclick="var inp=this.previousElementSibling;window._mdAddRelated(\'' + basePath + '\',inp.value,inp)">+</button>'
+        + '<div class="ss-dropdown"></div>'
+        + '</span>';
+    }
+    infoHTML += '</div>';
+
+    document.getElementById('mdStatsGrid').innerHTML = infoHTML;
+  }
+
+  // 商人售卖物品列表
+  function renderMerchantShop(m, basePath) {
+    var el = document.getElementById('mdShopList');
+    var items = m.items || [];
+    if (!items.length && !editMode) {
+      el.innerHTML = '<div class="bd-md-empty">暂未记录售卖物品</div>';
+      return;
+    }
+
+    // 物品类型颜色
+    var typeColors = {
+      weapon: { bg: 'rgba(255,82,82,0.12)', border: 'rgba(255,82,82,0.3)', text: '#ff5252', label: '武器' },
+      armor: { bg: 'rgba(68,138,255,0.12)', border: 'rgba(68,138,255,0.3)', text: '#448aff', label: '防具' },
+      talisman: { bg: 'rgba(179,136,255,0.12)', border: 'rgba(179,136,255,0.3)', text: '#b388ff', label: '护符' },
+      consumable: { bg: 'rgba(105,240,174,0.12)', border: 'rgba(105,240,174,0.3)', text: '#69f0ae', label: '消耗品' },
+      material: { bg: 'rgba(255,171,64,0.12)', border: 'rgba(255,171,64,0.3)', text: '#ffab40', label: '材料' },
+      misc: { bg: 'rgba(0,191,165,0.12)', border: 'rgba(0,191,165,0.3)', text: '#00bfa5', label: '杂项' }
+    };
+
+    var html = '<div class="md-shop-grid">';
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      var tc = typeColors[item.type] || typeColors.misc;
+      html += '<div class="md-shop-item" style="border-left: 3px solid ' + tc.border + ';">';
+      html += '<div class="md-shop-item-header">';
+      html += '<span class="md-shop-item-type" style="background:' + tc.bg + ';color:' + tc.text + ';border:1px solid ' + tc.border + ';">' + tc.label + '</span>';
+      if (editMode) {
+        html += '<div class="md-shop-item-actions">';
+        html += '<button class="md-shop-item-btn" onclick="window._mdEditShopItem(\'' + basePath + '\',' + i + ')">编辑</button>';
+        html += '<button class="md-shop-item-btn md-shop-item-del" onclick="window._mdDelShopItem(\'' + basePath + '\',' + i + ')">&times;</button>';
+        html += '</div>';
+      }
+      html += '</div>';
+      html += '<div class="md-shop-item-name">' + esc(item.name) + '</div>';
+      html += '<div class="md-shop-item-price">' + esc(item.price || '') + '</div>';
+      if (item.desc) {
+        html += '<div class="md-shop-item-desc">' + esc(item.desc) + '</div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+
+    if (editMode) {
+      html += '<button class="md-shop-add-btn" onclick="window._mdAddShopItem(\'' + basePath + '\')">+ 添加商品</button>';
+    }
+
+    el.innerHTML = html;
+  }
+
+  // 商人编辑辅助函数
+  window._mdFieldChange = function(el, field) {
+    var wrap = el.closest('[data-ss-basepath]') || el.closest('.bd-stats-grid');
+    var path = el.closest('[data-ss-basepath]') ? el.closest('[data-ss-basepath]').getAttribute('data-ss-basepath') : null;
+    if (!path) {
+      // try to find from nearby elements
+      var merchantName = document.getElementById('mdName').textContent;
+      var mIdx = TDE_DATA.merchants.findIndex(function(x) { return x.name === merchantName; });
+      if (mIdx >= 0) path = 'merchants.' + mIdx;
+    }
+    if (!path) return;
+    var m = getDataByPath(path);
+    if (!m) return;
+    m[field] = el.value.trim();
+    saveData();
+    showSaved();
+  };
+
+  window._mdEditShopItem = function(basePath, idx) {
+    var m = getDataByPath(basePath);
+    if (!m || !m.items) return;
+    var item = m.items[idx];
+    var overlay = document.createElement('div');
+    overlay.className = 'modal-overlay open';
+    overlay.innerHTML = '<div class="modal-content" style="max-width:460px;">'
+      + '<button class="modal-close">&times;</button>'
+      + '<h3 style="margin:0 0 16px;color:var(--cyan-bright);">编辑商品</h3>'
+      + '<div style="margin-bottom:10px;"><label style="display:block;font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;">名称</label><input class="md-shop-edit-name" value="' + escAttr(item.name || '') + '" style="width:100%;box-sizing:border-box;background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:0.82rem;"></div>'
+      + '<div style="margin-bottom:10px;"><label style="display:block;font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;">价格</label><input class="md-shop-edit-price" value="' + escAttr(item.price || '') + '" style="width:100%;box-sizing:border-box;background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:0.82rem;"></div>'
+      + '<div style="margin-bottom:10px;"><label style="display:block;font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;">类型</label><select class="md-shop-edit-type" style="width:100%;box-sizing:border-box;background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:0.82rem;">'
+        + ['weapon','armor','talisman','consumable','material','misc'].map(function(t) { return '<option value="' + t + '"' + (item.type === t ? ' selected' : '') + '>' + t + '</option>'; }).join('')
+      + '</select></div>'
+      + '<div style="margin-bottom:12px;"><label style="display:block;font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;">描述</label><textarea class="md-shop-edit-desc" rows="3" style="width:100%;box-sizing:border-box;background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:0.82rem;resize:vertical;">' + escAttr(item.desc || '') + '</textarea></div>'
+      + '<div class="modal-actions"><button class="btn-cancel">取消</button><button class="btn-save">保存</button></div>'
+      + '</div>';
+    document.body.appendChild(overlay);
+    var nameInp = overlay.querySelector('.md-shop-edit-name');
+    var priceInp = overlay.querySelector('.md-shop-edit-price');
+    var typeSel = overlay.querySelector('.md-shop-edit-type');
+    var descInp = overlay.querySelector('.md-shop-edit-desc');
+    nameInp.focus();
+    nameInp.select();
+    function save() {
+      item.name = nameInp.value.trim();
+      item.price = priceInp.value.trim();
+      item.type = typeSel.value;
+      item.desc = descInp.value.trim();
+      overlay.remove();
+      saveData();
+      renderAll();
+      showSaved();
+    }
+    overlay.querySelector('.btn-save').addEventListener('click', save);
+    overlay.querySelector('.btn-cancel').addEventListener('click', function() { overlay.remove(); });
+    overlay.querySelector('.modal-close').addEventListener('click', function() { overlay.remove(); });
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+  };
+
+  window._mdAddShopItem = function(basePath) {
+    var m = getDataByPath(basePath);
+    if (!m) return;
+    if (!m.items) m.items = [];
+    m.items.push({ name: '新商品', price: '', type: 'misc', desc: '' });
+    saveData();
+    renderAll();
+    showSaved();
+  };
+
+  window._mdDelShopItem = function(basePath, idx) {
+    var m = getDataByPath(basePath);
+    if (!m || !m.items) return;
+    m.items.splice(idx, 1);
+    saveData();
+    renderAll();
+    showSaved();
+  };
+
+  window._mdSsChange = function(wrap) {
+    var hidden = wrap.querySelector('.ss-hidden');
+    var input = wrap.querySelector('.ss-input');
+    var path = wrap.getAttribute('data-ss-basepath');
+    if (!path || !hidden) return;
+    var m = getDataByPath(path);
+    if (!m) return;
+    m.race = hidden.value;
+    saveData();
+    showSaved();
+  };
+
+  window._mdAddRelated = function(basePath, val, inputEl) {
+    var m = getDataByPath(basePath);
+    if (!m || !val) return;
+    if (!m.related) m.related = [];
+    var terms = TDE_DATA.glossary || [];
+    var found = terms.find(function(g) { return g.id === val.trim() || g.name === val.trim(); });
+    if (!found) return;
+    if (m.related.indexOf(found.id) >= 0) return;
+    m.related.push(found.id);
+    saveData();
+    renderAll();
+    showSaved();
+    if (inputEl) inputEl.value = '';
+  };
+
+  window._mdDelRelated = function(basePath, idx) {
+    var m = getDataByPath(basePath);
+    if (!m || !m.related) return;
+    m.related.splice(idx, 1);
     saveData();
     renderAll();
     showSaved();
@@ -4566,6 +4990,9 @@
     }
     if (Router.currentPage.startsWith('npc/')) {
       renderNPCDetail(Router.currentNpcId);
+    }
+    if (Router.currentPage.startsWith('merchant/')) {
+      renderMerchantDetail(Router.currentMerchantId);
     }
     renderWeapons();
     renderArmor();

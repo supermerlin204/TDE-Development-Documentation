@@ -41,7 +41,7 @@ TDE_DATA.regions = [
       "edges": []
     },
     "connections": [],
-    "id": "北风前哨站"
+    "id": "tde_z0l6q4v9a2"
   },
   {
     "name": "苍白之城",
@@ -57,7 +57,7 @@ TDE_DATA.regions = [
       "edges": ""
     },
     "connections": [],
-    "id": "XXXXX_1785313986736"
+    "id": "tde_w5d1g8k3m7"
   },
   {
     "name": "海潮镇",
@@ -94,7 +94,7 @@ TDE_DATA.regions = [
       "edges": []
     },
     "connections": [],
-    "id": "海潮镇"
+    "id": "tde_x2n7s4h9r5"
   },
   {
     "name": "黄金之城",
@@ -110,7 +110,7 @@ TDE_DATA.regions = [
       "edges": ""
     },
     "connections": [],
-    "id": "XXXXX_1785313435121"
+    "id": "tde_y6p1t5b8c4"
   },
   {
     "name": "黄沙堡垒",
@@ -126,7 +126,7 @@ TDE_DATA.regions = [
       "edges": ""
     },
     "connections": [],
-    "id": "XXXXX_1785314610571"
+    "id": "tde_z3j8m2f7v1"
   },
   {
     "name": "灰岩堡垒",
@@ -142,7 +142,7 @@ TDE_DATA.regions = [
       "edges": ""
     },
     "connections": [],
-    "id": "XXXXX_1785313323270"
+    "id": "tde_q9w4l1d6x3"
   },
   {
     "name": "金律",
@@ -158,7 +158,7 @@ TDE_DATA.regions = [
       "edges": ""
     },
     "connections": [],
-    "id": "XXXXX_1785315801602"
+    "id": "tde_a5r6u2n8k7"
   },
   {
     "name": "旧都",
@@ -174,7 +174,7 @@ TDE_DATA.regions = [
       "edges": ""
     },
     "connections": [],
-    "id": "XXXXX_1785313337151"
+    "id": "tde_e1g5c4p9t2"
   },
   {
     "name": "凛风城",
@@ -190,7 +190,7 @@ TDE_DATA.regions = [
       "edges": ""
     },
     "connections": [],
-    "id": "XXXXX_1785315055664"
+    "id": "tde_h8v3j7m1w6"
   },
   {
     "name": "染血堡",
@@ -206,7 +206,7 @@ TDE_DATA.regions = [
       "edges": ""
     },
     "connections": [],
-    "id": "XXXXX_1785316025508"
+    "id": "tde_i2s6b4y9d5"
   },
   {
     "name": "熔岩遗迹",
@@ -222,7 +222,7 @@ TDE_DATA.regions = [
       "edges": ""
     },
     "connections": [],
-    "id": "XXXXX_1785248577576"
+    "id": "tde_o7k1f5l3x8"
   },
   {
     "name": "深渊",
@@ -238,7 +238,7 @@ TDE_DATA.regions = [
       "edges": ""
     },
     "connections": [],
-    "id": "XXXXX_1785315885097"
+    "id": "tde_p4w9t6c2n1"
   },
   {
     "name": "世界尽头",
@@ -254,7 +254,7 @@ TDE_DATA.regions = [
       "edges": ""
     },
     "connections": [],
-    "id": "XXXXX_1785314459550"
+    "id": "tde_j8m5h2v7r6"
   },
   {
     "name": "双河之都",
@@ -270,7 +270,7 @@ TDE_DATA.regions = [
       "edges": ""
     },
     "connections": [],
-    "id": "XXXXX_1785314744571"
+    "id": "tde_l3d1q6x9y4"
   },
   {
     "name": "特里尔魔法学院",
@@ -286,7 +286,7 @@ TDE_DATA.regions = [
       "edges": ""
     },
     "connections": [],
-    "id": "XXXXX_1785316331386"
+    "id": "tde_n1c5s8w3f2"
   },
   {
     "name": "铁群岛",
@@ -335,7 +335,7 @@ TDE_DATA.regions = [
       "edges": []
     },
     "connections": [],
-    "id": "铁群岛"
+    "id": "tde_b7p4k9m2t8"
   },
   {
     "name": "涡流岛",
@@ -351,7 +351,7 @@ TDE_DATA.regions = [
       "edges": ""
     },
     "connections": [],
-    "id": "XXXXX_1785314902618"
+    "id": "tde_v6r2h5j1d3"
   },
   {
     "name": "朽木沼泽",
@@ -367,7 +367,7 @@ TDE_DATA.regions = [
       "edges": ""
     },
     "connections": [],
-    "id": "XXXXX_1785248567069"
+    "id": "tde_g9x3l7w4q5"
   },
   {
     "name": "预言之谷",
@@ -383,7 +383,7 @@ TDE_DATA.regions = [
       "edges": ""
     },
     "connections": [],
-    "id": "XXXXX_1785315125383"
+    "id": "tde_a8e1u6f4o9"
   }
 ];
 

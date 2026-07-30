@@ -17,6 +17,13 @@
   // 网页编辑后通过「下载源文件」导出更改，手动放入仓库并提交。
   const _defaultData = JSON.parse(JSON.stringify(TDE_DATA)); // 深拷贝默认数据，用于检测未保存的更改
 
+  function generateTdeId() {
+    var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    var id = 'tde_';
+    for (var i = 0; i < 10; i++) id += chars.charAt(Math.floor(Math.random() * chars.length));
+    return id;
+  }
+
   // ============================
   // 粒子背景系统
   // ============================
@@ -115,7 +122,7 @@
       if (regionId && regionId.indexOf('%') !== -1) {
         try { regionId = decodeURIComponent(regionId); } catch(e) {}
       }
-      var landmark = subParts[1] ? decodeURIComponent(subParts.slice(1).join('/')) : null;
+      var landmark = subParts[1] ? (function() { try { return decodeURIComponent(subParts.slice(1).join('/')); } catch(e) { return subParts.slice(1).join('/'); } })() : null;
       this.currentSub = (basePage === 'region-detail') ? regionId : null;
       this.currentLandmark = (basePage === 'region-detail') ? landmark : null;
 
@@ -126,7 +133,7 @@
         var bParts = sub.split('/');
         if (bParts.length >= 2) {
           bestiaryType = bParts[0];
-          bestiaryId = decodeURIComponent(bParts.slice(1).join('/'));
+          bestiaryId = (function() { try { return decodeURIComponent(bParts.slice(1).join('/')); } catch(e) { return bParts.slice(1).join('/'); } })();
           basePage = 'bestiary-detail';
         }
       }
@@ -136,7 +143,7 @@
       // 解析：npc/{id}
       var npcId = null;
       if (basePage === 'npc' && sub) {
-        npcId = decodeURIComponent(sub);
+        npcId = (function() { try { return decodeURIComponent(sub); } catch(e) { return sub; } })();
         basePage = 'npc-detail';
       }
       this.currentNpcId = (basePage === 'npc-detail') ? npcId : null;
@@ -144,7 +151,7 @@
       // 解析：merchant/{id}
       var merchantId = null;
       if (basePage === 'merchant' && sub) {
-        merchantId = decodeURIComponent(sub);
+        merchantId = (function() { try { return decodeURIComponent(sub); } catch(e) { return sub; } })();
         basePage = 'merchant-detail';
       }
       this.currentMerchantId = (basePage === 'merchant-detail') ? merchantId : null;
@@ -898,20 +905,20 @@
     // 始终根据数组名生成默认模板
     var _tpl = {
       regions: { name:"XXXXX", level:"1-10", desc:"XXXXX", tags:[], landmarks:[], bosses:["无"], route:{nodes:[],edges:[]}, connections:[] },
-      bosses: { id:"new_boss", name:"XXXXX", faction:"", phases:1, desc:"XXXXX", lore:"", drops:[] },
-      elites: { id:"new_elite", name:"XXXXX", faction:"", desc:"XXXXX" },
-      common: { id:"new_common", name:"XXXXX", faction:"", desc:"XXXXX" },
-      weapons: { id:"new_weapon", name:"XXXXX", type:"直剑", rarity:"common", dmg:{}, scaling:{}, skill:"XXXXX", desc:"XXXXX" },
-      armor: { id:"new_armor", name:"XXXXX", type:"轻甲", weight:"轻", defense:"", desc:"XXXXX" },
-      talismans: { id:"new_talisman", name:"XXXXX", desc:"XXXXX", rarity:"common" },
-      consumables: { id:"new_consumable", name:"XXXXX", desc:"XXXXX", rarity:"common" },
-      npcs: { id:"new_npc", name:"XXXXX", faction:"", desc:"XXXXX", lore:"", race:"", related:[] },
-      merchants: { id:"new_merchant_", name:"新商人", faction:"", race:"", desc:"", lore:"", location:"", restock:"", related:[], items:[] },
-      quests: { id:"new_quest", name:"XXXXX", type:"side", npc:"", desc:"XXXXX", rewards:[], stages:[] },
-      classes: { id:"new_class", name:"XXXXX", title:"XXXXX", desc:"XXXXX", stats:{生命:10,耐力:10,力量:10,敏捷:10,智力:10,信仰:10}, weapon:"", armor:"", skill:"" },
+      bosses: { name:"XXXXX", faction:"", phases:1, desc:"XXXXX", lore:"", drops:[] },
+      elites: { name:"XXXXX", faction:"", desc:"XXXXX" },
+      common: { name:"XXXXX", faction:"", desc:"XXXXX" },
+      weapons: { name:"XXXXX", type:"直剑", rarity:"common", dmg:{}, scaling:{}, skill:"XXXXX", desc:"XXXXX" },
+      armor: { name:"XXXXX", type:"轻甲", weight:"轻", defense:"", desc:"XXXXX" },
+      talismans: { name:"XXXXX", desc:"XXXXX", rarity:"common" },
+      consumables: { name:"XXXXX", desc:"XXXXX", rarity:"common" },
+      npcs: { name:"XXXXX", faction:"", desc:"XXXXX", lore:"", race:"", related:[] },
+      merchants: { name:"新商人", faction:"", race:"", desc:"", lore:"", items:[], shopLists:{} },
+      quests: { name:"XXXXX", type:"side", npc:"", desc:"XXXXX", rewards:[], stages:[] },
+      classes: { name:"XXXXX", title:"XXXXX", desc:"XXXXX", stats:{生命:10,耐力:10,力量:10,敏捷:10,智力:10,信仰:10}, weapon:"", armor:"", skill:"" },
       statusEffects: { name:"XXXXX", icon:"", buildup:"", effect:"XXXXX", cure:"" },
       damageMatrix: { name:"XXXXX" },
-      glossary: { id:"new_glossary", name:"XXXXX", category:"concept", desc:"XXXXX", related:[] },
+      glossary: { name:"XXXXX", category:"concept", desc:"XXXXX", related:[] },
       changelog: { ver:"", date:"", changes:"XXXXX" },
       milestones: { date:"", title:"XXXXX", desc:"", status:"pending" },
       sprints: { name:"XXXXX", status:"todo" },
@@ -923,8 +930,7 @@
     var tmpl = _tpl[arrName];
     if (tmpl) {
       var clone = JSON.parse(JSON.stringify(tmpl));
-      if (clone.id !== undefined) { clone.id = clone.id + '_' + Date.now(); }
-      else if (clone.name !== undefined) { clone.id = clone.name + '_' + Date.now(); }
+      clone.id = generateTdeId();
       arr.push(clone);
       saveData();
       renderAll();
@@ -1063,18 +1069,18 @@
     const idx = [];
     const add = (type, label, id, name) => { if (name) idx.push({ type, label, id, name }); };
 
-    TDE_DATA.classes.forEach(c => add('class', '职业', c.id, c.name));
-    TDE_DATA.npcs.forEach(n => add('npc', 'NPC', n.id, n.name));
-    TDE_DATA.merchants.forEach(m => add('npc', '商人', m.id, m.name));
-    TDE_DATA.bosses.forEach(b => add('boss', 'Boss', b.id, b.name));
-    TDE_DATA.elites.forEach(e => add('elite', '精英', e.id, e.name));
-    TDE_DATA.common.forEach(e => add('enemy', '敌人', e.id, e.name));
-    TDE_DATA.regions.forEach(r => add('region', '区域', r.name, r.name));
-    TDE_DATA.weapons.forEach(w => add('weapon', '武器', w.id, w.name));
-    TDE_DATA.armor.forEach(a => add('armor', '防具', a.id, a.name));
-    TDE_DATA.talismans.forEach(t => add('talisman', '护符', t.id, t.name));
-    TDE_DATA.consumables.forEach(c => add('consumable', '消耗品', c.id, c.name));
-    TDE_DATA.quests.forEach(q => add('quest', '任务', q.id, q.name));
+    (TDE_DATA.classes || []).forEach(c => add('class', '职业', c.id, c.name));
+    (TDE_DATA.npcs || []).forEach(n => add('npc', 'NPC', n.id, n.name));
+    (TDE_DATA.merchants || []).forEach(m => add('npc', '商人', m.id, m.name));
+    (TDE_DATA.bosses || []).forEach(b => add('boss', 'Boss', b.id, b.name));
+    (TDE_DATA.elites || []).forEach(e => add('elite', '精英', e.id, e.name));
+    (TDE_DATA.common || []).forEach(e => add('enemy', '敌人', e.id, e.name));
+    (TDE_DATA.regions || []).forEach(r => add('region', '区域', r.id, r.name));
+    (TDE_DATA.weapons || []).forEach(w => add('weapon', '武器', w.id, w.name));
+    (TDE_DATA.armor || []).forEach(a => add('armor', '防具', a.id, a.name));
+    (TDE_DATA.talismans || []).forEach(t => add('talisman', '护符', t.id, t.name));
+    (TDE_DATA.consumables || []).forEach(c => add('consumable', '消耗品', c.id, c.name));
+    (TDE_DATA.quests || []).forEach(q => add('quest', '任务', q.id, q.name));
     // 词条
     (TDE_DATA.glossary || []).forEach(g => add('glossary', '词条', g.id, g.name));
 
@@ -1251,8 +1257,8 @@
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      const items = dropdown.querySelectorAll('.autocomplete-item[style*="display:none"], .autocomplete-item:not([style*="display:none"])');
       const visible = [...dropdown.querySelectorAll('.autocomplete-item')].filter(i => i.style.display !== 'none');
+      if (!visible.length) return;
       const active = dropdown.querySelector('.autocomplete-item.active');
       const idx = visible.indexOf(active);
       visible.forEach(i => i.classList.remove('active'));
@@ -1263,6 +1269,7 @@
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       const visible = [...dropdown.querySelectorAll('.autocomplete-item')].filter(i => i.style.display !== 'none');
+      if (!visible.length) return;
       const active = dropdown.querySelector('.autocomplete-item.active');
       const idx = visible.indexOf(active);
       visible.forEach(i => i.classList.remove('active'));
@@ -1373,7 +1380,7 @@
       var color = node.color || '#00bfa5';
       var bossCount = (r.bosses || []).filter(function(b) { return b && b !== '无'; }).length;
       var connCount = (r.connections || []).filter(function(c) { return c && c !== '无'; }).length;
-      html += '<a class="ro-card" href="#region/' + encodeURIComponent(r.name) + '" title="查看区域详情：' + r.name + '">'
+      html += '<a class="ro-card" href="#region/' + r.id + '" title="查看区域详情：' + r.name + '">'
         + '<span class="ro-dot" style="background:' + color + ';box-shadow:0 0 8px ' + color + ';"></span>'
         + '<div class="ro-info">'
         + '<span class="ro-name">' + r.name + '</span>'
@@ -1390,72 +1397,7 @@
     if (el) el.innerHTML = html;
   }
 
-  function renderProgress() {
-    const list = TDE_DATA.progress.map((item, i) => `
-      <div class="progress-item">
-        <div class="progress-header">
-          <span class="progress-name" ${edit(`progress.${i}.name`)}>${item.name}</span>
-          <span class="progress-pct" ${edit(`progress.${i}.pct`)}>${item.pct}</span>
-        </div>
-        <div class="progress-track">
-          <div class="progress-track-fill" style="width:${item.pct}%" data-target="${item.pct}"></div>
-        </div>
-      </div>
-    `).join('');
-    document.getElementById('progressList').innerHTML = list;
-    // 编辑模式下进度条的添加删除
-    if (editMode) {
-      document.getElementById('progressList').insertAdjacentHTML('beforeend',
-        renderArrayControls('progress'));
-    }
-  }
-
-  function renderUpdates() {
-    document.getElementById('updateList').innerHTML = TDE_DATA.updates.map((u, i) => `
-      <div class="update-item" ${arrayItem(i)}>
-        <span class="update-date" ${edit(`updates.${i}.date`)}>${u.date}</span>
-        <span class="update-text" ${edit(`updates.${i}.text`)}>${u.text}</span>
-        ${renderArrayItemControls(i)}
-      </div>
-    `).join('') + renderArrayControls('updates');
-  }
-
-  function renderTasks() {
-    document.getElementById('taskList').innerHTML = TDE_DATA.tasks.map((t, i) => `
-      <div class="task-item" ${arrayItem(i)}>
-        <span class="task-priority ${t.priority}"></span>
-        <span ${edit(`tasks.${i}.text`)}>${t.text}</span>
-        ${renderArrayItemControls(i)}
-      </div>
-    `).join('') + renderArrayControls('tasks');
-  }
-
   // --- 角色 ---
-  function renderClasses() {
-    document.getElementById('tab-classes').innerHTML = `
-      <div class="char-grid">${TDE_DATA.classes.map((c, i) => `
-        <div class="char-card" ${editCard(`classes.${i}`)} onclick="if(!document.body.classList.contains('edit-mode'))window._showCharDetail('${c.id}')">
-          ${renderCardDelete(`classes.${i}`)}
-          <div class="char-card-header">
-            <div>
-              <div class="char-name" ${edit(`classes.${i}.name`)}>${c.name}</div>
-              <div class="char-title-label" ${edit(`classes.${i}.title`)}>${c.title}</div>
-            </div>
-            <div class="char-avatar">
-              <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            </div>
-          </div>
-          <div class="char-stats">
-            ${Object.entries(c.stats).map(([k, v]) => `<span class="char-stat"><span ${edit(`classes.${i}.stats.${k}`)}>${v}</span></span>`).join('')}
-          </div>
-          <div class="char-desc" ${edit(`classes.${i}.desc`)}>${c.desc}</div>
-          <div style="margin-top:10px;font-size:0.72rem;color:var(--cyan);" ${edit(`classes.${i}.weapon`)}>${c.weapon}</div>
-          <div style="font-size:0.72rem;color:var(--text-muted);" ${edit(`classes.${i}.skill`)}>${c.skill}</div>
-        </div>
-      `).join('')}</div>
-    ` + renderArrayControls('classes');
-  }
-
   function renderNPCFactionFilter() {
     var factions = (TDE_DATA.glossary || []).filter(function(g) { return g.category === 'faction'; });
     var allNpcs = TDE_DATA.npcs || [];
@@ -1540,10 +1482,6 @@
     document.getElementById('npcGrid').innerHTML = html;
   }
 
-  function renderNPCs() {
-    renderNPCsGrid();
-  }
-
   function renderMerchantsGrid() {
     TDE_DATA.merchants.sort(function(a,b) { return (a.name||"").localeCompare(b.name||"","zh"); });
     if (!TDE_DATA.merchants.length) {
@@ -1556,11 +1494,6 @@
     }
     html += '</div>' + renderArrayControls('merchants');
     document.getElementById('merchantGrid').innerHTML = html;
-  }
-
-  function renderMerchants() {
-    // Keep backward compat — not called directly anymore
-    renderMerchantsGrid();
   }
 
   // --- 图鉴 ---
@@ -1671,7 +1604,7 @@
     return '<div class="enemy-card" ' + editCard(dataKey + '.' + origIdx) + clickHandler + '>'
       + renderCardDelete(dataKey + '.' + origIdx)
       + '<div class="enemy-card-img">'
-        + '<img src="' + imgSrc + '" alt="" data-fallback=\'' + imgFallback + '\' onerror="var f=JSON.parse(this.getAttribute(\'data-fallback\'));if(f.length){this.setAttribute(\'data-fallback\',JSON.stringify(f.slice(1)));this.src=f[0]}else{this.style.display=\'none\';this.nextElementSibling.style.display=\'\'}">'
+        + '<img src="' + imgSrc + '" alt="" data-fallback=\'' + imgFallback + '\' onerror="try{var f=JSON.parse(this.getAttribute(\'data-fallback\'));if(f.length){this.setAttribute(\'data-fallback\',JSON.stringify(f.slice(1)));this.src=f[0]}else{this.style.display=\'none\';this.nextElementSibling.style.display=\'\'}}catch(e){this.style.display=\'none\';this.nextElementSibling.style.display=\'\'}">'
         + '<svg class="img-placeholder" viewBox="0 0 24 24" style="display:none"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-2-6.5l-1.5 1.5L12 18l4.5-4.5L15 12l-3 3-3-3z"/></svg>'
         + '<span class="enemy-card-badge ' + badgeCls + '">' + badgeText + '</span>'
       + '</div>'
@@ -1790,7 +1723,7 @@
     galleryEl.appendChild(loadingEl);
 
     // 代际标记，防止旧回调污染
-    var genId = Date.now();
+    var genId = performance.now();
     window._bdImgGenId = genId;
     function isStale() { return genId !== window._bdImgGenId; }
 
@@ -2115,7 +2048,7 @@
     loadingEl.innerHTML = '<svg viewBox="0 0 24 24" style="width:40px;height:40px;fill:none;stroke:rgba(0,191,165,0.5);stroke-width:2;animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke-dasharray="50" stroke-dashoffset="10"/></svg><span>加载中...</span>';
     galleryEl.appendChild(loadingEl);
 
-    var genId = Date.now();
+    var genId = performance.now();
     window._ndImgGenId = genId;
     function isStale() { return genId !== window._ndImgGenId; }
 
@@ -2390,7 +2323,7 @@
     loadingEl.innerHTML = '<svg viewBox="0 0 24 24" style="width:40px;height:40px;fill:none;stroke:rgba(0,191,165,0.5);stroke-width:2;animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke-dasharray="50" stroke-dashoffset="10"/></svg><span>加载中...</span>';
     galleryEl.appendChild(loadingEl);
 
-    var genId = Date.now();
+    var genId = performance.now();
     window._mdImgGenId = genId;
     function isStale() { return genId !== window._mdImgGenId; }
 
@@ -3135,7 +3068,7 @@
     }
     var region = (TDE_DATA.regions || []).find(function(r) { return r.name === name; });
     if (region) {
-      Router.navigate('region/' + encodeURIComponent(region.name));
+      Router.navigate('region/' + region.id);
     }
   }
 
@@ -3146,7 +3079,7 @@
     TDE_DATA.regions.sort(function(a,b) { return _levelNum(a.level) - _levelNum(b.level) || (a.name||"").localeCompare(b.name||"","zh"); });
   
     document.getElementById('regionGrid').innerHTML = TDE_DATA.regions.map((r, i) => `
-      <div class="region-card" ${editCard(`regions.${i}`)} onclick="if(!document.body.classList.contains('edit-mode'))window.location.hash='region/${encodeURIComponent(r.name)}'">
+      <div class="region-card" ${editCard(`regions.${i}`)} onclick="if(!document.body.classList.contains('edit-mode'))window.location.hash='region/${r.id}'">
         ${renderCardDelete(`regions.${i}`)}
         <div class="region-card-header">
           <span class="region-name" ${edit(`regions.${i}.name`)}>${r.name}</span>
@@ -3183,7 +3116,7 @@
     var levelEl = document.querySelector('#page-region-detail [data-rd-field="level"]');
     var descEl = document.querySelector('#page-region-detail [data-rd-field="desc"]');
     if (nameEl) r.name = nameEl.value;
-    r.id = r.name;
+
     if (levelEl) r.level = levelEl.value;
     if (descEl) r.desc = descEl.value;
 
@@ -3309,7 +3242,7 @@
   var _rgStates = {}; // { panX, panY, zoom, dragging, dragStartX, dragStartY, startPanX, startPanY, dragNodeId, connSource, lastTap, lastTapNodeId }
 
   function getRouteData(regionId) {
-    var region = TDE_DATA.regions.find(function(r) { return r.name === regionId; });
+    var region = TDE_DATA.regions.find(function(r) { return r.id === regionId || r.name === regionId; });
     if (!region) return { nodes: [], edges: [] };
     // 迁移旧格式
     if (Array.isArray(region.route)) {
@@ -3326,7 +3259,7 @@
   }
 
   function saveRouteGraphData(regionId) {
-    var region = TDE_DATA.regions.find(function(r) { return r.name === regionId; });
+    var region = TDE_DATA.regions.find(function(r) { return r.id === regionId || r.name === regionId; });
     if (!region) return;
     var container = document.getElementById('rgContainer-' + regionId);
     if (!container) return;
@@ -3926,7 +3859,7 @@
 
   function renderRegionDetail(regionId, focusLandmark) {
     var regions = TDE_DATA.regions || [];
-    var idx = regions.findIndex(function(r) { return r.name === regionId; });
+    var idx = regions.findIndex(function(r) { return r.id === regionId || r.name === regionId; });
 
     var elTitle = document.getElementById('rdTitle');
     var elSub = document.getElementById('rdSubtitle');
@@ -3934,7 +3867,6 @@
     var elMeta = document.getElementById('rdMeta');
     var elGraphic = document.getElementById('rdGraphic');
     var elSections = document.getElementById('rdSections');
-    var elEditBtn = document.getElementById('rdEditBtn');
     var elLmInfo = document.getElementById('rdLandmarkInfo');
 
     if (!elTitle) return;
@@ -3948,10 +3880,6 @@
     var nodes = (TDE_DATA.worldMap && TDE_DATA.worldMap.nodes) || {};
     var node = nodes[r.name] || {};
     var color = node.color || '#00bfa5';
-
-    // 此页面使用内联编辑，无需侧边面板
-    if (elEditBtn) elEditBtn.style.display = 'none';
-
     // 地标聚焦信息面板
     if (elLmInfo) {
       if (focusLandmark && !editMode) {
@@ -4230,61 +4158,6 @@
     });
   }
 
-  // --- 战斗 ---
-  function renderStatusEffects() {
-    document.getElementById('statusList').innerHTML = TDE_DATA.statusEffects.map((s, i) => `
-      <div class="status-item" ${editCard(`statusEffects.${i}`)}>
-        <span class="status-icon-badge ${s.icon}">${s.name[0]}</span>
-        <div>
-          <strong style="color:var(--text-primary)" ${edit(`statusEffects.${i}.name`)}>${s.name}</strong>
-          <div style="font-size:0.72rem;color:var(--text-muted);" ${edit(`statusEffects.${i}.effect`)}>${s.effect}</div>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  function renderDmgTypeTable() {
-    const headers = ['类型','斩击','打击','穿刺','火焰','冰霜','雷电','虚空','神圣','毒素'];
-    document.getElementById('dmgTypeTable').innerHTML = `
-      <table class="dmg-type-table">
-        <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
-        <tbody>${TDE_DATA.damageMatrix.map((row, i) => `
-          <tr>
-            <td style="color:var(--cyan);font-weight:600;" ${edit(`damageMatrix.${i}.type`)}>${row.type}</td>
-            <td class="${row.slash}">${row.slash || '—'}</td>
-            <td class="${row.strike}">${row.strike || '—'}</td>
-            <td class="${row.pierce}">${row.pierce || '—'}</td>
-            <td class="${row.fire}" ${edit(`damageMatrix.${i}.fire`)}>${row.fire || '—'}</td>
-            <td class="${row.frost}" ${edit(`damageMatrix.${i}.frost`)}>${row.frost || '—'}</td>
-            <td class="${row.lightning}" ${edit(`damageMatrix.${i}.lightning`)}>${row.lightning || '—'}</td>
-            <td class="${row.void}" ${edit(`damageMatrix.${i}.void`)}>${row.void || '—'}</td>
-            <td class="${row.holy}" ${edit(`damageMatrix.${i}.holy`)}>${row.holy || '—'}</td>
-            <td class="${row.poison}" ${edit(`damageMatrix.${i}.poison`)}>${row.poison || '—'}</td>
-          </tr>
-        `).join('')}</tbody>
-      </table>`;
-  }
-
-  function renderPoiseDiagram() {
-    const items = [
-      { name: '玩家（轻甲）', value: 30 },
-      { name: '玩家（中甲）', value: 60 },
-      { name: '玩家（重甲）', value: 100 },
-      { name: '普通敌人', value: 45 },
-      { name: '精英敌人', value: 80 },
-      { name: 'Boss（一阶段）', value: 120 }
-    ];
-    const max = 120;
-    document.getElementById('poiseDiagram').innerHTML = items.map(i => `
-      <div class="poise-bar-group">
-        <div class="poise-bar-label"><span>${i.name}</span><span style="font-family:var(--font-mono)">${i.value}</span></div>
-        <div class="poise-bar-track">
-          <div class="poise-bar-fill" style="width:${(i.value/max)*100}%"></div>
-        </div>
-      </div>
-    `).join('');
-  }
-
   // --- 装备 ---
   function renderWeapons() {
     TDE_DATA.weapons.sort(function(a,b) { var t = (a.type||"").localeCompare(b.type||"","zh"); if (t !== 0) return t; return (a.name||"").localeCompare(b.name||"","zh"); });
@@ -4392,40 +4265,6 @@
         </div>
       </div>
     `).join('') + renderArrayControls('quests');
-  }
-
-  // --- 开发 ---
-  function renderTimeline() {
-    document.getElementById('timeline').innerHTML = TDE_DATA.milestones.map((m, i) => `
-      <div class="timeline-item ${m.status === 'done' ? 'done' : ''} ${m.status === 'active' ? 'active-milestone' : ''}" ${editCard(`milestones.${i}`)}>
-        <div class="timeline-date" ${edit(`milestones.${i}.date`)}>${m.date}</div>
-        <div class="timeline-title">
-          <span ${edit(`milestones.${i}.title`)}>${m.title}</span>
-          ${m.status === 'active' ? ' ◀ 进行中' : ''}
-        </div>
-        <div class="timeline-desc" ${edit(`milestones.${i}.desc`)}>${m.desc}</div>
-        <span style="font-size:0.6rem;color:var(--text-muted);cursor:pointer;" ${enumField(`milestones.${i}.status`, 'done,active,pending')} onclick="event.stopPropagation();window._enumClick(event)">[${m.status}]</span>
-      </div>
-    `).join('') + renderArrayControls('milestones');
-  }
-
-  function renderSprints() {
-    const statusMap = { wip:'进行中', todo:'待办', done:'已完成' };
-    document.getElementById('sprintBoard').innerHTML = TDE_DATA.sprints.map((s, i) => `
-      <div class="sprint-item" ${editCard(`sprints.${i}`)}>
-        <span class="sprint-name" ${edit(`sprints.${i}.name`)}>${s.name}</span>
-        <span class="sprint-status ${s.status}" ${enumField(`sprints.${i}.status`, 'wip,todo,done')} onclick="event.stopPropagation();window._enumClick(event)">${statusMap[s.status]||s.status}</span>
-      </div>
-    `).join('') + renderArrayControls('sprints');
-  }
-
-  function renderChangelog() {
-    document.getElementById('changelog').innerHTML = TDE_DATA.changelog.map((c, i) => `
-      <div class="changelog-item" ${editCard(`changelog.${i}`)}>
-        <div class="changelog-ver" ${edit(`changelog.${i}.ver`)}>${c.ver} <span style="color:var(--text-muted);font-size:0.65rem;" ${edit(`changelog.${i}.date`)}>${c.date}</span></div>
-        <div class="changelog-text" ${edit(`changelog.${i}.changes`)}>${c.changes}</div>
-      </div>
-    `).join('') + renderArrayControls('changelog');
   }
 
   // --- 词条 ---

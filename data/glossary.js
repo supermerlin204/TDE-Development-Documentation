@@ -3,168 +3,168 @@
 
 TDE_DATA.glossary = [
   {
-    "id": "faction-rune-knights",
+    "id": "tde_k9m2n7x4h1",
     "name": "符文骑士团",
     "category": "faction",
     "desc": "符文之王麾下的精锐骑士团。每一位骑士都携带者符文之王亲自赐予的符文布带。这些符文既是对符文之王的忠诚誓言，也是他们在战场上引以为傲的力量源泉。",
     "related": []
   },
   {
-    "id": "faction-soul-thieves",
+    "id": "tde_r5p8s3v6w2",
     "name": "窃魂者",
     "category": "faction",
     "desc": "在北风前哨站中凝练出魂火的战士。拥有夺取生物的灵魂的力量，每一簇魂火都是他们在远征中的助力。",
     "related": []
   },
   {
-    "id": "faction-void",
+    "id": "tde_c7j1d4g8y3",
     "name": "虚空",
     "category": "faction",
     "desc": "深渊之下的混沌集合体。被放逐者的意识在无尽黑暗中融合而成的存在。虚空从地底深处不断渗出，掠夺每一幅躯体。",
     "related": []
   },
   {
-    "id": "faction-calamity",
+    "id": "tde_l3w9f5t2b6",
     "name": "灾厄军团",
     "category": "faction",
     "desc": "维利人的战争军团，由三位首领共同统帅。\n\n命名约定：采用土耳其语词源组词法。",
     "related": []
   },
   {
-    "id": "faction-nature",
+    "id": "tde_a1q6u0e4z8",
     "name": "自然",
     "category": "faction",
     "desc": "并非人类意义上的\"阵营\"，而是世界本身孕育的诸多生命。",
     "related": []
   },
   {
-    "id": "concept-sleepless",
+    "id": "tde_m7h2x5n9k1",
     "name": "不眠者",
     "category": "concept",
     "desc": "天生无法入睡的人类的统称，不眠者的成因各不相同。",
     "related": []
   },
   {
-    "id": "new_glossary_1785306845003",
+    "id": "tde_p4d8g3j7r2",
     "name": "祷告",
     "category": "concept",
     "desc": "通过特定的行为或文字来催动心中的信仰，从而与使用者所信仰的先驱达成联系，进而借用先驱的力量。",
     "related": []
   },
   {
-    "id": "new_glossary_1785306525171",
+    "id": "tde_v1s6w2l5c9",
     "name": "厄法",
     "category": "concept",
     "desc": "魔法的三大学派之一，维利人通过催动体内被驯化的厄咒来施展魔法。",
     "related": []
   },
   {
-    "id": "new_glossary_1785306484407",
+    "id": "tde_t3y6f0b4m8",
     "name": "炼金",
     "category": "concept",
     "desc": "魔法的三大学派之一，通过特定物质间的调配，使得物品或药水自发的施展魔法。",
     "related": []
   },
   {
-    "id": "new_glossary_1785306320701",
+    "id": "tde_e8n1q7z3x5",
     "name": "受赐厄法",
     "category": "concept",
     "desc": "激活维利人体内厄咒的仪式，能让维利人的肉体与厄法更加亲和，受赐厄法者皮肤会变为死灰色。",
     "related": []
   },
   {
-    "id": "concept-precursor",
+    "id": "tde_j5k0r4w6a2",
     "name": "先驱",
     "category": "concept",
     "desc": "生物的最初范本。传说每种生命形态都有一位对应的\"先驱\"——由苍白之树赐予权能的原始模板，所有同族皆从其衍生。",
     "related": []
   },
   {
-    "id": "concept-calamity-north-wind",
+    "id": "tde_u9d3h7l1p6",
     "name": "灾祸-北风",
     "category": "concept",
     "desc": "从北方逃难而来的原住民带来了令人绝望的信息，极北之地不断向外刮来凌冽的寒风，这寒风不断向北蔓延，冻结所过的一切。\n最后一次远征彻底终结了北风，可是最后一次远征的唯一幸存者德雷克拒绝向任何人提及在极北的所见所为。",
     "related": []
   },
   {
-    "id": "concept-calamity-curse",
+    "id": "tde_i2x8m4c7o5",
     "name": "灾祸-厄咒",
     "category": "concept",
     "desc": "从第一位扭曲婴孩的哭嚎开始，新出生的婴儿皆化为不可名状的扭曲造物。\n\n厄咒天生便会服从于对厄咒掌控更深的存在，翠绿面具凭借自己在厄咒上绝对的造诣，换来了整个厄咒的臣服，其将厄咒加以控制与改良，将其驯化为了独属于维利人的力量——厄法。",
     "related": []
   },
   {
-    "id": "concept-calamity-arborify",
+    "id": "tde_o6g1t5y9s3",
     "name": "灾祸-树化",
     "category": "concept",
     "desc": "自涡流岛向外蔓延的奇异现象，生物的体内会不自主的长出根须与枝叶，最终逐渐化为一株诡异的植物。\n树化的消失毫无征兆，其的蔓延也止步于最靠近涡流岛的海岸。",
     "related": []
   },
   {
-    "id": "concept-calamity-sleepless",
+    "id": "tde_b4v0n7e2w8",
     "name": "灾祸-无眠",
     "category": "concept",
     "desc": "令所有人类无法入睡的灾难，受害者会逐渐丧失理智，最终异变为无意识的\"空壳\"。",
     "related": []
   },
   {
-    "id": "concept-calamity-void",
+    "id": "tde_f8k3r1x6j4",
     "name": "灾祸-虚空",
     "category": "concept",
     "desc": "深渊之下向外涌出黑色泥水占据着一切人类的骸骨，并借由骸骨不断猎杀人类。\n律法之王在深渊之上建起金律，金律的光辉不断压制着虚空，使其无法再向外蔓延。",
     "related": []
   },
   {
-    "id": "new_glossary_1785306511222",
+    "id": "tde_q2d7s4h9u5",
     "name": "咒言",
     "category": "concept",
     "desc": "魔法的三大学派之一，通过咏唱或书写咒文来施展魔法。",
     "related": []
   },
   {
-    "id": "race-brute",
+    "id": "tde_z1l5p8c3v7",
     "name": "厄兽",
     "category": "race",
     "desc": "由厄法构造出的扭曲造物。由维利人死后的血肉重新凝结而成。它们本能地服从于厄法造诣更高的个体。",
     "related": []
   },
   {
-    "id": "race-human",
+    "id": "tde_w6m0y4t8n2",
     "name": "人类",
     "category": "race",
     "desc": "最坚韧的智慧种族。他们的生命短暂而脆弱。",
     "related": []
   },
   {
-    "id": "race-willie",
+    "id": "tde_s9a3j7g1d6",
     "name": "维利人",
     "category": "race",
     "desc": "被厄咒扭曲的人类后裔。他们的血肉中流淌着厄咒，死后尸体会被厄咒吞噬消散。",
     "related": []
   },
   {
-    "id": "race-void-construct",
+    "id": "tde_h7x2e5q9r4",
     "name": "虚空构造体",
     "category": "race",
     "desc": "虚空能量侵占人类遗骸后产生的无机造物。",
     "related": []
   },
   {
-    "id": "new_glossary_1785301226377",
+    "id": "tde_y0b6f3k8c1",
     "name": "植物生命",
     "category": "race",
     "desc": "世界本身孕育的智慧植物形态。它们并非由血肉构成，而是以根须、藤蔓与木质纤维编织而成的意识体。部分植物生命生而具有高度智慧，能感知自然界的细微脉动，并与周遭生态共生共存。",
     "related": []
   },
   {
-    "id": "new_glossary_1785317193876",
+    "id": "tde_g4p7z2m6v3",
     "name": "猪灵",
     "category": "race",
     "desc": "同时拥有猪与人类外观的生命，凶猛好战且拥有智慧，对黄金有着无法遏制的贪恋，自称神明的后裔。",
     "related": []
   },
   {
-    "id": "event-calamity-prophecy",
+    "id": "tde_d8n1l5w0s7",
     "name": "灾祸预言",
     "category": "event",
     "desc": "被囚禁的先驱对人类降下的预言\n\n来自根须的恨意会穿透生灵的皮肉\n天生弱者的贪婪会换来扭曲的恩赐\n遥远北方的哭嚎会冻结每一分土地\n深渊之下的迷茫会以骸骨抚平渴望\n那不眠者的愤怒会带来永恒的痛苦",

@@ -355,6 +355,12 @@
     if (Router.currentPage.startsWith('bestiary/')) {
       renderBestiaryDetail(Router.currentBestiaryType, Router.currentBestiaryId);
     }
+    if (Router.currentPage.startsWith('npc-detail')) {
+      renderNPCDetail(Router.currentNpcId);
+    }
+    if (Router.currentPage.startsWith('merchant-detail')) {
+      renderMerchantDetail(Router.currentMerchantId);
+    }
   }
 
   // ============================
@@ -4905,10 +4911,10 @@
     if (Router.currentPage.startsWith('bestiary/')) {
       renderBestiaryDetail(Router.currentBestiaryType, Router.currentBestiaryId);
     }
-    if (Router.currentPage.startsWith('npc/')) {
+    if (Router.currentPage.startsWith('npc-detail')) {
       renderNPCDetail(Router.currentNpcId);
     }
-    if (Router.currentPage.startsWith('merchant/')) {
+    if (Router.currentPage.startsWith('merchant-detail')) {
       renderMerchantDetail(Router.currentMerchantId);
     }
     renderWeapons();

@@ -356,7 +356,7 @@ TDE_DATA.regions = [
   },
   {
     "name": "涡流岛",
-    "level": "待规划",
+    "level": "建筑中",
     "desc": "大海中央被呈涡流状的巨大岛屿，是整个大陆的中心。",
     "tags": [],
     "landmarks": [],
@@ -372,7 +372,7 @@ TDE_DATA.regions = [
   },
   {
     "name": "朽木沼泽",
-    "level": "待规划",
+    "level": "建筑中",
     "desc": "由药贤直接管理的沼泽城镇。",
     "tags": [],
     "landmarks": [],

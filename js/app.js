@@ -3264,16 +3264,40 @@
 
   window._mapClickRegion = mapClickRegion;
 
+  function _statusSortOrd(s) { var o = { '已完工':0, '建筑中':1, '已规划':2, '待规划':3 }; return o[s] != null ? o[s] : 99; }
+  function _statusBadge(s) {
+    var colors = { '已完工':'#69f0ae', '建筑中':'#ffab40', '已规划':'#448aff', '待规划':'#666' };
+    var c = colors[s] || '#666';
+    return '<span class="region-status-badge" style="background:' + c + '1a;color:' + c + ';border:1px solid ' + c + '44;">' + esc(s) + '</span>';
+  }
+  function _levelDropdown(basePath, currentVal) {
+    var opts = ['待规划','已规划','建筑中','已完工'];
+    var d=document;
+    var sel = d.createElement('select');
+    sel.className = 'rd-status-select';
+    sel.setAttribute('data-edit-path', basePath + '.level');
+    opts.forEach(function(o) {
+      var opt = d.createElement('option');
+      opt.value = o; opt.textContent = o;
+      if (o === currentVal) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.onchange = function() {
+      setDataByPath(basePath + '.level', sel.value);
+      saveData();
+    };
+    return sel.outerHTML;
+  }
+
   function renderRegions() {
-    var _levelNum = function(lv) { if (lv === "主城") return 0; var m = String(lv).match(/\d+/); return m ? parseInt(m[0]) : 99; };
-    TDE_DATA.regions.sort(function(a,b) { return _levelNum(a.level) - _levelNum(b.level) || (a.name||"").localeCompare(b.name||"","zh"); });
-  
+    TDE_DATA.regions.sort(function(a,b) { return _statusSortOrd(a.level) - _statusSortOrd(b.level) || (a.name||'').localeCompare(b.name||'','zh'); });
+
     document.getElementById('regionGrid').innerHTML = TDE_DATA.regions.map((r, i) => `
       <div class="region-card" ${editCard(`regions.${i}`)} onclick="if(!document.body.classList.contains('edit-mode'))window.location.hash='region/${r.id}'">
         ${renderCardDelete(`regions.${i}`)}
         <div class="region-card-header">
           <span class="region-name" ${edit(`regions.${i}.name`)}>${r.name}</span>
-          <span class="region-level" ${edit(`regions.${i}.level`)}>${r.level}</span>
+          ${editMode ? _levelDropdown('regions.' + i, r.level) : _statusBadge(r.level)}
         </div>
         <div class="region-desc" ${edit(`regions.${i}.desc`)}>${r.desc}</div>
         <div class="region-tags" ${arrayContainer(`regions.${i}.tags`)}>
@@ -4096,7 +4120,7 @@
     if (editMode) {
       // ========== 编辑模式：内联可编辑 ==========
       elTitle.innerHTML = '<input class="rd-inline-input rd-title-input" data-rd-field="name" data-rd-region="' + regionId + '" value="' + escAttr(r.name || '') + '">';
-      elSub.innerHTML = '等级范围：<input class="rd-inline-input rd-level-input" data-rd-field="level" data-rd-region="' + regionId + '" value="' + escAttr(r.level || '') + '" placeholder="未知">';
+      elSub.innerHTML = '建设状态：<select class="rd-inline-select" data-rd-field="level" data-rd-region="' + regionId + '" onchange="window._saveRegionInline(\'' + regionId + '\')"><option value="待规划"' + (r.level==='待规划'?' selected':'') + '>待规划</option><option value="已规划"' + (r.level==='已规划'?' selected':'') + '>已规划</option><option value="建筑中"' + (r.level==='建筑中'?' selected':'') + '>建筑中</option><option value="已完工"' + (r.level==='已完工'?' selected':'') + '>已完工</option></select>';
       elDesc.innerHTML = '<textarea class="rd-inline-textarea" data-rd-field="desc" data-rd-region="' + regionId + '" placeholder="暂无描述。">' + escAttr(r.desc || '') + '</textarea>';
 
       // 标签编辑器
@@ -4180,7 +4204,7 @@
     } else {
       // ========== 查看模式：纯静态展示 ==========
       elTitle.textContent = r.name;
-      elSub.textContent = '等级范围：' + (r.level || '未知');
+      elSub.innerHTML = '建设状态：' + _statusBadge(r.level || '待规划');
       elDesc.innerHTML = '<p>' + (r.desc || '暂无描述。') + '</p>';
 
       elMeta.innerHTML = (r.tags || []).map(function(t) {

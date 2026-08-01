@@ -210,7 +210,7 @@ TDE_DATA.regions = [
   },
   {
     "name": "熔岩遗迹",
-    "level": "已规划",
+    "level": "建筑中",
     "desc": "由信仰先驱的古人所建立的都市，北风到来后便被废弃。如今都市由先驱的眷族管理。",
     "tags": [],
     "landmarks": [
@@ -259,7 +259,7 @@ TDE_DATA.regions = [
   },
   {
     "name": "世界尽头",
-    "level": "待规划",
+    "level": "建筑中",
     "desc": "大陆与海洋的尽头，被驱逐的原生生命们在此苟延残喘。",
     "tags": [],
     "landmarks": [],

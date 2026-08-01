@@ -38,5 +38,17 @@ TDE_DATA.merchants = [
     "restock": "",
     "related": [],
     "shopLists": {}
+  },
+  {
+    "id": "tde_y4x8k2w7q1",
+    "name": "神秘商人",
+    "faction": "",
+    "race": "",
+    "desc": "无人知晓其种族与来历的行商。他们总是戴着面具，沉默地展示着来自世界各处的奇珍异宝。",
+    "lore": "",
+    "location": "",
+    "restock": "",
+    "related": [],
+    "shopLists": {}
   }
 ];

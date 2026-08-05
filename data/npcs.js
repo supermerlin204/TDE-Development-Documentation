@@ -3,6 +3,15 @@
 
 TDE_DATA.npcs = [
   {
+    "id": "tde_r6v9n3p1q8",
+    "name": "蘑菇爷爷",
+    "faction": "自然",
+    "desc": "菇！？",
+    "lore": "",
+    "race": "",
+    "related": []
+  },
+  {
     "id": "tde_w3p8k5m2f7",
     "name": "先驱-苍岭战兽",
     "faction": "自然",

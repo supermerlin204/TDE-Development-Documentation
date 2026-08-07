@@ -14,6 +14,17 @@ TDE_DATA.bosses = [
     "related": []
   },
   {
+    "id": "tde_q2f6s9w3e1",
+    "name": "熔岩戍卫",
+    "faction": "自然",
+    "phases": 1,
+    "desc": "沉眠于熔岩遗迹深处的古老战士，千年流转，使命未曾褪色。",
+    "lore": "",
+    "drops": [],
+    "race": "",
+    "related": []
+  },
+  {
     "id": "tde_m3w8s1x6p9",
     "name": "咒贤-贝杜阿汗",
     "faction": "灾厄军团",

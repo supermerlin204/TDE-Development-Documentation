@@ -72,9 +72,10 @@ function initScene(container) {
     || (navigator.deviceMemory && navigator.deviceMemory <= 4);
   _renderer = new THREE.WebGLRenderer({ antialias: !lowPower, powerPreference: 'high-performance' });
   _renderer.setSize(w, h, false);
-  _renderer.setPixelRatio(Math.min(window.devicePixelRatio, lowPower ? 1 : 1.5));
+  _renderer.setPixelRatio(Math.min(window.devicePixelRatio, lowPower ? 1 : 1.25));
   _renderer.shadowMap.enabled = true;
   _renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  _renderer.shadowMap.autoUpdate = false;
   _renderer.toneMapping = THREE.ACESFilmicToneMapping;
   _renderer.toneMappingExposure = 1.2;
   container.innerHTML = '';
@@ -91,7 +92,6 @@ function initScene(container) {
   _controls.update();
   _controls.addEventListener('start', () => { _controlsInteracting = true; startRenderLoop(); });
   _controls.addEventListener('end', () => { _controlsInteracting = false; startRenderLoop(); });
-  _controls.addEventListener('change', startRenderLoop);
 
   // 阻止滚轮事件传播到页面，防止同时触发页面滚动
   _renderer.domElement.addEventListener('wheel', function(e) {
@@ -211,7 +211,7 @@ function processLoadedModel(gltf, token) {
         m.transparent = src.transparent;
         m.opacity = src.opacity;
         m.alphaTest = src.alphaTest;
-        m.side = THREE.DoubleSide;
+        m.side = src.side;
         return m;
       }
       if (Array.isArray(child.material)) {
@@ -228,6 +228,7 @@ function processLoadedModel(gltf, token) {
     }
   });
   _scene.add(_model);
+  _renderer.shadowMap.needsUpdate = true;
   renderScene();
   return true;
 }
@@ -252,6 +253,7 @@ function highlightLandmarkMesh(name) {
   } else {
     mesh.material = redMat;
   }
+  renderScene();
   return true;
 }
 
@@ -263,6 +265,7 @@ function clearLandmarkHighlight() {
   _highlightedMesh = null;
   _highlightOriginalMaterial = null;
   _highlightMaterial = null;
+  renderScene();
 }
 
 // 从 ArrayBuffer 解析 GLB（带 Draco 解码）

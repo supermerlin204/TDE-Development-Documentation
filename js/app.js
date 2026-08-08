@@ -4390,7 +4390,7 @@
     map3DLoadPromise = new Promise(function(resolve) {
       var script = document.createElement('script');
       script.type = 'module';
-      script.src = 'js/map3d.js?v=62';
+      script.src = 'js/map3d.js?v=63';
       script.onload = function() { resolve(!!window._initMap3D); };
       script.onerror = function() {
         map3DLoadPromise = null;
@@ -4475,9 +4475,7 @@
     }
 
     if (window._disposeMap3D) window._disposeMap3D(elGraphic);
-    elGraphic.classList.remove('has-model');
-    elGraphic.innerHTML = '<button type="button" class="rd-model-action">加载 3D 预览</button>';
-    elGraphic.querySelector('.rd-model-action').addEventListener('click', loadPreview);
+    loadPreview();
   }
 
   // --- 装备 ---

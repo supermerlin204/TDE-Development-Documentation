@@ -29,7 +29,7 @@
   // 粒子背景系统
   // ============================
   const ParticleSystem = {
-    canvas: null, ctx: null, particles: [], maxParticles: 48, animationId: null, lastFrame: 0,
+    canvas: null, ctx: null, particles: [], maxParticles: 48, animationId: null, lastFrame: 0, active: true,
     init() {
       this.canvas = document.getElementById('particleCanvas');
       if (!this.canvas || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -43,13 +43,23 @@
         if (document.hidden) {
           if (this.animationId) cancelAnimationFrame(this.animationId);
           this.animationId = null;
-        } else if (!this.animationId) {
+        } else if (this.active && !this.animationId) {
           this.lastFrame = 0;
           this.animationId = requestAnimationFrame((time) => this.animate(time));
         }
       });
       for (let i = 0; i < this.maxParticles; i++) this.particles.push(this.createParticle(true));
       this.animationId = requestAnimationFrame((time) => this.animate(time));
+    },
+    setActive(active) {
+      this.active = !!active;
+      if (!this.active && this.animationId) {
+        cancelAnimationFrame(this.animationId);
+        this.animationId = null;
+      } else if (this.active && !document.hidden && this.ctx && !this.animationId) {
+        this.lastFrame = 0;
+        this.animationId = requestAnimationFrame((time) => this.animate(time));
+      }
     },
     resize() {
       this.canvas.width = document.documentElement.clientWidth;
@@ -66,12 +76,12 @@
         opacity: Math.random() * 0.6 + 0.2,
         pulse: Math.random() * Math.PI * 2,
         pulseSpeed: Math.random() * 0.02 + 0.01,
-        hue: Math.random() * 30 + 165
+        hue: Math.random() * 20 + 195
       };
     },
     animate(time) {
       this.animationId = null;
-      if (document.hidden || !this.ctx) return;
+      if (document.hidden || !this.ctx || !this.active) return;
       if (time - this.lastFrame < 32) {
         this.animationId = requestAnimationFrame((nextTime) => this.animate(nextTime));
         return;
@@ -110,6 +120,422 @@
         }
       }
       this.animationId = requestAnimationFrame((nextTime) => this.animate(nextTime));
+    }
+  };
+
+  const ThemeManager = {
+    init() {
+      var stored = null;
+      try {
+        stored = localStorage.getItem('tde-theme');
+        if (!stored && localStorage.getItem('theme') === 'light') {
+          stored = 'light';
+          localStorage.setItem('tde-theme', stored);
+          localStorage.removeItem('theme');
+        }
+      } catch (error) {}
+      this.apply(stored === 'light' ? 'light' : 'dark', false);
+    },
+    apply(theme, persist) {
+      var isLight = theme === 'light';
+      document.documentElement.dataset.theme = isLight ? 'light' : 'dark';
+      if (persist) {
+        try { localStorage.setItem('tde-theme', isLight ? 'light' : 'dark'); } catch (error) {}
+      }
+      document.querySelectorAll('#themeToggle, #toolbarThemeToggle').forEach(function(button) {
+        button.setAttribute('aria-pressed', isLight ? 'true' : 'false');
+        button.setAttribute('aria-label', isLight ? '切换到深色主题' : '切换到浅色主题');
+        button.title = isLight ? '切换到深色主题' : '切换到浅色主题';
+      });
+      var sidebarLabel = document.querySelector('#themeToggle .theme-toggle-label');
+      if (sidebarLabel) sidebarLabel.textContent = isLight ? '深色主题' : '浅色主题';
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.content = isLight ? '#edf1f5' : '#06090f';
+      if (window._tdeWordmarkRefresh) window._tdeWordmarkRefresh();
+    },
+    toggle() {
+      this.apply(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light', true);
+    }
+  };
+
+  // 首页粒子字标：粒子只在总览页可见时运行，低性能设备限制为 30fps。
+  const ParticleWordmark = {
+    canvas: null, stage: null, ctx: null, particles: [], animationId: null,
+    pointer: { x: 0, y: 0, active: false }, active: false, visible: true,
+    lowPower: false, lastFrame: 0, resizeTimer: null,
+    init() {
+      this.canvas = document.getElementById('tdeWordmarkCanvas');
+      this.stage = document.getElementById('tdeWordmarkStage');
+      if (!this.canvas || !this.stage) return;
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      this.lowPower = reduced
+        || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
+        || (navigator.deviceMemory && navigator.deviceMemory <= 4);
+      if (reduced) {
+        this.stage.classList.add('is-static');
+        return;
+      }
+      this.ctx = this.canvas.getContext('2d', { alpha: true });
+      this.resize();
+      this.stage.addEventListener('pointermove', (event) => {
+        var rect = this.canvas.getBoundingClientRect();
+        this.pointer.x = event.clientX - rect.left;
+        this.pointer.y = event.clientY - rect.top;
+        this.pointer.active = true;
+      }, { passive: true });
+      this.stage.addEventListener('pointerleave', () => { this.pointer.active = false; });
+      window.addEventListener('resize', () => {
+        clearTimeout(this.resizeTimer);
+        this.resizeTimer = setTimeout(() => this.resize(), 140);
+      });
+      document.addEventListener('visibilitychange', () => {
+        this.visible = !document.hidden;
+        if (this.visible) this.start(); else this.stop();
+      });
+      window._tdeWordmarkRefresh = () => this.draw();
+      this.setActive(true);
+    },
+    resize() {
+      if (!this.canvas || !this.stage || !this.ctx) return;
+      var rect = this.stage.getBoundingClientRect();
+      var width = Math.max(280, Math.round(rect.width));
+      var height = Math.max(180, Math.round(rect.height));
+      var dpr = Math.min(window.devicePixelRatio || 1, this.lowPower ? 1 : 1.5);
+      this.canvas.width = Math.round(width * dpr);
+      this.canvas.height = Math.round(height * dpr);
+      this.canvas.style.width = width + 'px';
+      this.canvas.style.height = height + 'px';
+      this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      this.width = width;
+      this.height = height;
+      this.buildTargets();
+      this.draw();
+    },
+    buildTargets() {
+      var sample = document.createElement('canvas');
+      sample.width = this.width;
+      sample.height = this.height;
+      var ctx = sample.getContext('2d');
+      var fontSize = Math.min(this.height * 0.62, this.width * 0.3);
+      ctx.clearRect(0, 0, sample.width, sample.height);
+      ctx.fillStyle = '#fff';
+      ctx.font = '800 ' + fontSize + 'px Segoe UI, Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('TDE', this.width / 2, this.height / 2);
+      var pixels = ctx.getImageData(0, 0, this.width, this.height).data;
+      var gap = this.lowPower ? 8 : (this.width < 480 ? 7 : 6);
+      var targets = [];
+      for (var y = gap; y < this.height; y += gap) {
+        for (var x = gap; x < this.width; x += gap) {
+          if (pixels[(y * this.width + x) * 4 + 3] > 120) targets.push({ x: x, y: y });
+        }
+      }
+      var maxParticles = this.lowPower ? 430 : 1050;
+      if (targets.length > maxParticles) {
+        var stride = Math.ceil(targets.length / maxParticles);
+        targets = targets.filter(function(_, index) { return index % stride === 0; });
+      }
+      var old = this.particles;
+      this.particles = targets.map((target, index) => {
+        var previous = old[index];
+        return {
+          x: previous ? previous.x : this.width * (0.15 + Math.random() * 0.7),
+          y: previous ? previous.y : this.height * (0.15 + Math.random() * 0.7),
+          vx: previous ? previous.vx : 0,
+          vy: previous ? previous.vy : 0,
+          tx: target.x,
+          ty: target.y,
+          size: 0.7 + Math.random() * 1.15,
+          phase: Math.random() * Math.PI * 2
+        };
+      });
+    },
+    setActive(active) {
+      this.active = !!active;
+      if (this.active && this.visible) this.start(); else this.stop();
+    },
+    start() {
+      if (!this.active || !this.visible || !this.ctx || this.animationId) return;
+      this.animationId = requestAnimationFrame((time) => this.animate(time));
+    },
+    stop() {
+      if (this.animationId) cancelAnimationFrame(this.animationId);
+      this.animationId = null;
+    },
+    animate(time) {
+      this.animationId = null;
+      if (!this.active || !this.visible || !this.ctx) return;
+      var frameInterval = this.lowPower ? 33 : 16;
+      if (time - this.lastFrame >= frameInterval) {
+        this.lastFrame = time;
+        var radius = this.width < 480 ? 64 : 88;
+        for (var i = 0; i < this.particles.length; i++) {
+          var p = this.particles[i];
+          var ax = (p.tx - p.x) * 0.035;
+          var ay = (p.ty - p.y) * 0.035;
+          if (this.pointer.active) {
+            var dx = p.x - this.pointer.x;
+            var dy = p.y - this.pointer.y;
+            var distance = Math.sqrt(dx * dx + dy * dy) || 1;
+            if (distance < radius) {
+              var force = (1 - distance / radius) * 1.8;
+              ax += dx / distance * force;
+              ay += dy / distance * force;
+            }
+          }
+          p.vx = (p.vx + ax) * 0.88;
+          p.vy = (p.vy + ay) * 0.88;
+          p.x += p.vx;
+          p.y += p.vy;
+          p.phase += 0.025;
+        }
+        this.draw();
+      }
+      this.animationId = requestAnimationFrame((nextTime) => this.animate(nextTime));
+    },
+    draw() {
+      if (!this.ctx || !this.width || !this.height) return;
+      var light = document.documentElement.dataset.theme === 'light';
+      var main = light ? '26, 95, 140' : '96, 202, 255';
+      var accent = light ? '12, 65, 93' : '176, 226, 255';
+      this.ctx.clearRect(0, 0, this.width, this.height);
+      for (var i = 0; i < this.particles.length; i++) {
+        var p = this.particles[i];
+        var alpha = 0.55 + Math.sin(p.phase) * 0.18;
+        this.ctx.beginPath();
+        this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        this.ctx.fillStyle = 'rgba(' + (i % 9 === 0 ? accent : main) + ',' + alpha + ')';
+        this.ctx.fill();
+      }
+    }
+  };
+
+  const SiteSearch = {
+    root: null, input: null, results: null, count: null, trigger: null,
+    index: [], visibleItems: [], activeIndex: 0, previousFocus: null,
+    init() {
+      this.root = document.getElementById('globalSearch');
+      this.input = document.getElementById('globalSearchInput');
+      this.results = document.getElementById('globalSearchResults');
+      this.count = document.getElementById('globalSearchCount');
+      this.trigger = document.getElementById('globalSearchTrigger');
+      if (!this.root || !this.input || !this.results || !this.trigger) return;
+      this.buildIndex();
+      this.trigger.addEventListener('click', () => this.open());
+      this.root.querySelectorAll('[data-search-close]').forEach((element) => {
+        element.addEventListener('click', () => this.close());
+      });
+      this.input.addEventListener('input', () => this.render(this.input.value));
+      this.results.addEventListener('pointermove', (event) => {
+        var item = event.target.closest('.global-search-result');
+        if (!item) return;
+        this.setActive(Number(item.dataset.resultIndex));
+      });
+      this.results.addEventListener('click', (event) => {
+        var item = event.target.closest('.global-search-result');
+        if (item) this.openItem(Number(item.dataset.resultIndex));
+      });
+      document.addEventListener('keydown', (event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+          event.preventDefault();
+          this.root.classList.contains('open') ? this.close() : this.open();
+          return;
+        }
+        if (!this.root.classList.contains('open')) return;
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          this.close();
+        } else if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          this.setActive(Math.min(this.activeIndex + 1, this.visibleItems.length - 1), true);
+        } else if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          this.setActive(Math.max(this.activeIndex - 1, 0), true);
+        } else if (event.key === 'Enter' && document.activeElement === this.input) {
+          event.preventDefault();
+          this.openItem(this.activeIndex);
+        } else if (event.key === 'Tab') {
+          var focusable = Array.from(this.root.querySelectorAll('input, button:not([disabled])'));
+          if (!focusable.length) return;
+          var first = focusable[0];
+          var last = focusable[focusable.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
+        }
+      });
+    },
+    add(type, label, name, description, route, action, id, category) {
+      if (!name) return;
+      this.index.push({
+        type: type,
+        label: label,
+        name: name,
+        description: description || '',
+        route: route,
+        action: action || '',
+        id: id || '',
+        category: category || '',
+        search: (name + ' ' + (description || '') + ' ' + label).toLowerCase()
+      });
+    },
+    buildIndex() {
+      this.index = [];
+      (TDE_DATA.regions || []).forEach((item) => this.add('region', '区域', item.name, item.desc, 'region/' + regionRouteKey(item)));
+      (TDE_DATA.npcs || []).forEach((item) => this.add('npc', 'NPC', item.name, item.desc, 'npc/' + item.id));
+      (TDE_DATA.merchants || []).forEach((item) => this.add('merchant', '商人', item.name, item.desc, 'merchant/' + item.id));
+      [['bosses', 'Boss'], ['elites', '精英敌人'], ['common', '普通敌人']].forEach((entry) => {
+        (TDE_DATA[entry[0]] || []).forEach((item) => this.add('enemy', entry[1], item.name, item.desc, 'bestiary/' + entry[0] + '/' + item.id));
+      });
+      (TDE_DATA.classes || []).forEach((item) => this.add('class', '职业', item.name, item.desc, 'dashboard', 'class', item.id));
+      [['weapons', '武器'], ['armor', '防具'], ['talismans', '护符'], ['consumables', '消耗品']].forEach((entry) => {
+        (TDE_DATA[entry[0]] || []).forEach((item) => this.add('equipment', entry[1], item.name, item.desc, 'equipment'));
+      });
+      (TDE_DATA.quests || []).forEach((item) => this.add('quest', '任务', item.name, item.desc, 'quests'));
+      (TDE_DATA.glossary || []).forEach((item) => this.add('glossary', '词条', item.name, item.desc, 'glossary', 'glossary', item.id, item.category));
+    },
+    open() {
+      this.previousFocus = document.activeElement;
+      this.buildIndex();
+      this.root.removeAttribute('inert');
+      this.root.setAttribute('aria-hidden', 'false');
+      this.root.classList.add('open');
+      document.body.classList.add('search-open');
+      this.input.value = '';
+      this.render('');
+      requestAnimationFrame(() => this.input.focus());
+    },
+    close() {
+      if (!this.root || !this.root.classList.contains('open')) return;
+      this.root.classList.remove('open');
+      this.root.setAttribute('aria-hidden', 'true');
+      this.root.setAttribute('inert', '');
+      document.body.classList.remove('search-open');
+      if (this.previousFocus && this.previousFocus.focus) this.previousFocus.focus();
+    },
+    render(query) {
+      var needle = (query || '').trim().toLowerCase();
+      var items = this.index.map(function(item) {
+        var score = item.name.toLowerCase() === needle ? 0
+          : item.name.toLowerCase().startsWith(needle) ? 1
+          : item.name.toLowerCase().includes(needle) ? 2 : 3;
+        return { item: item, score: score };
+      }).filter(function(entry) {
+        return !needle || entry.item.search.includes(needle);
+      }).sort(function(a, b) {
+        return a.score - b.score || a.item.name.localeCompare(b.item.name, 'zh');
+      }).slice(0, 14).map(function(entry) { return entry.item; });
+      this.visibleItems = items;
+      this.activeIndex = 0;
+      if (this.count) this.count.textContent = (needle ? items.length : this.index.length) + ' 条资料';
+      if (!items.length) {
+        this.results.innerHTML = '<div class="global-search-empty">未找到匹配资料</div>';
+        return;
+      }
+      this.results.innerHTML = items.map(function(item, index) {
+        var description = item.description.replace(/[#*_`>\[\]]/g, '').replace(/\s+/g, ' ').trim();
+        return '<button type="button" class="global-search-result' + (index === 0 ? ' active' : '') + '" role="option" aria-selected="' + (index === 0 ? 'true' : 'false') + '" data-result-index="' + index + '">'
+          + '<span class="global-search-result-type type-' + escAttr(item.type) + '">' + esc(item.label) + '</span>'
+          + '<span class="global-search-result-copy"><strong>' + esc(item.name) + '</strong>'
+          + (description ? '<small>' + esc(description.slice(0, 88)) + '</small>' : '') + '</span>'
+          + '<span class="global-search-result-arrow" aria-hidden="true">\u2192</span></button>';
+      }).join('');
+    },
+    setActive(index, scroll) {
+      if (!this.visibleItems.length || index < 0) return;
+      this.activeIndex = index;
+      this.results.querySelectorAll('.global-search-result').forEach(function(element, itemIndex) {
+        var active = itemIndex === index;
+        element.classList.toggle('active', active);
+        element.setAttribute('aria-selected', active ? 'true' : 'false');
+        if (active && scroll) element.scrollIntoView({ block: 'nearest' });
+      });
+    },
+    openItem(index) {
+      var item = this.visibleItems[index];
+      if (!item) return;
+      this.close();
+      if (item.action === 'class') {
+        window.location.hash = item.route;
+        setTimeout(function() { window._showCharDetail(item.id); }, 80);
+      } else if (item.action === 'glossary') {
+        window._goGlossary(item.category, item.id);
+      } else {
+        window.location.hash = item.route;
+      }
+    }
+  };
+
+  function updateApplicationContext(basePage) {
+    var labels = {
+      dashboard: '总览面板', world: '世界地图', characters: '角色资料', bestiary: '敌人图鉴',
+      equipment: '装备道具', quests: '任务系统', glossary: '词条系统',
+      'region-detail': '区域档案', 'bestiary-detail': '敌人档案',
+      'npc-detail': 'NPC 档案', 'merchant-detail': '商人档案'
+    };
+    var label = labels[basePage] || 'TDE 档案库';
+    if (basePage === 'region-detail') {
+      var region = (TDE_DATA.regions || []).find(function(item) { return item.id === Router.currentSub || item.name === Router.currentSub; });
+      if (region) label = '区域 / ' + region.name;
+    }
+    var context = document.getElementById('appContextLabel');
+    if (context) context.textContent = label;
+    ParticleSystem.setActive(basePage !== 'region-detail');
+    ParticleWordmark.setActive(basePage === 'dashboard');
+  }
+
+  const AccessibilityEnhancer = {
+    observer: null, frame: null,
+    init() {
+      var content = document.getElementById('content');
+      if (!content) return;
+      this.scan();
+      this.observer = new MutationObserver(() => this.schedule());
+      this.observer.observe(content, { childList: true, subtree: true });
+      content.addEventListener('click', (event) => {
+        if (event.target.closest('.tab-btn, .bd-tab-btn')) this.schedule();
+      });
+    },
+    schedule() {
+      if (this.frame) return;
+      this.frame = requestAnimationFrame(() => {
+        this.frame = null;
+        this.scan();
+      });
+    },
+    scan() {
+      document.querySelectorAll('.tab-nav, .bd-tabs').forEach(function(tabList) {
+        tabList.setAttribute('role', 'tablist');
+        tabList.querySelectorAll('.tab-btn, .bd-tab-btn').forEach(function(tab) {
+          var active = tab.classList.contains('active');
+          tab.type = 'button';
+          tab.setAttribute('role', 'tab');
+          tab.setAttribute('aria-selected', active ? 'true' : 'false');
+          tab.tabIndex = active ? 0 : -1;
+        });
+      });
+      document.querySelectorAll('.tab-content, .bd-tab-content').forEach(function(panel) {
+        panel.setAttribute('role', 'tabpanel');
+      });
+      document.querySelectorAll('.enemy-card, .region-card, .glossary-card, .char-card').forEach(function(card) {
+        if (card.dataset.keyboardReady === 'true') return;
+        card.dataset.keyboardReady = 'true';
+        card.tabIndex = 0;
+        card.setAttribute('role', 'button');
+        var label = card.querySelector('.enemy-card-name, .region-name, .glossary-name, .char-name');
+        if (label) card.setAttribute('aria-label', label.textContent.trim());
+        card.addEventListener('keydown', function(event) {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            card.click();
+          }
+        });
+      });
     }
   };
 
@@ -204,7 +630,14 @@
         history.replaceState(null, '', '#dashboard');
         showToast('页面不存在，已返回项目总览');
       }
-      if (targetPage) targetPage.classList.add('active');
+      if (targetPage) {
+        targetPage.classList.add('active');
+        targetPage.classList.remove('page-enter');
+        void targetPage.offsetWidth;
+        targetPage.classList.add('page-enter');
+      }
+
+      updateApplicationContext(basePage);
 
       setSidebarOpen(false);
 
@@ -416,7 +849,7 @@
   // 编辑面板系统
   // ============================
   const EditPanel = {
-    overlay: null, panel: null, body: null, title: null,
+    overlay: null, panel: null, body: null, title: null, previousFocus: null,
 
     init() {
       this.overlay = document.getElementById('editPanelOverlay');
@@ -435,18 +868,31 @@
     },
 
     open(html, title) {
+      this.previousFocus = document.activeElement;
       this.body.innerHTML = html;
       this.title.textContent = title || '编辑';
+      this.panel.removeAttribute('inert');
+      this.panel.setAttribute('aria-hidden', 'false');
       this.panel.classList.add('open');
       this.overlay.classList.add('show');
       document.body.style.overflow = 'hidden';
+      requestAnimationFrame(() => {
+        var firstField = this.body.querySelector('input, textarea, select, button')
+          || this.panel.querySelector('.edit-panel-close');
+        if (firstField) firstField.focus();
+      });
     },
 
     close() {
       if (this.panel) this.panel.classList.remove('open');
+      if (this.panel) {
+        this.panel.setAttribute('aria-hidden', 'true');
+        this.panel.setAttribute('inert', '');
+      }
       if (this.overlay) this.overlay.classList.remove('show');
       document.body.style.overflow = '';
       editPanelPath = null;
+      if (this.previousFocus && this.previousFocus.focus) this.previousFocus.focus();
     }
   };
 
@@ -1565,7 +2011,7 @@
     if (!_glossNameMap) buildGlossNameMap();
     var g = _glossNameMap[name];
     if (g) {
-      return '<span class="gloss-link" data-gloss-id="' + g.id + '" data-gloss-cat="' + g.category + '" onclick="event.stopPropagation();window._goGlossary(\'' + g.category + '\')" title="查看词条：' + name + '">' + name + '</span>';
+      return '<span class="gloss-link" data-gloss-id="' + g.id + '" data-gloss-cat="' + g.category + '" onclick="event.stopPropagation();window._goGlossary(\'' + g.category + '\',\'' + g.id + '\')" title="查看词条：' + name + '">' + name + '</span>';
     }
     return name;
   }
@@ -2855,10 +3301,73 @@
   function renderMarkdown(text) {
     if (!text) return '';
     if (typeof marked !== 'undefined') {
+      scheduleMarkdownEnhancement();
       return marked.parse(text);
     }
     ensureMarkdownRenderer();
     return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+  }
+
+  var markdownEnhanceFrame = null;
+  function scheduleMarkdownEnhancement() {
+    if (markdownEnhanceFrame) cancelAnimationFrame(markdownEnhanceFrame);
+    markdownEnhanceFrame = requestAnimationFrame(function() {
+      markdownEnhanceFrame = null;
+      document.querySelectorAll('.bd-md-view, .bd-md-preview').forEach(enhanceMarkdownView);
+    });
+  }
+
+  function headingSlug(text) {
+    return String(text || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\u3400-\u9fff-]/g, '')
+      .replace(/-+/g, '-') || 'section';
+  }
+
+  function enhanceMarkdownView(root) {
+    if (!root || !root.id || root.dataset.enhancing === 'true') return;
+    root.dataset.enhancing = 'true';
+    var oldOutline = root.parentElement && root.parentElement.querySelector('.doc-outline[data-outline-for="' + root.id + '"]');
+    if (oldOutline) oldOutline.remove();
+
+    root.querySelectorAll('table').forEach(function(table) {
+      if (table.parentElement && table.parentElement.classList.contains('doc-table-wrap')) return;
+      var wrapper = document.createElement('div');
+      wrapper.className = 'doc-table-wrap';
+      table.parentNode.insertBefore(wrapper, table);
+      wrapper.appendChild(table);
+    });
+
+    var used = {};
+    var headings = Array.from(root.querySelectorAll('h1, h2, h3'));
+    headings.forEach(function(heading) {
+      heading.querySelectorAll(':scope > .doc-heading-anchor').forEach(function(anchor) { anchor.remove(); });
+      var plainText = heading.textContent.trim();
+      var base = root.id + '-' + headingSlug(plainText);
+      used[base] = (used[base] || 0) + 1;
+      heading.id = used[base] > 1 ? base + '-' + used[base] : base;
+      var anchor = document.createElement('a');
+      anchor.className = 'doc-heading-anchor';
+      anchor.href = '#' + heading.id;
+      anchor.setAttribute('aria-label', '链接到“' + plainText + '”');
+      anchor.textContent = '#';
+      heading.appendChild(anchor);
+    });
+
+    if (headings.length >= 2 && root.parentElement) {
+      var outline = document.createElement('nav');
+      outline.className = 'doc-outline';
+      outline.dataset.outlineFor = root.id;
+      outline.setAttribute('aria-label', '本页目录');
+      outline.innerHTML = '<div class="doc-outline-title">本页目录</div>' + headings.map(function(heading) {
+        var label = heading.childNodes[0] ? heading.childNodes[0].textContent.trim() : heading.textContent.replace(/#$/, '').trim();
+        return '<a class="doc-outline-link level-' + heading.tagName.toLowerCase() + '" href="#' + escAttr(heading.id) + '">' + esc(label) + '</a>';
+      }).join('');
+      root.parentNode.insertBefore(outline, root);
+    }
+    root.dataset.enhancing = 'false';
   }
 
   function bindMarkdownEditor(textarea, preview, updateValue) {
@@ -2868,6 +3377,7 @@
       clearTimeout(previewTimer);
       previewTimer = setTimeout(function() {
         preview.innerHTML = renderMarkdown(textarea.value);
+        scheduleMarkdownEnhancement();
       }, 120);
     };
   }
@@ -3109,8 +3619,15 @@
 
     document.getElementById('mnTitle').textContent = '编辑节点：' + name;
     document.getElementById('mnBody').innerHTML = html;
-    document.getElementById('mapNodeModal').classList.add('open');
+    var mapModal = document.getElementById('mapNodeModal');
+    mapModal.removeAttribute('inert');
+    mapModal.setAttribute('aria-hidden', 'false');
+    mapModal.classList.add('open');
     document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function() {
+      var firstControl = mapModal.querySelector('button, input');
+      if (firstControl) firstControl.focus();
+    });
   }
 
   // 节点编辑弹窗内选项点击 — 事件委托 (必须在 #mnBody 上，因为 .mn-modal 有 stopPropagation)
@@ -3157,7 +3674,10 @@
   }
 
   function closeMapNodeModal() {
-    document.getElementById('mapNodeModal').classList.remove('open');
+    var mapModal = document.getElementById('mapNodeModal');
+    mapModal.classList.remove('open');
+    mapModal.setAttribute('aria-hidden', 'true');
+    mapModal.setAttribute('inert', '');
     document.body.style.overflow = '';
     _editingMapNode = null;
   }
@@ -4129,13 +4649,21 @@
     document.getElementById('lmModalBadge').style.background = color + '22';
     document.getElementById('lmModalName').textContent = name;
     document.getElementById('lmModalDesc').innerHTML = '<p>' + (desc || '暂无描述。') + '</p>';
+    overlay.removeAttribute('inert');
+    overlay.setAttribute('aria-hidden', 'false');
     overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function() {
+      var closeButton = overlay.querySelector('.lm-modal-close');
+      if (closeButton) closeButton.focus();
+    });
   }
   function closeLandmarkModal() {
     var overlay = document.getElementById('lmModal');
     if (!overlay) return;
     overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.setAttribute('inert', '');
     document.body.style.overflow = '';
     if (window._clearLandmarkHighlight) window._clearLandmarkHighlight();
   }
@@ -4384,13 +4912,14 @@
   }
 
   var map3DLoadPromise = null;
+  var modelAvailability = {};
   function ensureMap3D() {
     if (window._initMap3D) return Promise.resolve(true);
     if (map3DLoadPromise) return map3DLoadPromise;
     map3DLoadPromise = new Promise(function(resolve) {
       var script = document.createElement('script');
       script.type = 'module';
-      script.src = 'js/map3d.js?v=63';
+      script.src = 'js/map3d.js?v=67';
       script.onload = function() { resolve(!!window._initMap3D); };
       script.onerror = function() {
         map3DLoadPromise = null;
@@ -4399,6 +4928,29 @@
       document.body.appendChild(script);
     });
     return map3DLoadPromise;
+  }
+
+  function checkModelAvailability(path) {
+    if (Object.prototype.hasOwnProperty.call(modelAvailability, path)) {
+      return Promise.resolve(modelAvailability[path]);
+    }
+    var manifest = window.TDE_MEDIA && window.TDE_MEDIA.modelFiles;
+    if (manifest && path.indexOf('models/') === 0) {
+      var filename = path.slice('models/'.length);
+      try { filename = decodeURIComponent(filename); } catch (error) {}
+      var listed = manifest.indexOf(filename) !== -1;
+      modelAvailability[path] = listed;
+      return Promise.resolve(listed);
+    }
+    return fetch(path, { method: 'HEAD', cache: 'no-cache' }).then(function(response) {
+      var contentType = response.headers.get('content-type') || '';
+      var available = response.ok && contentType.indexOf('text/html') === -1;
+      modelAvailability[path] = available;
+      return available;
+    }).catch(function() {
+      // 网络异常交给实际加载流程显示可重试错误，避免把临时故障误判为没有模型。
+      return true;
+    });
   }
 
   function initRegionModelPreview(regionId, color, regionName) {
@@ -4448,30 +5000,44 @@
     var regions2 = TDE_DATA.regions || [];
     var r2 = regions2.find(function(rr) { return rr.id === regionId || rr.name === regionId; });
     var modelFile = (r2 && r2.model) ? r2.model : (regionName + '.glb');
-    var resolvedPath = 'models/' + modelFile;
+    var previewManifest = window.TDE_MEDIA && window.TDE_MEDIA.modelPreviews;
+    var resolvedPath = 'models/' + (previewManifest && previewManifest[modelFile] || modelFile);
     var fallback = function(message) {
       elGraphic.classList.remove('has-model');
       elGraphic.innerHTML = '<div class="rd-model-error">' + (message || '3D 预览暂时无法加载') + '<br><button type="button" class="rd-model-action" style="margin-top:12px">重试</button></div>';
       elGraphic.querySelector('.rd-model-action').addEventListener('click', loadPreview);
     };
+    var showEmpty = function() {
+      elGraphic.classList.remove('has-model');
+      elGraphic.innerHTML = '<div class="rd-model-empty"><span class="rd-model-empty-mark" aria-hidden="true"></span><strong>暂无 3D 预览</strong><small>当前区域尚未提供模型文件</small></div>';
+    };
 
-    function loadPreview() {
+    async function loadPreview() {
       elGraphic.classList.add('has-model');
       elGraphic.innerHTML = '<div class="rd-loading"><div class="rd-loading-ring"></div><span class="rd-loading-text">正在准备 3D 预览...</span></div>';
-      ensureMap3D().then(function(ready) {
+      try {
+        var available = await checkModelAvailability(resolvedPath);
+        if (Router.currentSub !== regionId) return;
+        if (!available) {
+          showEmpty();
+          return;
+        }
+        var ready = await ensureMap3D();
         if (!ready || Router.currentSub !== regionId) {
           if (Router.currentSub === regionId) fallback('3D 组件加载失败');
-          return false;
+          return;
         }
-        return window._initMap3D(elGraphic, regionId, resolvedPath);
-      }).then(function(loaded) {
-        if (loaded === false && Router.currentSub === regionId) { fallback('模型文件加载失败'); return; }
+        var loaded = await window._initMap3D(elGraphic, regionId, resolvedPath);
+        if (loaded === false && Router.currentSub === regionId) {
+          fallback('3D 预览暂时无法加载');
+          return;
+        }
         if (loaded && _pendingLandmark && window._highlightLandmarkMesh) {
           window._highlightLandmarkMesh(_pendingLandmark);
         }
-      }).catch(function() {
+      } catch (error) {
         if (Router.currentSub === regionId) fallback('3D 预览初始化失败');
-      });
+      }
     }
 
     if (window._disposeMap3D) window._disposeMap3D(elGraphic);
@@ -4617,7 +5183,7 @@
           ${g.related && g.related.length > 0 ? `
           <div class="glossary-related">
             <span class="glossary-related-label">关联：</span>
-            ${g.related.map(r => `<span class="glossary-related-tag">${r}</span>`).join('')}
+            ${g.related.map(r => `<button type="button" class="glossary-related-tag" onclick="event.stopPropagation();window._showGlossaryByName('${escAttr(r)}')">${esc(r)}</button>`).join('')}
           </div>` : ''}
         </div>
       `;
@@ -4673,7 +5239,7 @@
       '<div style="white-space:pre-wrap;line-height:1.8;margin:16px 0;color:var(--text-primary);">' + g.desc + '</div>' +
       (g.related && g.related.length > 0
         ? '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;"><span style="font-size:0.7rem;color:var(--text-muted);">关联：</span>' +
-          g.related.map(function(r) { return '<span class="glossary-related-tag">' + r + '</span>'; }).join('') +
+          g.related.map(function(r) { return '<button type="button" class="glossary-related-tag" onclick="window._showGlossaryByName(\'' + escAttr(r) + '\')">' + esc(r) + '</button>'; }).join('') +
           '</div>'
         : '') +
       '</div>'
@@ -4755,7 +5321,11 @@
   window._startMapConnection = function(from) { startMapConnection(from); };
   window._deleteMapConnection = function(from, to) { deleteMapConnection(from, to); };
   window._startDragNode = function(e, name) { startDragNode(e, name); };
-  window._goGlossary = function(cat) {
+  window._showGlossaryByName = function(name) {
+    var entry = (TDE_DATA.glossary || []).find(function(item) { return item.name === name || item.id === name; });
+    if (entry) window._goGlossary(entry.category, entry.id);
+  };
+  window._goGlossary = function(cat, id) {
     Router.navigate('glossary');
     setTimeout(function() {
       var btns = document.querySelectorAll('#page-glossary .tab-btn');
@@ -4763,6 +5333,7 @@
       var target = document.querySelector('#page-glossary .tab-btn[data-gtab="' + cat + '"]');
       if (target) target.classList.add('active');
       renderGlossary(cat);
+      if (id) window._showGlossaryDetail(id);
     }, 60);
   };
 
@@ -5076,18 +5647,16 @@
     renderGlossary();
     renderEntityStats();
     renderRegionOverview();
+    if (AccessibilityEnhancer.observer) AccessibilityEnhancer.schedule();
   }
 
   // ============================
   // 启动
   // ============================
   function boot() {
-    // 主题恢复（默认夜间模式）
-    if (localStorage.theme === 'light') {
-      document.documentElement.dataset.theme = 'light';
-    }
-
+    ThemeManager.init();
     ParticleSystem.init();
+    ParticleWordmark.init();
     Router.init();
     Modal.init();
     EditPanel.init();
@@ -5116,8 +5685,10 @@
     })();
 
     buildMentionIndex();
+    SiteSearch.init();
     renderAll();
     updateDashboardStats();
+    AccessibilityEnhancer.init();
 
     // 编辑模式切换按钮
     const editBtn = document.getElementById('editToggle');
@@ -5171,14 +5742,7 @@
 
   // 日/夜间模式切换
   window._toggleTheme = function() {
-    var el = document.documentElement;
-    if (el.dataset.theme === 'light') {
-      delete el.dataset.theme;
-      localStorage.removeItem('theme');
-    } else {
-      el.dataset.theme = 'light';
-      localStorage.theme = 'light';
-    }
+    ThemeManager.toggle();
   };
 
 })();

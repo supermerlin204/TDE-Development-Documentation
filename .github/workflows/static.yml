@@ -33,11 +33,31 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Pages
         uses: actions/configure-pages@v5
+      - name: Prepare site artifact
+        run: |
+          mkdir -p "${RUNNER_TEMP}/tde-site"
+          rsync -a \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude '.idea/' \
+            --exclude 'node_modules/' \
+            --exclude 'scripts/' \
+            --exclude 'test-results/' \
+            --exclude '灵感词条集合.md' \
+            --exclude '.editorconfig' \
+            --exclude '.gitattributes' \
+            --exclude '.gitignore' \
+            --exclude 'package.json' \
+            --exclude 'package-lock.json' \
+            --exclude 'README.md' \
+            --exclude 'LICENSE.txt' \
+            --exclude 'start.bat' \
+            --exclude 'stop.bat' \
+            ./ "${RUNNER_TEMP}/tde-site/"
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: '.'
+          path: ${{ runner.temp }}/tde-site
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5

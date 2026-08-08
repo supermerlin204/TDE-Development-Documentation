@@ -9,8 +9,12 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 // Draco 解码器
-var dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath('lib/draco/gltf/');
+function createDracoLoader() {
+  var loader = new DRACOLoader();
+  loader.setDecoderPath('lib/draco/gltf/');
+  return loader;
+}
+var dracoLoader = createDracoLoader();
 
 // 全局 GLTFLoader（带 Draco 支持）
 var _gltfLoader = null;
@@ -33,6 +37,8 @@ let _model = null;
 let _animId = null;
 let _currentRegion = null;
 let _controlsInteracting = false;
+let _lowPower = false;
+let _lastFrameTime = 0;
 let _loadToken = 0;
 let _fetchController = null;
 
@@ -42,9 +48,14 @@ function renderScene() {
 
 function startRenderLoop() {
   if (_animId || !_controls || !_renderer) return;
-  function animate() {
+  function animate(now) {
     _animId = null;
     if (!_controls || !_renderer || document.hidden) return;
+    if (_lowPower && now - _lastFrameTime < 1000 / 30) {
+      _animId = requestAnimationFrame(animate);
+      return;
+    }
+    _lastFrameTime = now;
     const changed = _controls.update();
     renderScene();
     if (_controlsInteracting || changed) _animId = requestAnimationFrame(animate);
@@ -68,12 +79,12 @@ function initScene(container) {
   _camera.lookAt(0, 0, 0);
 
   // Renderer
-  const lowPower = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
+  _lowPower = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
     || (navigator.deviceMemory && navigator.deviceMemory <= 4);
-  _renderer = new THREE.WebGLRenderer({ antialias: !lowPower, powerPreference: 'high-performance' });
+  _renderer = new THREE.WebGLRenderer({ antialias: !_lowPower, powerPreference: 'high-performance' });
   _renderer.setSize(w, h, false);
-  _renderer.setPixelRatio(Math.min(window.devicePixelRatio, lowPower ? 1 : 1.25));
-  _renderer.shadowMap.enabled = true;
+  _renderer.setPixelRatio(Math.min(window.devicePixelRatio, _lowPower ? 1 : 1.25));
+  _renderer.shadowMap.enabled = !_lowPower;
   _renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   _renderer.shadowMap.autoUpdate = false;
   _renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -84,7 +95,7 @@ function initScene(container) {
   // Controls
   _controls = new OrbitControls(_camera, _renderer.domElement);
   _controls.enableDamping = true;
-  _controls.dampingFactor = 0.08;
+  _controls.dampingFactor = _lowPower ? 0.12 : 0.08;
   _controls.minDistance = 1.5;
   _controls.maxDistance = 20;
   _controls.maxPolarAngle = Math.PI * 0.65;
@@ -105,8 +116,8 @@ function initScene(container) {
 
   const key = new THREE.DirectionalLight(0xffeedd, 4);
   key.position.set(8, 10, 4);
-  key.castShadow = true;
-  key.shadow.mapSize.set(lowPower ? 512 : 1024, lowPower ? 512 : 1024);
+  key.castShadow = !_lowPower;
+  key.shadow.mapSize.set(1024, 1024);
   key.shadow.normalBias = 0.02;
   key.shadow.camera.near = 0.5;
   key.shadow.camera.far = 50;
@@ -133,7 +144,7 @@ function initScene(container) {
   _scene.add(ground);
 
   // Grid helper
-  const grid = new THREE.PolarGridHelper(6, 32, 24, 64, 0x00bfa5, 0x00bfa5);
+  const grid = new THREE.PolarGridHelper(6, 32, 24, 64, 0x2f9bc9, 0x2f9bc9);
   grid.position.y = -1.99;
   _scene.add(grid);
 
@@ -147,6 +158,8 @@ function disposeScene(container) {
   clearLandmarkHighlight();
   if (_controls) { _controls.dispose(); _controls = null; }
   dracoLoader.dispose();
+  dracoLoader = createDracoLoader();
+  _gltfLoader = null;
   if (_scene) disposeModel(_scene);
   _model = null;
   if (_renderer) {
@@ -156,6 +169,8 @@ function disposeScene(container) {
     _renderer = null;
   }
   _controlsInteracting = false;
+  _lowPower = false;
+  _lastFrameTime = 0;
   _scene = null; _camera = null; _controls = null; _currentRegion = null;
   if (container) container.innerHTML = '';
 }
@@ -201,7 +216,7 @@ function processLoadedModel(gltf, token) {
 
   _model.traverse(child => {
     if (child.isMesh) {
-      child.castShadow = true;
+      child.castShadow = !_lowPower;
       child.receiveShadow = false;
       // 全部转为 Lambert 材质 — 漫反射过渡柔和，不产生纯黑面
       function toLambert(src) {
@@ -305,12 +320,13 @@ async function loadModelIntoScene(regionId, modelPath, token, signal) {
 
   // 1. IndexedDB 缓存优先 — 秒加载
   var cached = null;
+  var expectedFilename = modelPath ? modelPath.split('/').pop() : '';
   try {
     cached = await window._modelStore.load(regionId);
   } catch (error) {
     console.warn('[map3d] model cache unavailable:', error);
   }
-  if (cached && cached.buffer) {
+  if (cached && cached.buffer && (!expectedFilename || cached.filename === expectedFilename)) {
     var ok = await parseFromBuffer(cached.buffer, token);
     if (ok) return true;
   }

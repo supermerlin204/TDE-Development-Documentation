@@ -4,7 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>无眠纪 The Dreamless Era — 开发文档</title>
-  <link rel="stylesheet" href="css/style.css?v=77">
+  <script>
+    (function() {
+      try {
+        document.documentElement.dataset.theme = localStorage.getItem('tde-theme') === 'light' ? 'light' : 'dark';
+      } catch (error) {
+        document.documentElement.dataset.theme = 'dark';
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="css/style.css?v=78">
   <script type="importmap">
   {
     "imports": {
@@ -23,12 +32,13 @@
   <meta name="theme-color" content="#060e0e">
 </head>
 <body>
+  <a class="skip-link" href="#content">跳到主要内容</a>
   <button class="mobile-menu-toggle" id="mobileMenuToggle" type="button" aria-label="打开导航" aria-controls="sidebar" aria-expanded="false">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
   </button>
 
   <!-- 粒子背景 -->
-  <canvas id="particleCanvas"></canvas>
+  <canvas id="particleCanvas" aria-hidden="true"></canvas>
 
   <!-- 符文圆环装饰 -->
   <div class="bg-rune-circle rune-1"></div>
@@ -43,7 +53,7 @@
     <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
 
     <!-- 侧边栏导航 -->
-    <nav id="sidebar">
+    <nav id="sidebar" aria-label="主要导航">
       <div class="sidebar-inner">
         <div class="logo-container">
           <div class="logo-icon">
@@ -116,8 +126,9 @@
             <svg viewBox="0 0 24 24" class="edit-toggle-icon"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
             <span class="edit-toggle-label">编辑模式</span>
           </button>
-          <button class="theme-toggle" id="themeToggle" title="切换日/夜间模式" onclick="window._toggleTheme()">
+          <button class="theme-toggle" id="themeToggle" type="button" title="切换明暗主题" aria-label="切换到浅色主题" aria-pressed="false" onclick="window._toggleTheme()">
             <svg viewBox="0 0 24 24" class="theme-toggle-icon"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <span class="theme-toggle-label">浅色主题</span>
           </button>
         </div>
       </div>
@@ -125,12 +136,41 @@
 
     <!-- 主内容区 -->
     <main id="content">
+      <header class="app-toolbar" aria-label="页面工具栏">
+        <div class="app-context">
+          <span class="app-context-mark" aria-hidden="true"></span>
+          <span class="app-context-label" id="appContextLabel">总览面板</span>
+        </div>
+        <div class="app-toolbar-actions">
+          <button class="global-search-trigger" id="globalSearchTrigger" type="button" aria-haspopup="dialog" aria-controls="globalSearch" aria-label="打开全站搜索">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+            <span>搜索文档</span>
+          </button>
+          <button class="toolbar-theme-toggle" id="toolbarThemeToggle" type="button" aria-label="切换到浅色主题" aria-pressed="false" title="切换明暗主题" onclick="window._toggleTheme()">
+            <svg class="theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.41M17.66 6.34l1.41-1.41"></path></svg>
+            <svg class="theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.4A8.5 8.5 0 0 1 9.6 3.5 8.5 8.5 0 1 0 20.5 14.4Z"></path></svg>
+          </button>
+        </div>
+      </header>
 
       <!-- 总览面板 -->
       <section id="page-dashboard" class="page active">
-        <header class="page-header">
-          <h2 class="page-title">项目总览</h2>
-          <p class="page-desc">无眠纪 — The Dreamless Era 开发总览面板</p>
+        <header class="page-header dashboard-hero">
+          <div class="dashboard-hero-copy">
+            <span class="dashboard-kicker">THE DREAMLESS ERA / ARCHIVE</span>
+            <h2 class="page-title">项目总览</h2>
+            <p class="page-desc">无眠纪 — The Dreamless Era 开发总览面板</p>
+            <div class="dashboard-hero-status" aria-label="项目状态">
+              <span>世界设定档案</span>
+              <span>持续编纂</span>
+              <span>v0.1.0-alpha</span>
+            </div>
+          </div>
+          <div class="tde-wordmark-stage" id="tdeWordmarkStage" aria-label="TDE 交互式粒子文字">
+            <canvas id="tdeWordmarkCanvas" aria-hidden="true"></canvas>
+            <span class="tde-wordmark-fallback" aria-hidden="true">TDE</span>
+            <div class="tde-wordmark-grid" aria-hidden="true"></div>
+          </div>
         </header>
 
         <div class="stat-grid" id="statGrid">
@@ -207,9 +247,9 @@
         </div>
         <div class="region-grid" id="regionGrid"></div>
         <!-- 地图节点编辑弹窗 -->
-        <div class="mn-modal-overlay" id="mapNodeModal" onclick="window._closeMapNodeModal()">
+        <div class="mn-modal-overlay" id="mapNodeModal" role="dialog" aria-modal="true" aria-labelledby="mnTitle" aria-hidden="true" inert onclick="window._closeMapNodeModal()">
           <div class="mn-modal" onclick="event.stopPropagation()">
-            <button class="mn-modal-close" onclick="window._closeMapNodeModal()">&times;</button>
+            <button class="mn-modal-close" type="button" aria-label="关闭" onclick="window._closeMapNodeModal()">&times;</button>
             <h3 class="mn-modal-title" id="mnTitle"></h3>
             <div class="mn-modal-body" id="mnBody"></div>
             <div class="mn-modal-actions">
@@ -240,9 +280,9 @@
         </div>
         <div class="rd-sections" id="rdSections"></div>
         <!-- 地标放大弹窗 -->
-        <div class="lm-modal-overlay" id="lmModal" onclick="window._closeLandmarkModal()">
+        <div class="lm-modal-overlay" id="lmModal" role="dialog" aria-modal="true" aria-labelledby="lmModalName" aria-hidden="true" inert onclick="window._closeLandmarkModal()">
           <div class="lm-modal" onclick="event.stopPropagation()">
-            <button class="lm-modal-close" onclick="window._closeLandmarkModal()">&times;</button>
+            <button class="lm-modal-close" type="button" aria-label="关闭" onclick="window._closeLandmarkModal()">&times;</button>
             <span class="lm-modal-badge" id="lmModalBadge"></span>
             <h3 class="lm-modal-name" id="lmModalName"></h3>
             <div class="lm-modal-desc" id="lmModalDesc"></div>
@@ -464,6 +504,24 @@
     </main>
   </div>
 
+  <!-- 全站搜索 -->
+  <div class="global-search" id="globalSearch" role="dialog" aria-modal="true" aria-labelledby="globalSearchTitle" aria-hidden="true" inert>
+    <div class="global-search-backdrop" data-search-close></div>
+    <div class="global-search-panel">
+      <h2 class="sr-only" id="globalSearchTitle">全站搜索</h2>
+      <div class="global-search-input-wrap">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+        <input id="globalSearchInput" type="search" autocomplete="off" placeholder="搜索区域、角色、敌人、词条、装备或任务" aria-controls="globalSearchResults" aria-autocomplete="list">
+        <button class="global-search-close" type="button" data-search-close aria-label="关闭搜索">Esc</button>
+      </div>
+      <div class="global-search-meta">
+        <span>全站资料索引</span>
+        <span id="globalSearchCount">0 条资料</span>
+      </div>
+      <div class="global-search-results" id="globalSearchResults" role="listbox" aria-live="polite"></div>
+    </div>
+  </div>
+
   <!-- 详情弹窗 -->
   <div id="modal" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" inert>
     <div class="modal-content" tabindex="-1">
@@ -476,10 +534,10 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <!-- 编辑面板（右侧抽屉） -->
-  <div id="editPanel" class="edit-panel">
+  <div id="editPanel" class="edit-panel" role="dialog" aria-modal="true" aria-labelledby="editPanelTitle" aria-hidden="true" inert>
     <div class="edit-panel-header">
       <h3 class="edit-panel-title" id="editPanelTitle">编辑</h3>
-      <button class="edit-panel-close" id="editPanelClose">&times;</button>
+      <button class="edit-panel-close" id="editPanelClose" type="button" aria-label="关闭编辑面板">&times;</button>
     </div>
     <div class="edit-panel-body" id="editPanelBody"></div>
     <div class="edit-panel-footer">
@@ -514,8 +572,8 @@
   <script src="data/quests.js?v=19"></script>
   <script src="data/glossary.js?v=20"></script>
   <script src="data/changelog.js?v=19"></script>
-  <script src="js/mediaManifest.js?v=1"></script>
+  <script src="js/mediaManifest.js?v=3"></script>
   <script src="js/modelStore.js?v=32"></script>
-  <script src="js/app.js?v=89"></script>
+  <script src="js/app.js?v=95"></script>
 </body>
 </html>

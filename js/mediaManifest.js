@@ -24,9 +24,27 @@
   Object.keys(entityImages).forEach(function(name) {
     thumbnails[name] = 'img/entities/thumbnails/' + name + '.webp';
   });
+  var modelFiles = [
+    '北风前哨站.glb',
+    '海潮镇.glb',
+    '熔岩遗迹.glb',
+    '铁群岛.glb',
+    '北风前哨站.preview.glb',
+    '海潮镇.preview.glb',
+    '熔岩遗迹.preview.glb',
+    '铁群岛.preview.glb'
+  ];
+  var modelPreviews = {
+    '北风前哨站.glb': '北风前哨站.preview.glb',
+    '海潮镇.glb': '海潮镇.preview.glb',
+    '熔岩遗迹.glb': '熔岩遗迹.preview.glb',
+    '铁群岛.glb': '铁群岛.preview.glb'
+  };
 
   window.TDE_MEDIA = Object.freeze({
     entityImages: Object.freeze(entityImages),
-    thumbnails: Object.freeze(thumbnails)
+    thumbnails: Object.freeze(thumbnails),
+    modelFiles: Object.freeze(modelFiles),
+    modelPreviews: Object.freeze(modelPreviews)
   });
 })();

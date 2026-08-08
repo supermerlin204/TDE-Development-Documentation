@@ -58,10 +58,17 @@ const media = mediaContext.window.TDE_MEDIA;
 for (const path of [...Object.values(media.thumbnails), ...Object.values(media.entityImages).flat()]) {
   if (!existsSync(resolve(root, path))) failures.push(`media manifest: missing ${path}`);
 }
+for (const filename of media.modelFiles || []) {
+  if (!existsSync(resolve(root, 'models', filename))) failures.push(`model manifest: missing models/${filename}`);
+}
 
 const inspirationFile = resolve(root, '灵感词条集合.md');
 if (!existsSync(inspirationFile) || statSync(inspirationFile).size === 0) {
   failures.push('灵感词条集合.md is missing or empty');
+}
+const pagesWorkflow = readFileSync(resolve(root, '.github/workflows/static.yml'), 'utf8');
+if (!pagesWorkflow.includes("--exclude '灵感词条集合.md'")) {
+  failures.push('GitHub Pages artifact must exclude 灵感词条集合.md');
 }
 
 if (failures.length) {

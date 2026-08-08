@@ -3,9 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script>if(!sessionStorage.getItem('_ld')){sessionStorage.setItem('_ld','1');location.reload()}</script>
   <title>无眠纪 The Dreamless Era — 开发文档</title>
-  <link rel="stylesheet" href="css/style.css?v=76">
+  <link rel="stylesheet" href="css/style.css?v=77">
   <script type="importmap">
   {
     "imports": {
@@ -24,6 +23,10 @@
   <meta name="theme-color" content="#060e0e">
 </head>
 <body>
+  <button class="mobile-menu-toggle" id="mobileMenuToggle" type="button" aria-label="打开导航" aria-controls="sidebar" aria-expanded="false">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+  </button>
+
   <!-- 粒子背景 -->
   <canvas id="particleCanvas"></canvas>
 
@@ -37,6 +40,7 @@
 
   <!-- 应用容器 -->
   <div id="app">
+    <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
 
     <!-- 侧边栏导航 -->
     <nav id="sidebar">
@@ -66,37 +70,37 @@
         </div>
 
         <ul class="nav-list">
-          <li><a href="#dashboard" class="nav-link active" data-page="dashboard">
+          <li><a href="#page-dashboard" class="nav-link active" data-page="dashboard">
             <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></span>
             <span class="nav-label">总览面板</span>
             <span class="nav-glow"></span>
           </a></li>
-          <li><a href="#world" class="nav-link" data-page="world">
+          <li><a href="#page-world" class="nav-link" data-page="world">
             <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10A15.3 15.3 0 0112 2z"/></svg></span>
             <span class="nav-label">世界地图</span>
             <span class="nav-glow"></span>
           </a></li>
-          <li><a href="#characters" class="nav-link" data-page="characters">
+          <li><a href="#page-characters" class="nav-link" data-page="characters">
             <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14c-4.4 0-8 1.8-8 4v2h16v-2c0-2.2-3.6-4-8-4z"/></svg></span>
             <span class="nav-label">角色资料</span>
             <span class="nav-glow"></span>
           </a></li>
-          <li><a href="#bestiary" class="nav-link" data-page="bestiary">
+          <li><a href="#page-bestiary" class="nav-link" data-page="bestiary">
             <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-2-6.5l-1.5 1.5L12 18l4.5-4.5L15 12l-3 3-3-3z"/></svg></span>
             <span class="nav-label">敌人图鉴</span>
             <span class="nav-glow"></span>
           </a></li>
-          <li><a href="#equipment" class="nav-link" data-page="equipment">
+          <li><a href="#page-equipment" class="nav-link" data-page="equipment">
             <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 3.6L12 12.6 3 3.6 12 3l9 .6zM12 13l-9 .6L12 21l9-7.4L12 13z"/></svg></span>
             <span class="nav-label">装备道具</span>
             <span class="nav-glow"></span>
           </a></li>
-          <li><a href="#quests" class="nav-link" data-page="quests">
+          <li><a href="#page-quests" class="nav-link" data-page="quests">
             <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg></span>
             <span class="nav-label">任务系统</span>
             <span class="nav-glow"></span>
           </a></li>
-          <li><a href="#glossary" class="nav-link" data-page="glossary">
+          <li><a href="#page-glossary" class="nav-link" data-page="glossary">
             <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/><circle cx="18" cy="4" r="2"/><circle cx="8" cy="4" r="2"/></svg></span>
             <span class="nav-label">词条系统</span>
             <span class="nav-glow"></span>
@@ -461,15 +465,15 @@
   </div>
 
   <!-- 详情弹窗 -->
-  <div id="modal" class="modal-overlay">
-    <div class="modal-content">
-      <button class="modal-close">&times;</button>
+  <div id="modal" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" inert>
+    <div class="modal-content" tabindex="-1">
+      <button class="modal-close" type="button" aria-label="关闭">&times;</button>
       <div class="modal-body" id="modalBody"></div>
     </div>
   </div>
 
   <!-- 提示消息 -->
-  <div id="toast" class="toast"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <!-- 编辑面板（右侧抽屉） -->
   <div id="editPanel" class="edit-panel">
@@ -499,7 +503,6 @@
   </div>
 
   <!-- 数据文件（_init.js 必须在最前，其余顺序无关） -->
-  <script src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js"></script>
   <script src="data/_init.js?v=20"></script>
   <script src="data/dashboard.js?v=19"></script>
   <script src="data/classes.js?v=19"></script>
@@ -511,8 +514,8 @@
   <script src="data/quests.js?v=19"></script>
   <script src="data/glossary.js?v=20"></script>
   <script src="data/changelog.js?v=19"></script>
+  <script src="js/mediaManifest.js?v=1"></script>
   <script src="js/modelStore.js?v=32"></script>
-  <script src="js/app.js?v=87"></script>
-  <script type="module" src="js/map3d.js?v=61"></script>
+  <script src="js/app.js?v=88"></script>
 </body>
 </html>

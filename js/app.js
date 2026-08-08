@@ -29,21 +29,37 @@
   // 粒子背景系统
   // ============================
   const ParticleSystem = {
-    canvas: null, ctx: null, particles: [], maxParticles: 80, animationId: null,
+    canvas: null, ctx: null, particles: [], maxParticles: 48, animationId: null, lastFrame: 0,
     init() {
       this.canvas = document.getElementById('particleCanvas');
+      if (!this.canvas || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       this.ctx = this.canvas.getContext('2d');
+      var lowPower = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
+        || (navigator.deviceMemory && navigator.deviceMemory <= 4);
+      this.maxParticles = lowPower ? 24 : (window.innerWidth < 768 ? 32 : 48);
       this.resize();
       window.addEventListener('resize', () => this.resize());
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          if (this.animationId) cancelAnimationFrame(this.animationId);
+          this.animationId = null;
+        } else if (!this.animationId) {
+          this.lastFrame = 0;
+          this.animationId = requestAnimationFrame((time) => this.animate(time));
+        }
+      });
       for (let i = 0; i < this.maxParticles; i++) this.particles.push(this.createParticle(true));
-      this.animate();
+      this.animationId = requestAnimationFrame((time) => this.animate(time));
     },
-    resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; },
+    resize() {
+      this.canvas.width = document.documentElement.clientWidth;
+      this.canvas.height = document.documentElement.clientHeight;
+    },
     isLight() { return document.documentElement.dataset.theme === 'light'; },
     createParticle(randomY) {
       return {
-        x: Math.random() * window.innerWidth,
-        y: randomY ? Math.random() * window.innerHeight : window.innerHeight + 10,
+        x: Math.random() * this.canvas.width,
+        y: randomY ? Math.random() * this.canvas.height : this.canvas.height + 10,
         size: Math.random() * 2 + 0.5,
         speedY: -(Math.random() * 0.6 + 0.15),
         speedX: (Math.random() - 0.5) * 0.3,
@@ -53,7 +69,14 @@
         hue: Math.random() * 30 + 165
       };
     },
-    animate() {
+    animate(time) {
+      this.animationId = null;
+      if (document.hidden || !this.ctx) return;
+      if (time - this.lastFrame < 32) {
+        this.animationId = requestAnimationFrame((nextTime) => this.animate(nextTime));
+        return;
+      }
+      this.lastFrame = time;
       var light = this.isLight();
       var sat = light ? '40%' : '70%';
       var lit = light ? '35%' : '60%';
@@ -81,12 +104,12 @@
             this.ctx.lineWidth = 0.5; this.ctx.stroke();
           }
         }
-        if (p.y < -10 || p.x < -10 || p.x > window.innerWidth + 10) {
-          p.y = window.innerHeight + 10; p.x = Math.random() * window.innerWidth;
+        if (p.y < -10 || p.x < -10 || p.x > this.canvas.width + 10) {
+          p.y = this.canvas.height + 10; p.x = Math.random() * this.canvas.width;
           p.opacity = Math.random() * 0.6 + 0.2;
         }
       }
-      this.animationId = requestAnimationFrame(() => this.animate());
+      this.animationId = requestAnimationFrame((nextTime) => this.animate(nextTime));
     }
   };
 
@@ -172,7 +195,18 @@
         try { window._disposeMap3D(document.getElementById('rdGraphic')); } catch(e) { console.warn(e); }
       }
       var targetPage = document.getElementById('page-' + basePage);
+      if (!targetPage) {
+        basePage = 'dashboard';
+        this.currentPage = 'dashboard';
+        this.currentSub = null;
+        targetPage = document.getElementById('page-dashboard');
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page === 'dashboard'));
+        history.replaceState(null, '', '#dashboard');
+        showToast('页面不存在，已返回项目总览');
+      }
       if (targetPage) targetPage.classList.add('active');
+
+      setSidebarOpen(false);
 
       document.getElementById('content').scrollTop = 0;
       window.scrollTo(0, 0);
@@ -240,7 +274,7 @@
   // Modal
   // ============================
   const Modal = {
-    overlay: null, body: null,
+    overlay: null, body: null, previousFocus: null,
     init() {
       this.overlay = document.getElementById('modal');
       this.body = document.getElementById('modalBody');
@@ -248,8 +282,21 @@
       this.overlay.addEventListener('click', e => { if (e.target === this.overlay) this.close(); });
       document.addEventListener('keydown', e => { if (e.key === 'Escape') this.close(); });
     },
-    open(html) { this.body.innerHTML = html; this.overlay.classList.add('open'); },
-    close() { this.overlay.classList.remove('open'); }
+    open(html) {
+      this.previousFocus = document.activeElement;
+      this.body.innerHTML = html;
+      this.overlay.classList.add('open');
+      this.overlay.setAttribute('aria-hidden', 'false');
+      this.overlay.removeAttribute('inert');
+      this.overlay.querySelector('.modal-content').focus();
+    },
+    close() {
+      if (!this.overlay.classList.contains('open')) return;
+      this.overlay.classList.remove('open');
+      this.overlay.setAttribute('aria-hidden', 'true');
+      this.overlay.setAttribute('inert', '');
+      if (this.previousFocus && this.previousFocus.focus) this.previousFocus.focus();
+    }
   };
 
   // ============================
@@ -302,7 +349,8 @@
   function animateStat(valueId, target, barId, barPct) {
     var el = document.getElementById(valueId);
     if (!el) return;
-    var duration = 2000, start = performance.now();
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var duration = reduceMotion ? 0 : 700, start = performance.now();
     var initial = parseInt(el.textContent) || 0;
     if (initial === target) { el.textContent = target; return; }
     function update(now) {
@@ -310,7 +358,8 @@
       el.textContent = Math.floor(initial + (target - initial) * (1 - Math.pow(1-p, 3)));
       if (p < 1) requestAnimationFrame(update); else el.textContent = target;
     }
-    requestAnimationFrame(update);
+    if (duration === 0) el.textContent = target;
+    else requestAnimationFrame(update);
     var bar = document.getElementById(barId);
     if (bar) bar.style.width = barPct + '%';
   }
@@ -1387,7 +1436,7 @@
       var color = node.color || '#00bfa5';
       var bossCount = (r.bosses || []).filter(function(b) { return b && b !== '无'; }).length;
       var connCount = (r.connections || []).filter(function(c) { return c && c !== '无'; }).length;
-      html += '<a class="ro-card" href="#region/' + r.id + '" title="查看区域详情：' + r.name + '">'
+      html += '<a class="ro-card" href="#region/' + regionRouteKey(r) + '" title="查看区域详情：' + r.name + '">'
         + '<span class="ro-dot" style="background:' + color + ';box-shadow:0 0 8px ' + color + ';"></span>'
         + '<div class="ro-info">'
         + '<span class="ro-name">' + r.name + '</span>'
@@ -1585,23 +1634,26 @@
     return list.filter(function(e) { return e.faction === bestiaryFactionFilter; });
   }
 
+  function entityVariantCandidates(entity, suffix) {
+    var media = window.TDE_MEDIA && window.TDE_MEDIA.entityImages;
+    var files = media && media[entity.name] ? media[entity.name].slice() : [];
+    var marker = entity.name + suffix + '.';
+    var matches = files.filter(function(path) { return path.indexOf(marker) !== -1; });
+    if (!suffix && entity.image && matches.indexOf(entity.image) === -1) matches.unshift(entity.image);
+    return matches;
+  }
+
   // 统一的图片中心卡片渲染
   function _renderEnemyCard(enemy, type, origIdx) {
     var isNpc = type === 'npcs';
     var isMerchant = type === 'merchants';
-    var isChar = isNpc || isMerchant;
     var dataKey = isMerchant ? 'merchants' : (isNpc ? 'npcs' : (type === 'bosses' ? 'bosses' : (type === 'elites' ? 'elites' : 'common')));
     var hash = isNpc ? ('npc/' + enemy.id) : (isMerchant ? ('merchant/' + enemy.id) : ('bestiary/' + dataKey + '/' + enemy.id));
     var badgeText = isNpc ? 'NPC' : (isMerchant ? '商人' : (type === 'bosses' ? 'BOSS' : (type === 'elites' ? '精英' : '普通')));
     var badgeCls = isNpc ? 'npc-badge' : (isMerchant ? 'merchant-badge' : (type === 'bosses' ? 'boss-badge' : (type === 'elites' ? 'elite-badge' : 'common-badge')));
-    var exts = ['.gif', '.png', '.webp', '.jpg'];
-	    var imgDir = 'img/entities/';
-	    var imgCandidates = [];
-	    if (enemy.image) imgCandidates.push(enemy.image);
-	    exts.forEach(function(ext) { imgCandidates.push(imgDir + enemy.name + ext); });
-	    exts.forEach(function(ext) { imgCandidates.push(imgDir + enemy.id + ext); });
-	    var imgSrc = imgCandidates[0];
-	    var imgFallback = JSON.stringify(imgCandidates.slice(1));
+    var thumbnail = window.TDE_MEDIA && window.TDE_MEDIA.thumbnails[enemy.name];
+    var imgSrc = thumbnail || enemy.image || '';
+    var imgFallback = JSON.stringify(imgSrc ? entityVariantCandidates(enemy, '') : []);
     var raceName = _glossNameById(enemy.race);
     var firstRelated = '';
     if (enemy.related && enemy.related.length > 0) {
@@ -1611,8 +1663,8 @@
     return '<div class="enemy-card" ' + editCard(dataKey + '.' + origIdx) + clickHandler + '>'
       + renderCardDelete(dataKey + '.' + origIdx)
       + '<div class="enemy-card-img">'
-        + '<img src="' + imgSrc + '" alt="" data-fallback=\'' + imgFallback + '\' onerror="try{var f=JSON.parse(this.getAttribute(\'data-fallback\'));if(f.length){this.setAttribute(\'data-fallback\',JSON.stringify(f.slice(1)));this.src=f[0]}else{this.style.display=\'none\';this.nextElementSibling.style.display=\'\'}}catch(e){this.style.display=\'none\';this.nextElementSibling.style.display=\'\'}">'
-        + '<svg class="img-placeholder" viewBox="0 0 24 24" style="display:none"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-2-6.5l-1.5 1.5L12 18l4.5-4.5L15 12l-3 3-3-3z"/></svg>'
+        + (imgSrc ? '<img src="' + imgSrc + '" alt="" loading="lazy" decoding="async" fetchpriority="low" data-fallback=\'' + imgFallback + '\' onerror="try{var f=JSON.parse(this.getAttribute(\'data-fallback\'));if(f.length){this.setAttribute(\'data-fallback\',JSON.stringify(f.slice(1)));this.src=f[0]}else{this.style.display=\'none\';this.nextElementSibling.style.display=\'\'}}catch(e){this.style.display=\'none\';this.nextElementSibling.style.display=\'\'}">' : '')
+        + '<svg class="img-placeholder" viewBox="0 0 24 24"' + (imgSrc ? ' style="display:none"' : '') + '><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-2-6.5l-1.5 1.5L12 18l4.5-4.5L15 12l-3 3-3-3z"/></svg>'
         + '<span class="enemy-card-badge ' + badgeCls + '">' + badgeText + '</span>'
       + '</div>'
       + '<div class="enemy-card-info">'
@@ -1696,6 +1748,9 @@
 
     if (!enemy) {
       document.getElementById('bdName').textContent = '敌人未找到';
+      document.getElementById('bdImagePanel').style.display = 'none';
+      document.getElementById('bdMdView').innerHTML = '<div class="bd-md-empty">该条目不存在或已被删除。<a href="#bestiary">返回敌人图鉴</a></div>';
+      document.getElementById('bdStatsGrid').innerHTML = '';
       return;
     }
 
@@ -1716,7 +1771,6 @@
     badgeEl.className = 'bd-badge ' + badgeCls;
 
     // 图片 — 逐个加载，全部就绪后同步显示
-    var exts = ['.gif', '.png', '.webp', '.jpg'];
     var galleryEl = document.getElementById('bdImageGallery');
     var panelEl = document.getElementById('bdImagePanel');
 
@@ -1735,21 +1789,17 @@
     function isStale() { return genId !== window._bdImgGenId; }
 
     function buildCandidates(suffix) {
-      var c = [];
-      exts.forEach(function(ext) { c.push('img/entities/' + enemy.name + suffix + ext); });
-      exts.forEach(function(ext) { c.push('img/entities/' + enemy.id + suffix + ext); });
-      return c;
+      return entityVariantCandidates(enemy, suffix);
     }
-    var primaryCandidates = [];
-    if (enemy.image) primaryCandidates.push(enemy.image);
-    primaryCandidates = primaryCandidates.concat(buildCandidates(''));
-
-    var allVariants = [primaryCandidates];
-    for (var v = 1; v <= 5; v++) { allVariants.push(buildCandidates('_' + v)); }
+    var primaryCandidates = buildCandidates('');
+    var allVariants = primaryCandidates.length ? [primaryCandidates] : [];
+    for (var v = 1; v <= 5; v++) {
+      var variant = buildCandidates('_' + v);
+      if (variant.length) allVariants.push(variant);
+    }
 
     var items = [];       // { div, ok }
     var currentV = 0;
-    var anyLoaded = false;
 
     function revealAll() {
       if (isStale()) return;
@@ -1785,7 +1835,6 @@
       img.onload = function() {
         if (isStale()) return;
         entry.ok = true;
-        anyLoaded = true;
         currentV++;
         tryNext();
       };
@@ -1806,7 +1855,7 @@
       itemDiv.appendChild(img);
       galleryEl.appendChild(itemDiv);
     }
-    tryNext();
+    if (allVariants.length) tryNext(); else revealAll();
 
     // Markdown 介绍
     var descText = enemy.desc || '';
@@ -1825,19 +1874,11 @@
     // Markdown 实时预览
     var mdTextarea = document.getElementById('bdMdTextarea');
     var mdPreview = document.getElementById('bdMdPreview');
-    mdTextarea.oninput = function() {
-      enemy.desc = mdTextarea.value;
-      mdPreview.innerHTML = renderMarkdown(mdTextarea.value);
-      saveData();
-    };
+    bindMarkdownEditor(mdTextarea, mdPreview, function(value) { enemy.desc = value; });
     var loreTextarea = document.getElementById('bdLoreTextarea');
     var lorePreview = document.getElementById('bdLorePreview');
     if (hasLore) {
-      loreTextarea.oninput = function() {
-        enemy.lore = loreTextarea.value;
-        lorePreview.innerHTML = renderMarkdown(loreTextarea.value);
-        saveData();
-      };
+      bindMarkdownEditor(loreTextarea, lorePreview, function(value) { enemy.lore = value; });
     }
 
     // 标签页切换
@@ -2031,6 +2072,9 @@
     var npc = (TDE_DATA.npcs || []).find(function(x) { return x.id === id; });
     if (!npc) {
       document.getElementById('ndName').textContent = 'NPC未找到';
+      document.getElementById('ndImagePanel').style.display = 'none';
+      document.getElementById('ndMdView').innerHTML = '<div class="bd-md-empty">该条目不存在或已被删除。<a href="#characters">返回角色资料</a></div>';
+      document.getElementById('ndStatsGrid').innerHTML = '';
       return;
     }
 
@@ -2044,7 +2088,6 @@
     nameEl.onblur = editMode ? function() { npc.name = nameEl.textContent.trim(); saveData(); } : null;
 
     // 图片加载
-    var exts = ['.gif', '.png', '.webp', '.jpg'];
     var galleryEl = document.getElementById('ndImageGallery');
     var panelEl = document.getElementById('ndImagePanel');
     galleryEl.innerHTML = '';
@@ -2060,17 +2103,14 @@
     function isStale() { return genId !== window._ndImgGenId; }
 
     function buildCandidates(suffix) {
-      var c = [];
-      exts.forEach(function(ext) { c.push('img/entities/' + npc.name + suffix + ext); });
-      exts.forEach(function(ext) { c.push('img/entities/' + npc.id + suffix + ext); });
-      return c;
+      return entityVariantCandidates(npc, suffix);
     }
-    var primaryCandidates = [];
-    if (npc.image) primaryCandidates.push(npc.image);
-    primaryCandidates = primaryCandidates.concat(buildCandidates(''));
-
-    var allVariants = [primaryCandidates];
-    for (var v = 1; v <= 5; v++) { allVariants.push(buildCandidates('_' + v)); }
+    var primaryCandidates = buildCandidates('');
+    var allVariants = primaryCandidates.length ? [primaryCandidates] : [];
+    for (var v = 1; v <= 5; v++) {
+      var variant = buildCandidates('_' + v);
+      if (variant.length) allVariants.push(variant);
+    }
 
     var items = [];
     var currentV = 0;
@@ -2127,7 +2167,7 @@
       itemDiv.appendChild(img);
       galleryEl.appendChild(itemDiv);
     }
-    tryNext();
+    if (allVariants.length) tryNext(); else revealAll();
 
     // Markdown 介绍
     var descText = npc.desc || '';
@@ -2144,19 +2184,11 @@
 
     var mdTextarea = document.getElementById('ndMdTextarea');
     var mdPreview = document.getElementById('ndMdPreview');
-    mdTextarea.oninput = function() {
-      npc.desc = mdTextarea.value;
-      mdPreview.innerHTML = renderMarkdown(mdTextarea.value);
-      saveData();
-    };
+    bindMarkdownEditor(mdTextarea, mdPreview, function(value) { npc.desc = value; });
     var loreTextarea = document.getElementById('ndLoreTextarea');
     var lorePreview = document.getElementById('ndLorePreview');
     if (hasLore) {
-      loreTextarea.oninput = function() {
-        npc.lore = loreTextarea.value;
-        lorePreview.innerHTML = renderMarkdown(loreTextarea.value);
-        saveData();
-      };
+      bindMarkdownEditor(loreTextarea, lorePreview, function(value) { npc.lore = value; });
     }
 
     // 标签页切换
@@ -2306,6 +2338,9 @@
     var m = (TDE_DATA.merchants || []).find(function(x) { return x.id === id; });
     if (!m) {
       document.getElementById('mdName').textContent = '商人未找到';
+      document.getElementById('mdImagePanel').style.display = 'none';
+      document.getElementById('mdMdView').innerHTML = '<div class="bd-md-empty">该条目不存在或已被删除。<a href="#characters">返回角色资料</a></div>';
+      document.getElementById('mdStatsGrid').innerHTML = '';
       return;
     }
 
@@ -2319,7 +2354,6 @@
     nameEl.onblur = editMode ? function() { m.name = nameEl.textContent.trim(); saveData(); } : null;
 
     // 图片加载
-    var exts = ['.gif', '.png', '.webp', '.jpg'];
     var galleryEl = document.getElementById('mdImageGallery');
     var panelEl = document.getElementById('mdImagePanel');
     galleryEl.innerHTML = '';
@@ -2335,17 +2369,14 @@
     function isStale() { return genId !== window._mdImgGenId; }
 
     function buildCandidates(suffix) {
-      var c = [];
-      exts.forEach(function(ext) { c.push('img/entities/' + m.name + suffix + ext); });
-      exts.forEach(function(ext) { c.push('img/entities/' + m.id + suffix + ext); });
-      return c;
+      return entityVariantCandidates(m, suffix);
     }
-    var primaryCandidates = [];
-    if (m.image) primaryCandidates.push(m.image);
-    primaryCandidates = primaryCandidates.concat(buildCandidates(''));
-
-    var allVariants = [primaryCandidates];
-    for (var v = 1; v <= 5; v++) { allVariants.push(buildCandidates('_' + v)); }
+    var primaryCandidates = buildCandidates('');
+    var allVariants = primaryCandidates.length ? [primaryCandidates] : [];
+    for (var v = 1; v <= 5; v++) {
+      var variant = buildCandidates('_' + v);
+      if (variant.length) allVariants.push(variant);
+    }
 
     var items = [];
     var currentV = 0;
@@ -2402,7 +2433,7 @@
       itemDiv.appendChild(img);
       galleryEl.appendChild(itemDiv);
     }
-    tryNext();
+    if (allVariants.length) tryNext(); else revealAll();
 
     // Markdown 介绍
     var descText = m.desc || '';
@@ -2419,19 +2450,11 @@
 
     var mdTextarea = document.getElementById('mdMdTextarea');
     var mdPreview = document.getElementById('mdMdPreview');
-    mdTextarea.oninput = function() {
-      m.desc = mdTextarea.value;
-      mdPreview.innerHTML = renderMarkdown(mdTextarea.value);
-      saveData();
-    };
+    bindMarkdownEditor(mdTextarea, mdPreview, function(value) { m.desc = value; });
     var loreTextarea = document.getElementById('mdLoreTextarea');
     var lorePreview = document.getElementById('mdLorePreview');
     if (hasLore) {
-      loreTextarea.oninput = function() {
-        m.lore = loreTextarea.value;
-        lorePreview.innerHTML = renderMarkdown(loreTextarea.value);
-        saveData();
-      };
+      bindMarkdownEditor(loreTextarea, lorePreview, function(value) { m.lore = value; });
     }
 
     // 标签页切换
@@ -2785,15 +2808,68 @@
     showSaved();
   };
 
-  // Markdown 渲染
+  // Markdown 仅在详情页按需加载，CDN 不可用时仍保留纯文本展示。
+  var markedLoadPromise = null;
+  function ensureMarkdownRenderer() {
+    if (typeof marked !== 'undefined') return Promise.resolve(true);
+    if (markedLoadPromise) return markedLoadPromise;
+    markedLoadPromise = new Promise(function(resolve) {
+      var script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js';
+      script.async = true;
+      script.onload = function() {
+        marked.setOptions({ breaks: true, gfm: true });
+        refreshCurrentMarkdown();
+        resolve(true);
+      };
+      script.onerror = function() {
+        markedLoadPromise = null;
+        resolve(false);
+      };
+      document.head.appendChild(script);
+    });
+    return markedLoadPromise;
+  }
+
+  function refreshCurrentMarkdown() {
+    var item = null;
+    var viewPrefix = '';
+    if (Router.currentPage.startsWith('bestiary/')) {
+      var list = TDE_DATA[Router.currentBestiaryType] || [];
+      item = list.find(function(entry) { return entry.id === Router.currentBestiaryId; });
+      viewPrefix = 'bd';
+    } else if (Router.currentPage.startsWith('npc/')) {
+      item = (TDE_DATA.npcs || []).find(function(entry) { return entry.id === Router.currentNpcId; });
+      viewPrefix = 'nd';
+    } else if (Router.currentPage.startsWith('merchant/')) {
+      item = (TDE_DATA.merchants || []).find(function(entry) { return entry.id === Router.currentMerchantId; });
+      viewPrefix = 'md';
+    }
+    if (!item) return;
+    var descView = document.getElementById(viewPrefix + 'MdView');
+    var loreView = document.getElementById(viewPrefix + 'LoreView');
+    if (descView && item.desc) descView.innerHTML = renderMarkdown(item.desc);
+    if (loreView && item.lore) loreView.innerHTML = renderMarkdown(item.lore);
+  }
+
   function renderMarkdown(text) {
     if (!text) return '';
     if (typeof marked !== 'undefined') {
-      marked.setOptions({ breaks: true, gfm: true });
       return marked.parse(text);
     }
-    // 降级：简单的纯文本渲染
+    ensureMarkdownRenderer();
     return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+  }
+
+  function bindMarkdownEditor(textarea, preview, updateValue) {
+    var previewTimer = null;
+    textarea.oninput = function() {
+      updateValue(textarea.value);
+      clearTimeout(previewTimer);
+      previewTimer = setTimeout(function() {
+        preview.innerHTML = renderMarkdown(textarea.value);
+      }, 120);
+    };
   }
 
   // --- 世界 ---
@@ -3258,11 +3334,15 @@
     }
     var region = (TDE_DATA.regions || []).find(function(r) { return r.name === name; });
     if (region) {
-      Router.navigate('region/' + region.id);
+      window.location.hash = 'region/' + regionRouteKey(region);
     }
   }
 
   window._mapClickRegion = mapClickRegion;
+
+  function regionRouteKey(region) {
+    return encodeURIComponent(region.id || region.name);
+  }
 
   function _statusSortOrd(s) { var o = { '已完工':0, '建筑中':1, '已规划':2, '待规划':3 }; return o[s] != null ? o[s] : 99; }
   function _statusBadge(s) {
@@ -3293,7 +3373,7 @@
     TDE_DATA.regions.sort(function(a,b) { return _statusSortOrd(a.level) - _statusSortOrd(b.level) || (a.name||'').localeCompare(b.name||'','zh'); });
 
     document.getElementById('regionGrid').innerHTML = TDE_DATA.regions.map((r, i) => `
-      <div class="region-card" ${editCard(`regions.${i}`)} onclick="if(!document.body.classList.contains('edit-mode'))window.location.hash='region/${r.id}'">
+      <div class="region-card" ${editCard(`regions.${i}`)} onclick="if(!document.body.classList.contains('edit-mode'))window.location.hash='region/${regionRouteKey(r)}'">
         ${renderCardDelete(`regions.${i}`)}
         <div class="region-card-header">
           <span class="region-name" ${edit(`regions.${i}.name`)}>${r.name}</span>
@@ -4063,7 +4143,7 @@
   window._closeLandmarkModal = closeLandmarkModal;
   window._clearLandmarkFocus = function() {
     if (Router.currentSub) {
-      window._clearLandmarkHighlight();
+      if (window._clearLandmarkHighlight) window._clearLandmarkHighlight();
       window.location.hash = '#region/' + Router.currentSub;
     }
   };
@@ -4182,7 +4262,7 @@
           var connNode = nodes[cleanName] || {};
           var connColor = connNode.color || 'rgba(0,191,165,0.5)';
           if (targetRegion) {
-            sectionsHTML += '<a class="rd-conn-item" href="#region/' + targetRegion.id + '">';
+            sectionsHTML += '<a class="rd-conn-item" href="#region/' + regionRouteKey(targetRegion) + '">';
             sectionsHTML += '<span class="rd-conn-dot" style="background:' + connColor + ';box-shadow:0 0 6px ' + connColor + ';"></span>';
             sectionsHTML += '<span>' + conn + '</span>';
             sectionsHTML += '</a>';
@@ -4278,7 +4358,7 @@
           var connNode = nodes[cleanName] || {};
           var connColor = connNode.color || 'rgba(0,191,165,0.5)';
           if (targetRegion) {
-            sectionsHTML += '<a class="rd-conn-item" href="#region/' + targetRegion.id + '">';
+            sectionsHTML += '<a class="rd-conn-item" href="#region/' + regionRouteKey(targetRegion) + '">';
             sectionsHTML += '<span class="rd-conn-dot" style="background:' + connColor + ';box-shadow:0 0 6px ' + connColor + ';"></span>';
             sectionsHTML += '<span>' + conn + '</span>';
             sectionsHTML += '</a>';
@@ -4303,18 +4383,34 @@
     initRegionModelPreview(regionId, color, r.name);
   }
 
+  var map3DLoadPromise = null;
+  function ensureMap3D() {
+    if (window._initMap3D) return Promise.resolve(true);
+    if (map3DLoadPromise) return map3DLoadPromise;
+    map3DLoadPromise = new Promise(function(resolve) {
+      var script = document.createElement('script');
+      script.type = 'module';
+      script.src = 'js/map3d.js?v=62';
+      script.onload = function() { resolve(!!window._initMap3D); };
+      script.onerror = function() {
+        map3DLoadPromise = null;
+        resolve(false);
+      };
+      document.body.appendChild(script);
+    });
+    return map3DLoadPromise;
+  }
+
   function initRegionModelPreview(regionId, color, regionName) {
     var elGraphic = document.getElementById('rdGraphic');
     var elPicker = document.getElementById('rdModelPicker');
     if (!elGraphic) return;
 
-    console.log('[app] initRegionModelPreview', { regionId, regionName, editMode, hasInitMap3D: !!window._initMap3D });
-
     // 编辑模式：文件名输入（可覆盖默认的 {区域名}.glb）
     if (editMode && elPicker) {
       elPicker.style.display = 'flex';
       var regions = TDE_DATA.regions || [];
-      var r = regions.find(function(rr) { return rr.id === regionId; });
+      var r = regions.find(function(rr) { return rr.id === regionId || rr.name === regionId; });
       var currentModel = (r && r.model) ? r.model : (regionName + '.glb');
 
       var html = '<input type="text" id="rdModelInput" value="' + escAttr(currentModel) + '" placeholder="模型文件名，如 sanctuary.glb" style="flex:1;min-width:0;background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:0.78rem;">';
@@ -4326,10 +4422,11 @@
         var val = this.value.trim();
         var defaultModel = regionName + '.glb';
         var regions2 = TDE_DATA.regions || [];
-        var idx = regions2.findIndex(function(rr) { return rr.id === regionId; });
+        var idx = regions2.findIndex(function(rr) { return rr.id === regionId || rr.name === regionId; });
         if (idx !== -1) {
           regions2[idx].model = (val === defaultModel) ? '' : val;
         }
+        if (window._disposeMap3D) window._disposeMap3D(elGraphic);
         renderRegionDetail(regionId, Router.currentLandmark);
       });
 
@@ -4337,8 +4434,9 @@
       if (delBtn) {
         delBtn.onclick = function() {
           var regions3 = TDE_DATA.regions || [];
-          var idx = regions3.findIndex(function(rr) { return rr.id === regionId; });
+          var idx = regions3.findIndex(function(rr) { return rr.id === regionId || rr.name === regionId; });
           if (idx !== -1) regions3[idx].model = '';
+          if (window._disposeMap3D) window._disposeMap3D(elGraphic);
           renderRegionDetail(regionId, Router.currentLandmark);
         };
       }
@@ -4348,28 +4446,38 @@
 
     // 确定模型文件路径
     var regions2 = TDE_DATA.regions || [];
-    var r2 = regions2.find(function(rr) { return rr.id === regionId; });
+    var r2 = regions2.find(function(rr) { return rr.id === regionId || rr.name === regionId; });
     var modelFile = (r2 && r2.model) ? r2.model : (regionName + '.glb');
     var resolvedPath = 'models/' + modelFile;
-    console.log('[app] resolvedPath:', resolvedPath);
-
-    var fallback = function() {
-      console.log('[app] 3D fallback — using decorative circle');
+    var fallback = function(message) {
       elGraphic.classList.remove('has-model');
-      elGraphic.innerHTML = '<div class="rd-graphic-inner" style="background:' + color + ';color:' + color + ';"></div>';
+      elGraphic.innerHTML = '<div class="rd-model-error">' + (message || '3D 预览暂时无法加载') + '<br><button type="button" class="rd-model-action" style="margin-top:12px">重试</button></div>';
+      elGraphic.querySelector('.rd-model-action').addEventListener('click', loadPreview);
     };
-    if (!window._initMap3D) { fallback(); return; }
 
-    elGraphic.classList.add('has-model');
-    window._initMap3D(elGraphic, regionId, resolvedPath).then(function(loaded) {
-      console.log('[app] _initMap3D resolved:', loaded);
-      if (!loaded) { fallback(); return; }
-      if (_pendingLandmark) {
-        setTimeout(function() {
+    function loadPreview() {
+      elGraphic.classList.add('has-model');
+      elGraphic.innerHTML = '<div class="rd-loading"><div class="rd-loading-ring"></div><span class="rd-loading-text">正在准备 3D 预览...</span></div>';
+      ensureMap3D().then(function(ready) {
+        if (!ready || Router.currentSub !== regionId) {
+          if (Router.currentSub === regionId) fallback('3D 组件加载失败');
+          return false;
+        }
+        return window._initMap3D(elGraphic, regionId, resolvedPath);
+      }).then(function(loaded) {
+        if (loaded === false && Router.currentSub === regionId) { fallback('模型文件加载失败'); return; }
+        if (loaded && _pendingLandmark && window._highlightLandmarkMesh) {
           window._highlightLandmarkMesh(_pendingLandmark);
-        }, 100);
-      }
-    });
+        }
+      }).catch(function() {
+        if (Router.currentSub === regionId) fallback('3D 预览初始化失败');
+      });
+    }
+
+    if (window._disposeMap3D) window._disposeMap3D(elGraphic);
+    elGraphic.classList.remove('has-model');
+    elGraphic.innerHTML = '<button type="button" class="rd-model-action">加载 3D 预览</button>';
+    elGraphic.querySelector('.rd-model-action').addEventListener('click', loadPreview);
   }
 
   // --- 装备 ---
@@ -4707,12 +4815,33 @@
   }
 
   function initNavigation() {
+    var menuButton = document.getElementById('mobileMenuToggle');
+    var overlay = document.getElementById('sidebarOverlay');
+    if (menuButton) menuButton.addEventListener('click', function() {
+      setSidebarOpen(!document.getElementById('sidebar').classList.contains('open'));
+    });
+    if (overlay) overlay.addEventListener('click', function() { setSidebarOpen(false); });
+
     document.querySelectorAll('.nav-link').forEach(link => {
       link.addEventListener('click', e => {
         e.preventDefault();
         window.location.hash = link.dataset.page;
+        setSidebarOpen(false);
       });
     });
+  }
+
+  function setSidebarOpen(open) {
+    var sidebar = document.getElementById('sidebar');
+    var menuButton = document.getElementById('mobileMenuToggle');
+    var overlay = document.getElementById('sidebarOverlay');
+    if (!sidebar || !menuButton || !overlay) return;
+    var shouldOpen = !!open && window.matchMedia('(max-width: 768px)').matches;
+    sidebar.classList.toggle('open', shouldOpen);
+    menuButton.setAttribute('aria-expanded', String(shouldOpen));
+    menuButton.setAttribute('aria-label', shouldOpen ? '关闭导航' : '打开导航');
+    overlay.classList.toggle('show', shouldOpen);
+    overlay.setAttribute('aria-hidden', String(!shouldOpen));
   }
 
   // ============================
@@ -5006,6 +5135,7 @@
       }
       // Esc 取消地图连接模式 或 拖拽
       if (e.key === 'Escape') {
+        setSidebarOpen(false);
         if (_mapConnSource) {
           e.preventDefault();
           cancelMapConnection();

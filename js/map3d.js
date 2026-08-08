@@ -32,6 +32,25 @@ let _controls = null;
 let _model = null;
 let _animId = null;
 let _currentRegion = null;
+let _controlsInteracting = false;
+let _loadToken = 0;
+let _fetchController = null;
+
+function renderScene() {
+  if (_renderer && _scene && _camera) _renderer.render(_scene, _camera);
+}
+
+function startRenderLoop() {
+  if (_animId || !_controls || !_renderer) return;
+  function animate() {
+    _animId = null;
+    if (!_controls || !_renderer || document.hidden) return;
+    const changed = _controls.update();
+    renderScene();
+    if (_controlsInteracting || changed) _animId = requestAnimationFrame(animate);
+  }
+  _animId = requestAnimationFrame(animate);
+}
 
 function initScene(container) {
   const rect = container.getBoundingClientRect();
@@ -49,9 +68,11 @@ function initScene(container) {
   _camera.lookAt(0, 0, 0);
 
   // Renderer
-  _renderer = new THREE.WebGLRenderer({ antialias: true });
+  const lowPower = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
+    || (navigator.deviceMemory && navigator.deviceMemory <= 4);
+  _renderer = new THREE.WebGLRenderer({ antialias: !lowPower, powerPreference: 'high-performance' });
   _renderer.setSize(w, h, false);
-  _renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  _renderer.setPixelRatio(Math.min(window.devicePixelRatio, lowPower ? 1 : 1.5));
   _renderer.shadowMap.enabled = true;
   _renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   _renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -68,6 +89,9 @@ function initScene(container) {
   _controls.maxPolarAngle = Math.PI * 0.65;
   _controls.target.set(0, 0.5, 0);
   _controls.update();
+  _controls.addEventListener('start', () => { _controlsInteracting = true; startRenderLoop(); });
+  _controls.addEventListener('end', () => { _controlsInteracting = false; startRenderLoop(); });
+  _controls.addEventListener('change', startRenderLoop);
 
   // 阻止滚轮事件传播到页面，防止同时触发页面滚动
   _renderer.domElement.addEventListener('wheel', function(e) {
@@ -82,7 +106,7 @@ function initScene(container) {
   const key = new THREE.DirectionalLight(0xffeedd, 4);
   key.position.set(8, 10, 4);
   key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.mapSize.set(lowPower ? 512 : 1024, lowPower ? 512 : 1024);
   key.shadow.normalBias = 0.02;
   key.shadow.camera.near = 0.5;
   key.shadow.camera.far = 50;
@@ -113,19 +137,25 @@ function initScene(container) {
   grid.position.y = -1.99;
   _scene.add(grid);
 
-  // Animation loop
-  function animate() {
-    _animId = requestAnimationFrame(animate);
-    _controls.update();
-    _renderer.render(_scene, _camera);
-  }
-  animate();
+  renderScene();
 }
 
 function disposeScene(container) {
+  _loadToken++;
+  if (_fetchController) { _fetchController.abort(); _fetchController = null; }
   if (_animId) { cancelAnimationFrame(_animId); _animId = null; }
-  if (_model && _scene) { _scene.remove(_model); disposeModel(_model); _model = null; }
-  if (_renderer) { _renderer.dispose(); _renderer = null; }
+  clearLandmarkHighlight();
+  if (_controls) { _controls.dispose(); _controls = null; }
+  dracoLoader.dispose();
+  if (_scene) disposeModel(_scene);
+  _model = null;
+  if (_renderer) {
+    _renderer.renderLists.dispose();
+    _renderer.dispose();
+    _renderer.forceContextLoss();
+    _renderer = null;
+  }
+  _controlsInteracting = false;
   _scene = null; _camera = null; _controls = null; _currentRegion = null;
   if (container) container.innerHTML = '';
 }
@@ -134,11 +164,14 @@ function disposeModel(obj) {
   obj.traverse(child => {
     if (child.geometry) child.geometry.dispose();
     if (child.material) {
-      if (Array.isArray(child.material)) {
-        child.material.forEach(m => m.dispose());
-      } else {
-        child.material.dispose();
-      }
+      const materials = Array.isArray(child.material) ? child.material : [child.material];
+      materials.forEach(material => {
+        Object.keys(material).forEach(key => {
+          const value = material[key];
+          if (value && value.isTexture) value.dispose();
+        });
+        material.dispose();
+      });
     }
   });
 }
@@ -146,11 +179,15 @@ function disposeModel(obj) {
 // Highlight state
 let _highlightedMesh = null;
 let _highlightOriginalMaterial = null;
+let _highlightMaterial = null;
 
-function processLoadedModel(gltf) {
-  if (!_scene) return; // 场景已被销毁（用户已离开页面）
-  if (_model) { _scene.remove(_model); disposeModel(_model); }
+function processLoadedModel(gltf, token) {
+  if (!_scene || token !== _loadToken) {
+    disposeModel(gltf.scene);
+    return false;
+  }
   clearLandmarkHighlight();
+  if (_model) { _scene.remove(_model); disposeModel(_model); }
   _model = gltf.scene;
 
   // Center & fit
@@ -178,13 +215,21 @@ function processLoadedModel(gltf) {
         return m;
       }
       if (Array.isArray(child.material)) {
-        child.material = child.material.map(function(m) { return toLambert(m); });
+        child.material = child.material.map(function(m) {
+          var replacement = toLambert(m);
+          m.dispose();
+          return replacement;
+        });
       } else {
-        child.material = toLambert(child.material);
+        var original = child.material;
+        child.material = toLambert(original);
+        original.dispose();
       }
     }
   });
   _scene.add(_model);
+  renderScene();
+  return true;
 }
 
 function highlightLandmarkMesh(name) {
@@ -199,7 +244,9 @@ function highlightLandmarkMesh(name) {
     emissive: 0x330000,
     side: THREE.DoubleSide
   });
-  if (_highlightOriginalMaterial.map) redMat.map = _highlightOriginalMaterial.map;
+  var sourceMaterial = Array.isArray(_highlightOriginalMaterial) ? _highlightOriginalMaterial[0] : _highlightOriginalMaterial;
+  if (sourceMaterial && sourceMaterial.map) redMat.map = sourceMaterial.map;
+  _highlightMaterial = redMat;
   if (Array.isArray(mesh.material)) {
     mesh.material = [redMat];
   } else {
@@ -212,17 +259,18 @@ function clearLandmarkHighlight() {
   if (_highlightedMesh && _highlightOriginalMaterial) {
     _highlightedMesh.material = _highlightOriginalMaterial;
   }
+  if (_highlightMaterial) _highlightMaterial.dispose();
   _highlightedMesh = null;
   _highlightOriginalMaterial = null;
+  _highlightMaterial = null;
 }
 
 // 从 ArrayBuffer 解析 GLB（带 Draco 解码）
-function parseFromBuffer(buffer) {
+function parseFromBuffer(buffer, token) {
   return new Promise((resolve) => {
     const loader = getGltfLoader();
     loader.parse(buffer, '', (gltf) => {
-      processLoadedModel(gltf);
-      resolve(true);
+      resolve(processLoadedModel(gltf, token));
     }, (err) => {
       console.warn('[map3d] parse failed:', err);
       resolve(false);
@@ -231,20 +279,17 @@ function parseFromBuffer(buffer) {
 }
 
 // 从 URL 下载 GLB 并缓存到 IndexedDB
-async function fetchAndCache(url, regionId) {
-  console.log('[map3d] downloading:', url);
-  const t0 = performance.now();
+async function fetchAndCache(url, regionId, signal) {
   let response;
   try {
-    response = await fetch(url);
+    response = await fetch(url, { signal });
     if (!response.ok) throw new Error('HTTP ' + response.status);
   } catch (e) {
-    console.warn('[map3d] fetch failed:', e);
+    if (e.name !== 'AbortError') console.warn('[map3d] fetch failed:', e);
     return null;
   }
   const buffer = await response.arrayBuffer();
-  const mb = (buffer.byteLength / 1024 / 1024).toFixed(1);
-  console.log('[map3d] downloaded', mb, 'MB in', (performance.now() - t0).toFixed(0), 'ms');
+  if (signal.aborted) return null;
 
   // 异步写入 IndexedDB（不阻塞解析）
   const filename = url.split('/').pop();
@@ -253,27 +298,28 @@ async function fetchAndCache(url, regionId) {
   return buffer;
 }
 
-async function loadModelIntoScene(regionId, modelPath) {
-  console.log('[map3d] loadModelIntoScene', { regionId, modelPath });
+async function loadModelIntoScene(regionId, modelPath, token, signal) {
 
   // 1. IndexedDB 缓存优先 — 秒加载
-  var cached = await window._modelStore.load(regionId);
+  var cached = null;
+  try {
+    cached = await window._modelStore.load(regionId);
+  } catch (error) {
+    console.warn('[map3d] model cache unavailable:', error);
+  }
   if (cached && cached.buffer) {
-    console.log('[map3d] trying IndexedDB cache (' + (cached.buffer.byteLength / 1024 / 1024).toFixed(1) + ' MB)...');
-    var ok = await parseFromBuffer(cached.buffer);
-    if (ok) { console.log('[map3d] loaded from cache'); return true; }
-    console.log('[map3d] cache parse failed, will re-download');
+    var ok = await parseFromBuffer(cached.buffer, token);
+    if (ok) return true;
   }
 
   // 2. 网络下载 + 缓存
   if (modelPath) {
-    var buffer = await fetchAndCache(modelPath, regionId);
+    var buffer = await fetchAndCache(modelPath, regionId, signal);
     if (buffer) {
-      return await parseFromBuffer(buffer);
+      return await parseFromBuffer(buffer, token);
     }
   }
 
-  console.log('[map3d] no model available');
   return false;
 }
 
@@ -281,15 +327,9 @@ async function loadModelIntoScene(regionId, modelPath) {
 // 公开 API → window
 // ============================
 
-async function hasModel(regionId) {
-  return window._modelStore.has(regionId);
-}
-
 async function initMap3D(container, regionId, modelPath) {
-  console.log('[map3d] initMap3D called', { regionId, modelPath, containerId: container && container.id });
-  if (!container) { console.log('[map3d] no container'); return; }
+  if (!container) return false;
   if (_currentRegion === regionId && _scene) {
-    console.log('[map3d] already active, re-attaching canvas if needed');
     if (container && _renderer && !container.contains(_renderer.domElement)) {
       container.innerHTML = '';
       container.appendChild(_renderer.domElement);
@@ -300,8 +340,9 @@ async function initMap3D(container, regionId, modelPath) {
   disposeScene(container);
 
   initScene(container);
-  console.log('[map3d] scene initialized');
   _currentRegion = regionId;
+  const token = ++_loadToken;
+  _fetchController = new AbortController();
 
   // 加载提示（覆盖在 canvas 上方）
   var spinner = document.createElement('div');
@@ -309,27 +350,15 @@ async function initMap3D(container, regionId, modelPath) {
   spinner.innerHTML = '<div class="rd-loading-ring"></div><span class="rd-loading-text">加载模型中...</span>';
   container.appendChild(spinner);
 
-  const loaded = await loadModelIntoScene(regionId, modelPath);
+  const loaded = await loadModelIntoScene(regionId, modelPath, token, _fetchController.signal);
+  if (token === _loadToken) _fetchController = null;
   if (spinner.parentNode) spinner.remove();
-  if (!_scene) { console.log('[map3d] scene disposed during load'); return false; }
+  if (!_scene) return false;
   if (!loaded) {
-    console.log('[map3d] model load failed, disposing scene');
     disposeScene(container);
     _currentRegion = null;
   }
-  console.log('[map3d] initMap3D result:', loaded);
   return loaded;
-}
-
-function isViewerActive(regionId) {
-  return _currentRegion === regionId && !!_scene;
-}
-
-async function removeRegionModel(regionId) {
-  await window._modelStore.delete(regionId);
-  if (_currentRegion === regionId) {
-    disposeScene(document.getElementById('rdGraphic'));
-  }
 }
 
 // 响应式 resize
@@ -339,6 +368,7 @@ function resizeMap3D(container) {
   _renderer.setSize(rect.width || 280, rect.height || 280, false);
   _camera.aspect = (rect.width || 280) / (rect.height || 280);
   _camera.updateProjectionMatrix();
+  renderScene();
 }
 
 window.addEventListener('resize', () => {
@@ -347,12 +377,7 @@ window.addEventListener('resize', () => {
   }
 });
 
-window._hasRegionModel = hasModel;
 window._initMap3D = initMap3D;
-window._isMap3DActive = isViewerActive;
-window._pickRegionModel = window._modelStore.pick;   // 委托至 modelStore
-window._removeRegionModel = removeRegionModel;
-window._resizeMap3D = resizeMap3D;
 window._disposeMap3D = disposeScene;
 function hasLandmarkMesh(name) {
   if (!_model || !name) return false;

@@ -30,8 +30,8 @@
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readwrite');
       tx.objectStore(STORE_NAME).put({ buffer, filename, ts: Date.now(), stamp }, regionId);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
+      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onerror = () => { db.close(); reject(tx.error); };
     });
   }
 
@@ -40,18 +40,24 @@
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readonly');
       const req = tx.objectStore(STORE_NAME).get(regionId);
+      var stale = false;
       req.onsuccess = () => {
         var data = req.result || null;
         if (data && data.buffer) {
           var currentStamp = (typeof TDE_DATA !== 'undefined' && TDE_DATA._modelStamp) ? TDE_DATA._modelStamp : 0;
           if (data.stamp !== currentStamp) {
-            console.log('[modelStore] stamp mismatch for', regionId, '(cached:', data.stamp, 'current:', currentStamp, ')—invalidating cache');
-            return resolve(null);
+            stale = true;
+            data = null;
           }
         }
         resolve(data);
       };
       req.onerror = () => reject(req.error);
+      tx.oncomplete = () => {
+        db.close();
+        if (stale) deleteModel(regionId).catch(function() {});
+      };
+      tx.onerror = () => db.close();
     });
   }
 
@@ -60,79 +66,13 @@
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readwrite');
       tx.objectStore(STORE_NAME).delete(regionId);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
+      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onerror = () => { db.close(); reject(tx.error); };
     });
-  }
-
-  async function hasModel(regionId) {
-    const data = await loadModel(regionId);
-    return !!(data && data.buffer);
-  }
-
-  // 文件选择器 (后备：直接选文件存 IndexedDB 即时预览)
-  function pickModelFile(regionId) {
-    return new Promise((resolve) => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.glb,.gltf';
-      input.style.display = 'none';
-      document.body.appendChild(input);
-
-      let settled = false;
-      function done(result) {
-        if (settled) return;
-        settled = true;
-        input.remove();
-        resolve(result);
-      }
-
-      input.onchange = async () => {
-        const file = input.files[0];
-        if (!file) { done({ ok: false }); return; }
-        try {
-          const buffer = await file.arrayBuffer();
-          await saveModel(regionId, buffer, file.name);
-          done({ ok: true, filename: file.name });
-        } catch (e) {
-          console.error('模型保存失败:', e);
-          done({ ok: false });
-        }
-      };
-
-      function onFocus() {
-        window.removeEventListener('focus', onFocus);
-        setTimeout(() => {
-          if (input.files && input.files.length === 0) done({ ok: false });
-        }, 200);
-      }
-      window.addEventListener('focus', onFocus);
-
-      input.click();
-    });
-  }
-
-  // Blob URL 工具
-  async function getModelBlobUrl(regionId) {
-    const data = await loadModel(regionId);
-    if (!data || !data.buffer) return null;
-    const blob = new Blob([data.buffer], { type: 'model/gltf-binary' });
-    return URL.createObjectURL(blob);
-  }
-
-  function revokeModelBlobUrl(url) {
-    URL.revokeObjectURL(url);
   }
 
   window._modelStore = {
     save: saveModel,
-    load: loadModel,
-    delete: deleteModel,
-    has: hasModel,
-    pick: pickModelFile,
-    getBlobUrl: getModelBlobUrl,
-    revokeBlobUrl: revokeModelBlobUrl
+    load: loadModel
   };
-
-  console.log('[modelStore] 已就绪');
 })();

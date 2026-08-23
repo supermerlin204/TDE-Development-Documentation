@@ -101,6 +101,13 @@ TDE_DATA.common = [
     "race": "tde_y0b6f3k8c1"
   },
   {
+    "id": "tde_p6r2n8v4k1",
+    "name": "红菇猎手",
+    "faction": "自然",
+    "desc": "来历不明的神秘生物。",
+    "race": "tde_y0b6f3k8c1"
+  },
+  {
     "name": "鱼头渔夫",
     "faction": "深潮教会",
     "desc": "得到先驱赐福的海潮镇渔夫。",

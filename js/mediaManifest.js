@@ -17,6 +17,7 @@
     '窃魂者骷髅': ['img/entities/窃魂者骷髅.gif'],
     '维利人流浪商人': ['img/entities/维利人流浪商人.gif'],
     '蘑菇人': ['img/entities/蘑菇人.gif'],
+    '红菇猎手': ['img/entities/红菇猎手.gif', 'img/entities/红菇猎手_1.gif'],
     '蘑菇爷爷': ['img/entities/蘑菇爷爷.gif', 'img/entities/蘑菇爷爷_1.gif'],
     '鱼头渔夫': ['img/entities/鱼头渔夫.gif']
   };
